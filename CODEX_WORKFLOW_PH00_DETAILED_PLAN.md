@@ -9,7 +9,7 @@
 
 > **Live execution status (2026-09-03):** `IN_PROGRESS` on `spike/ph00-codex-capabilities`
 > **Observed baseline:** Windows 11 `10.0.26200`; Desktop `26.901.1978.0`; Codex CLI updated to `0.153.0`; Node `24.19.0`; ChatGPT auth/network healthy.
-> **Progress:** repository/bootstrap and latest CLI complete; `P01..P04`, `P07`, and `P09..P12` have automated evidence. Target Desktop checks for `P00`, `P02`, `P03`, `P05`, `P06`, and `P08`, then `P13` cleanup and `P14` consolidation, remain open.
+> **Progress:** repository/bootstrap and latest CLI complete; `P01..P05`, `P07`, and `P09..P12` have evidence. Desktop inline UI, fullscreen, and follow-up pass; render-result `_meta` is unavailable on the tested path. Target checks for `P00`, remaining optional `P05` controls, `P06`, and `P08`, then `P13` cleanup and `P14` consolidation, remain open.
 
 ---
 

@@ -11,10 +11,11 @@ Status: automated evidence current; Desktop checkpoint pending.
 | Account/plan | signed-in target account; Plus UI confirmation pending |
 | Models/efforts | CLI host advertises Sol/Terra/Luna; explicit Luna/low passed; Desktop picker pending |
 | Plugin packaging | local marketplace plugin installed/enabled in real profile |
-| Skill lifecycle | validator pass and fresh CLI session invocation pass; Desktop new-task check pending |
+| Skill lifecycle | validator pass; fresh CLI and Desktop new-task invocation pass |
 | MCP | deterministic read tool and separate render tool pass SDK/CLI live tests |
-| UI modes | contract implemented; target Desktop inline/fullscreen/PiP/modal pending |
-| Hooks | deterministic redacted recorder pass; Desktop trust/runtime pending |
+| UI modes | Desktop inline pass; fullscreen opens with a state gap; follow-up passes with confirmation; PiP/modal/UI tool call pending |
+| UI data boundary | model receives `PH00_PUBLIC_NONCE`; component render-result `_meta` was missing on the target path |
+| Hooks | deterministic redacted recorder pass; no real `PLUGIN_DATA` event file after the UI task, so trust/runtime proof remains pending |
 | `PLUGIN_DATA` | direct script test pass; Desktop persistence pending |
 | Agents/context | task-only child omitted parent nonce; custom reader profile passed; effective model not public |
 | Worktrees/local env | public native contract confirmed; target Desktop fixture pending |

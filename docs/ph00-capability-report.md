@@ -6,8 +6,11 @@ checkpoint and P13 cleanup.
 ## Proven now
 
 - current CLI `0.153.0`, plugin packaging, local marketplace installation,
-  packaged Skill, deterministic read-only MCP, and CLI parity;
+  packaged Skill in fresh CLI/Desktop tasks, deterministic read-only MCP, and
+  CLI parity;
 - separate data/render contract and model-visible versus UI-only fields;
+- Codex Desktop inline rendering, fullscreen transition, and follow-up with
+  user confirmation; render-result `_meta` was unavailable on the tested path;
 - task-only child context in the tested surface, repeat child-result delivery,
   custom project agent profile discovery, and blocked nested spawn in the
   tested child surface;
@@ -19,7 +22,7 @@ checkpoint and P13 cleanup.
 ## Not yet proven
 
 - installed Desktop build is the latest stable and the target account is Plus;
-- target Desktop plugin/Skill activation, MCP UI rendering and interaction;
+- Desktop component-originated tool call, PiP, and custom modal behavior;
 - hook trust, lifecycle delivery, and real `PLUGIN_DATA` persistence;
 - managed worktree, `.worktreeinclude`, local environment, review, and terminal
   behavior on this installation;
@@ -32,8 +35,10 @@ checkpoint and P13 cleanup.
   broad guaranteed property;
 - public telemetry supports root completed turns; family token claims are
   prohibited while child attribution remains partial;
-- persistent sidebar is removed from V1; inline/fullscreen or text is the
-  supported ladder pending the Desktop UI result;
+- persistent sidebar is removed from V1; inline to fullscreen with text/tool
+  fallback is the supported ladder;
+- production correctness must not depend on render-result `_meta` or UI state
+  surviving a display-mode transition;
 - hooks cannot be the sole semantic event bus; explicit MCP transitions and
   reconciliation remain required if lifecycle coverage is incomplete.
 
