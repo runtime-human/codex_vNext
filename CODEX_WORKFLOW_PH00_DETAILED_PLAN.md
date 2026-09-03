@@ -1,11 +1,15 @@
 # Workflow Next — PH-00 / H0 Detailed Capability-Proof Plan
 
-> **Status:** implementation-ready capability spike baseline  
+> **Status:** execution in progress
 > **Date baseline:** 2026-09-03  
 > **Roadmap:** `PH-00`, `DELIV-00.01..00.07`, `GATE-00`, `PLANSEED-00`  
 > **Master Plan:** `MILE-00`, `WP-001..WP-009`, `AC-10`  
 > **Product:** Desktop-first Codex workflow plugin; CLI-compatible; no standalone app/runtime  
 > **Execution class:** feasibility/capability proof. Throwaway probe code is expected. Production domain/state/orchestration code is explicitly out of scope.
+
+> **Live execution status (2026-09-03):** `IN_PROGRESS` on `spike/ph00-codex-capabilities`
+> **Observed baseline:** Windows 11 `10.0.26200`; Desktop `26.901.1978.0`; Codex CLI updated to `0.153.0`; Node `24.19.0`; ChatGPT auth/network healthy.
+> **Progress:** repository/bootstrap and latest CLI complete; `P01..P04`, `P07`, and `P09..P12` have automated evidence. Target Desktop checks for `P00`, `P02`, `P03`, `P05`, `P06`, and `P08`, then `P13` cleanup and `P14` consolidation, remain open.
 
 ---
 

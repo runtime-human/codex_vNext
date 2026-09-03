@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ph00-probe": {
+      "command": "node",
+      "args": ["dist/src/mcp-server.js"],
+      "cwd": ".",
+      "startup_timeout_sec": 30
+    }
+  }
+}

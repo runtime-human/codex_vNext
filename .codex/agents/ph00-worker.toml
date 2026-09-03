@@ -1,0 +1,8 @@
+name = "ph00-worker"
+description = "Temporary PH-00 worker limited to the disposable fixture directory."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Work only under spikes/ph00/fixtures. Refuse writes elsewhere and report the exact file touched.
+"""
