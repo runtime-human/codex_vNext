@@ -1,19 +1,20 @@
 # ADR-PH00-003: Trace attribution
 
-Status: accepted for PH-00 evidence.
+Status: accepted for PH-00.
 
 ## Decision
 
-Use public `codex exec --json` as the automation trace source. Normalize the
-observed completed-turn usage fields and treat `cached_input_tokens` as a
-subset of input.
+Use documented `codex exec --json` events and `turn.completed.usage` for root
+automation traces. Treat `cached_input_tokens` as a subset of input. Missing
+failed/interrupted usage, effective model, child ID, parent relation or
+child-only usage remains unknown, never zero.
 
-Effective provider model, failed/interrupted usage, child thread identity, and
-child-only usage were absent from the tested public JSONL. Descendant
-attribution is therefore `PARTIAL`. Missing fields remain unknown and must
-never be synthesized as zero.
+Descendant attribution is `PARTIAL`. The clean-room local parser is explicitly
+`NON_CONTRACTUAL_DIAGNOSTIC`, guards the observed schema and exposes only
+session metadata plus token totals. It proved local parent/child ancestry and
+usage that the public surface did not expose, but it is not a correctness or
+product dependency.
 
-Later benchmarks may report root completed-turn usage, quality, elapsed time,
-and public child state. Total family-token savings are prohibited until an
-official complete attribution surface exists. Private rollout data may be
-diagnostic only, never a production dependency or public claim source.
+Total family-token savings remain prohibited until an official complete
+attribution surface exists. Headless and Desktop multi-agent reliability stay
+separate evidence classes.

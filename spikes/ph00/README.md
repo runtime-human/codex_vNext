@@ -14,7 +14,6 @@ The local marketplace package is
 build output, hook data, and managed worktrees are ignored or removed during
 P13 cleanup.
 
-Current automated result: plugin/Skill/MCP and CLI parity pass; subagent and
-trace behavior are classified in evidence. Desktop UI, hook trust,
-managed-worktree, review, terminal, and account-picker observations remain a
-manual target-host checkpoint.
+PH-00 execution is complete with `GATE-H0=BLOCKED`: plugin/Skill/MCP/UI and the
+explicit fresh-worker subset pass, while live Windows hooks/`PLUGIN_DATA` and
+the managed-worktree checkpoint remain incomplete. PH-01 was not started.

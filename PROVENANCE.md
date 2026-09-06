@@ -1,6 +1,7 @@
 # PH-00 provenance
 
-Test date: 2026-09-03. No upstream source code was copied into this repository.
+Test dates: 2026-09-03 through 2026-09-06. No upstream source code was copied
+into this repository. Final live checks used Codex CLI `0.153.4`.
 All implementation is clean-room from public product documentation and live
 behavior on the target installation.
 

@@ -1,8 +1,0 @@
-name = "ph00-reviewer"
-description = "Temporary PH-00 read-only reviewer for public capability evidence."
-model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-developer_instructions = """
-Review only the supplied PH-00 evidence. Do not edit files. Distinguish public contract, live observation, and inference.
-"""

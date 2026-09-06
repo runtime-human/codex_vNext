@@ -1,37 +1,32 @@
-# P09-P11 CLI, trace, and memory snapshot
+# P09-P11 CLI, trace, diagnostic and memory snapshot
 
-CLI `0.153.0` exposes native `plugin`, `agents`, `queue`, `doctor`, `exec`, and
-`review` commands. The real profile sees the installed PH-00 marketplace and
-plugin. CLI Skill/MCP parity passed as recorded under P02-P06.
+The official changelog and npm registry both reported CLI `0.153.4`; the
+installed binary returned `codex-cli 0.153.4` on 2026-09-06.
 
-Fresh `codex exec --json` event types observed:
+Fresh `codex exec --json` exposed `thread.started`, `turn.started`,
+`item.started`, `item.completed`, `turn.completed` and `error`. The documented
+`turn.completed.usage` fields were observed, including `input_tokens`,
+`cached_input_tokens`, `cache_write_input_tokens`, `output_tokens` and
+`reasoning_output_tokens`. Cached input is a subset of input.
+
+One 0.153.4 Skill + MCP run completed with input `113166`, cached input `54784`,
+output `262`, and reasoning output `72`. Effective provider model and public
+descendant relationship or child-only usage were not emitted, so public
+descendant attribution is `PARTIAL`.
+
+The clean-room `scripts/session-diagnostic.mjs` reads only guarded metadata and
+token fields and labels every result `NON_CONTRACTUAL_DIAGNOSTIC`. Against one
+real child it observed:
 
 ```text
-thread.started
-turn.started
-item.started
-item.completed
-turn.completed
-turn.failed
-error
+thread_id=01a077c0-2dd0-7f40-a553-9729b049b704
+parent_thread_id=01a06848-336c-7543-92c3-7df1a2313b0c
+agent_role=ph00-reader
+model=gpt-5.6-luna
+input=193349 cached=189184 output=259 reasoning=122 total=193608
 ```
 
-Completed usage fields:
-
-```text
-input_tokens
-cached_input_tokens
-cache_write_input_tokens
-output_tokens
-reasoning_output_tokens
-```
-
-`cached_input_tokens` is treated as a subset of input, never added again.
-JSONL did not report an effective provider model ID. A controlled invalid
-reasoning-effort value ended with `turn.failed` and no usage, so incomplete
-turn usage is `partial/unknown`, never zero.
-
-The supported `--disable memories` control was tested with explicit requested
-`gpt-5.6-luna` / `low`. It returned exactly `PH00_MEMORY_OFF_OK`; usage was
-input `24228`, cached input `0`, output `9`, reasoning output `0`. Plugin
-correctness therefore does not depend on ambient memory.
+The public surface did not expose the same child identity/usage tuple, so no
+family-total or savings claim is allowed. Unknown schema fails closed. The
+supported `--disable memories` control previously returned exactly
+`PH00_MEMORY_OFF_OK`; correctness does not depend on ambient memory.

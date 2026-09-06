@@ -1,46 +1,44 @@
 # PH-00 capability report
 
-Status: `IN_PROGRESS`; final H0 decision waits for the target Desktop
-checkpoint and P13 cleanup.
+Status: PH-00 executed; `GATE-H0=BLOCKED`. PH-01 was not started.
 
-## Proven now
+## Environment
 
-- current CLI `0.153.0`, plugin packaging, local marketplace installation,
-  packaged Skill in fresh CLI/Desktop tasks, deterministic read-only MCP, and
-  CLI parity;
-- separate data/render contract and model-visible versus UI-only fields;
-- Codex Desktop inline rendering, fullscreen transition, and follow-up with
-  user confirmation; render-result `_meta` was unavailable on the tested path;
-- task-only child context in the tested surface, repeat child-result delivery,
-  custom project agent profile discovery, and blocked nested spawn in the
-  tested child surface;
-- public root JSONL usage, missing failed-turn usage, missing effective model,
-  and partial descendant attribution;
-- plugin correctness with native memory disabled;
-- no documented public third-party sidebar API.
+- Windows 11 build 26200;
+- Codex Desktop `26.901.1978.0` (installed/healthy; latest-stable not proven);
+- Codex CLI `0.153.4`, matched official changelog and npm latest on 2026-09-06;
+- Plus observed only in non-contractual local session telemetry.
 
-## Not yet proven
+## Critical findings
 
-- installed Desktop build is the latest stable and the target account is Plus;
-- Desktop component-originated tool call, PiP, and custom modal behavior;
-- hook trust, lifecycle delivery, and real `PLUGIN_DATA` persistence;
-- managed worktree, `.worktreeinclude`, local environment, review, and terminal
-  behavior on this installation;
-- plugin-disabled/MCP-unavailable degradation and complete cleanup.
+1. Plugin/Skill/MCP: supported local marketplace lifecycle, fresh Skill load,
+   deterministic read tool and UI-independent data contract pass.
+2. MCP/UI: inline, fullscreen and confirmed follow-up pass in Desktop. PiP and
+   modal are optional; render-result `_meta` was absent on the tested path.
+3. Hooks/PLUGIN_DATA: trust/activation is visible, but live Windows hook
+   commands exit 1; plugin data is read-only to the sandbox token and the
+   synchronous sentinel was not blocked. `BR-H0-09` applies.
+4. Subagents: explicit `fork_turns=none` task/result delivery passed 3/3;
+   follow-up, two parallel siblings and MCP inheritance passed. `1` delivered
+   but did not reveal the parent marker. Default/`all` are unavailable under
+   the current tool contract. Classification:
+   `PUBLIC_BOUNDED_CONTEXT_PARTIAL`.
+5. Trace: public root `turn.completed.usage` works; effective model and public
+   descendant identity/usage do not. Descendant attribution is `PARTIAL`.
+   Clean-room local ancestry is diagnostic only.
+6. Native surfaces: official worktree/local environment/review/terminal
+   boundaries are confirmed; target managed-worktree smoke remains a manual
+   gap. No custom TUI, worktree manager, review UI or terminal was built.
+7. Sidebar: `UNSUPPORTED_PUBLIC`; text → inline → fullscreen remains the host
+   ladder.
 
-## Current architecture implications
+## Gate decision
 
-- no custom Workflow Next CLI/TUI: use native CLI controls;
-- Task Capsule is semantic authority, but context/token isolation is not a
-  broad guaranteed property;
-- public telemetry supports root completed turns; family token claims are
-  prohibited while child attribution remains partial;
-- persistent sidebar is removed from V1; inline to fullscreen with text/tool
-  fallback is the supported ladder;
-- production correctness must not depend on render-result `_meta` or UI state
-  surviving a display-mode transition;
-- hooks cannot be the sole semantic event bus; explicit MCP transitions and
-  reconciliation remain required if lifecycle coverage is incomplete.
+The Desktop-first plugin architecture remains viable, and the safe worker
+subset is explicit fresh `fork_turns=none`. The mandatory H0 gate does not pass
+on this build because trusted hooks/`PLUGIN_DATA`, full fork-mode coverage and
+the managed-worktree target checkpoint are incomplete. Architecture review and
+a fresh Codex re-probe are required before PH-01.
 
-Exact evidence is under `spikes/ph00/evidence`. The final GO/BLOCK decision is
-intentionally not made before the remaining live target-host checks.
+No private API, transcript event bus, release, push, PR, benchmark or PH-01
+implementation was added. Exact evidence is under `spikes/ph00/evidence`.
