@@ -2209,25 +2209,25 @@ git commit -m "feat: add PH-02 state repositories"
   - `recordEvidence`
 - Uses PH-01 `canTransition` and `validateCompletion`.
 
-- [ ] **Step 1: Write failing begin/idempotency tests**
+- [x] **Step 1: Write failing begin/idempotency tests**
 
 Duplicate `workflow.begin` command returns exactly the same run ID.
 
 `durable=true` is rejected in PH-02.
 
-- [ ] **Step 2: Write work create/patch tests**
+- [x] **Step 2: Write work create/patch tests**
 
 State cannot be patched through `work.update`.
 
 Version conflict is deterministic.
 
-- [ ] **Step 3: Write every legal/illegal transition integration test**
+- [x] **Step 3: Write every legal/illegal transition integration test**
 
 Reuse the PH-01 transition matrix as the authority.
 
 Persistence must reject an edge that PH-01 rejects.
 
-- [ ] **Step 4: Write completion gate tests**
+- [x] **Step 4: Write completion gate tests**
 
 A `done` transition fails when:
 
@@ -2242,11 +2242,11 @@ pending run-level decision exists
 
 It passes only when all PH-01 completion requirements are met.
 
-- [ ] **Step 5: Inject a failure between entity update and event append**
+- [x] **Step 5: Inject a failure between entity update and event append**
 
 Expected: neither entity mutation nor event nor receipt commits.
 
-- [ ] **Step 6: Implement semantic service**
+- [x] **Step 6: Implement semantic service**
 
 Each mutation must run:
 
@@ -2262,14 +2262,14 @@ validate input/domain
 → COMMIT
 ```
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```powershell
 npm test -- state-service
 npm run typecheck
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add src/state/state-service.ts src/state/index.ts tests/state/state-service.test.ts

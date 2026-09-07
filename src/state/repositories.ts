@@ -384,6 +384,30 @@ export class StateRepositories {
     return row ? projectFromRow(row) : undefined;
   }
 
+  updateProjectInspection(
+    projectId: string,
+    inspection: Pick<
+      ProjectRecord,
+      'repoRoot' | 'repoFingerprint' | 'remoteUrl' | 'defaultBranch'
+    >,
+    updatedAt: string,
+  ): ProjectRecord {
+    this.db
+      .prepare(`UPDATE projects SET
+        repo_root = ?, repo_fingerprint = ?, remote_url = ?, default_branch = ?,
+        updated_at = ?, version = version + 1
+        WHERE project_id = ?`)
+      .run(
+        inspection.repoRoot,
+        inspection.repoFingerprint,
+        inspection.remoteUrl ?? null,
+        inspection.defaultBranch ?? null,
+        updatedAt,
+        projectId,
+      );
+    return this.getProject(projectId) as ProjectRecord;
+  }
+
   putRun(value: RunRecord): void {
     this.db
       .prepare(`INSERT INTO runs (
@@ -409,6 +433,15 @@ export class StateRepositories {
     const row = this.db
       .prepare('SELECT * FROM runs WHERE run_id = ?')
       .get(runId) as Row | undefined;
+    return row ? runFromRow(row) : undefined;
+  }
+
+  getLatestRunForProject(projectId: string): RunRecord | undefined {
+    const row = this.db
+      .prepare(
+        'SELECT * FROM runs WHERE project_id = ? ORDER BY updated_at DESC LIMIT 1',
+      )
+      .get(projectId) as Row | undefined;
     return row ? runFromRow(row) : undefined;
   }
 
@@ -488,6 +521,56 @@ export class StateRepositories {
     return this.getWorkItem(workItemId) as WorkItemRecord;
   }
 
+  setWorkItemState(
+    workItemId: string,
+    expectedVersion: number,
+    state: WorkItemState,
+    updatedAt: string,
+    completion?: { readinessLevel: ReadinessLevel; evidenceIds: string[] },
+  ): WorkItemRecord {
+    const result = completion
+      ? this.db
+          .prepare(`UPDATE work_items SET
+            state = ?, readiness_level = ?, readiness_evidence_json = ?,
+            updated_at = ?, version = version + 1
+            WHERE work_item_id = ? AND version = ?`)
+          .run(
+            state,
+            completion.readinessLevel,
+            canonicalJson(completion.evidenceIds),
+            updatedAt,
+            workItemId,
+            expectedVersion,
+          )
+      : this.db
+          .prepare(`UPDATE work_items SET
+            state = ?, updated_at = ?, version = version + 1
+            WHERE work_item_id = ? AND version = ?`)
+          .run(state, updatedAt, workItemId, expectedVersion);
+    if (Number(result.changes) === 0) {
+      if (!this.getWorkItem(workItemId))
+        throw new StateError('NOT_FOUND', 'work item not found');
+      throw new StateError(
+        'VERSION_CONFLICT',
+        'work item version does not match',
+        {
+          expectedVersion,
+        },
+      );
+    }
+    return this.getWorkItem(workItemId) as WorkItemRecord;
+  }
+
+  listWorkItems(runId: string): WorkItemRecord[] {
+    return (
+      this.db
+        .prepare(
+          'SELECT * FROM work_items WHERE run_id = ? ORDER BY created_at, work_item_id',
+        )
+        .all(runId) as Row[]
+    ).map(workItemFromRow);
+  }
+
   putDecision(value: DecisionRecord): void {
     this.db
       .prepare(`INSERT INTO decisions (
@@ -517,6 +600,49 @@ export class StateRepositories {
     return row ? decisionFromRow(row) : undefined;
   }
 
+  listPendingDecisions(runId: string, workItemId?: string): DecisionRecord[] {
+    const rows = workItemId
+      ? this.db
+          .prepare(`SELECT * FROM decisions
+            WHERE run_id = ? AND status = 'pending'
+              AND (work_item_id IS NULL OR work_item_id = ?)
+            ORDER BY created_at, decision_id`)
+          .all(runId, workItemId)
+      : this.db
+          .prepare(`SELECT * FROM decisions
+            WHERE run_id = ? AND status = 'pending'
+            ORDER BY created_at, decision_id`)
+          .all(runId);
+    return (rows as Row[]).map(decisionFromRow);
+  }
+
+  resolveDecision(
+    decisionId: string,
+    expectedVersion: number,
+    resolution: string,
+    updatedAt: string,
+  ): DecisionRecord {
+    const result = this.db
+      .prepare(`UPDATE decisions SET
+        status = 'resolved', resolution = ?, updated_at = ?, version = version + 1
+        WHERE decision_id = ? AND version = ? AND status = 'pending'`)
+      .run(resolution, updatedAt, decisionId, expectedVersion);
+    if (Number(result.changes) === 0) {
+      const existing = this.getDecision(decisionId);
+      if (!existing) throw new StateError('NOT_FOUND', 'decision not found');
+      if (existing.version !== expectedVersion)
+        throw new StateError(
+          'VERSION_CONFLICT',
+          'decision version does not match',
+          {
+            expectedVersion,
+          },
+        );
+      throw new StateError('INVALID_TRANSITION', 'decision is not pending');
+    }
+    return this.getDecision(decisionId) as DecisionRecord;
+  }
+
   putEvidence(value: EvidenceRecord): void {
     this.db
       .prepare(`INSERT INTO evidence (
@@ -544,6 +670,16 @@ export class StateRepositories {
       .prepare('SELECT * FROM evidence WHERE evidence_id = ?')
       .get(evidenceId) as Row | undefined;
     return row ? evidenceFromRow(row) : undefined;
+  }
+
+  listEvidence(runId: string): EvidenceRecord[] {
+    return (
+      this.db
+        .prepare(
+          'SELECT * FROM evidence WHERE run_id = ? ORDER BY created_at, evidence_id',
+        )
+        .all(runId) as Row[]
+    ).map(evidenceFromRow);
   }
 
   putArtifact(value: ArtifactRecord): void {
@@ -605,6 +741,16 @@ export class StateRepositories {
       .prepare('SELECT * FROM resources WHERE resource_id = ?')
       .get(resourceId) as Row | undefined;
     return row ? resourceFromRow(row) : undefined;
+  }
+
+  listCleanupRequiredResources(runId: string): ResourceRecord[] {
+    return (
+      this.db
+        .prepare(`SELECT * FROM resources
+          WHERE run_id = ? AND cleanup_required = 1
+          ORDER BY created_at, resource_id`)
+        .all(runId) as Row[]
+    ).map(resourceFromRow);
   }
 
   appendEvent(value: WorkflowEventRecord): WorkflowEventRecord {

@@ -8,5 +8,6 @@ export * from './project-inspector.js';
 export * from './redaction.js';
 export * from './repositories.js';
 export * from './sqlite.js';
+export * from './state-service.js';
 export * from './storage-root.js';
 export * from './transaction.js';
