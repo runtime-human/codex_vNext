@@ -1926,7 +1926,7 @@ git commit -m "build: add PH-02 state and MCP runtime dependencies"
 - Produces `resolveStorageRoot`, `openWorkflowDatabase`, `withImmediateTransaction`, ID generators and clock injection.
 - Later repository/service code must not open SQLite directly.
 
-- [ ] **Step 1: Write failing storage-root tests**
+- [x] **Step 1: Write failing storage-root tests**
 
 Required cases:
 
@@ -1937,7 +1937,7 @@ valid temp directory → resolves
 state/artifacts/backups/tmp directories stay inside root
 ```
 
-- [ ] **Step 2: Write failing SQLite pragma tests**
+- [x] **Step 2: Write failing SQLite pragma tests**
 
 Against a temp directory, assert:
 
@@ -1949,7 +1949,7 @@ quick_check = ok
 extensions cannot be enabled
 ```
 
-- [ ] **Step 3: Write a transaction rollback test**
+- [x] **Step 3: Write a transaction rollback test**
 
 Inside `withImmediateTransaction`:
 
@@ -1960,7 +1960,7 @@ throw sentinel
 
 Expected: row does not exist.
 
-- [ ] **Step 4: Write an async-callback rejection test**
+- [x] **Step 4: Write an async-callback rejection test**
 
 Pass a callback returning a Promise.
 
@@ -1971,7 +1971,7 @@ transaction rolls back
 error = write transaction callback must be synchronous
 ```
 
-- [ ] **Step 5: Implement minimal code**
+- [x] **Step 5: Implement minimal code**
 
 Use:
 
@@ -1985,14 +1985,14 @@ new DatabaseSync(path, {
 
 Then apply the required pragmas.
 
-- [ ] **Step 6: Verify GREEN**
+- [x] **Step 6: Verify GREEN**
 
 ```powershell
 npm test -- sqlite
 npm run typecheck
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/state tests/state/sqlite.test.ts
