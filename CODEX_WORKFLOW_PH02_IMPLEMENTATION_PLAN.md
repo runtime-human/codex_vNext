@@ -2455,7 +2455,7 @@ git commit -m "feat: add recovery reconciliation and doctor"
 - Exposes the exact nine-tool PH-02 surface from section 12.
 - Uses only `StateService`, `ResourceJournal`, `ProjectInspector` and read-only projections.
 
-- [ ] **Step 1: Write schema RED tests**
+- [x] **Step 1: Write schema RED tests**
 
 For every tool:
 
@@ -2468,11 +2468,11 @@ non-done transition rejects completion payload
 resource union operation validated
 ```
 
-- [ ] **Step 2: Write annotation tests**
+- [x] **Step 2: Write annotation tests**
 
 Assert exact table from section 13.
 
-- [ ] **Step 3: Write in-memory MCP tests**
+- [x] **Step 3: Write in-memory MCP tests**
 
 Use the MCP SDK's linked in-memory transport/client where possible.
 
@@ -2487,17 +2487,17 @@ work.transition(done)
 workflow.summary
 ```
 
-- [ ] **Step 4: Write idempotency through MCP**
+- [x] **Step 4: Write idempotency through MCP**
 
 Call the same mutating MCP request twice.
 
 Expected one event/mutation and identical structured result.
 
-- [ ] **Step 5: Write error-envelope tests**
+- [x] **Step 5: Write error-envelope tests**
 
 `VERSION_CONFLICT`, `COMPLETION_BLOCKED`, `IDEMPOTENCY_CONFLICT` return bounded structured error objects and no stack trace.
 
-- [ ] **Step 6: Implement tool-result helper**
+- [x] **Step 6: Implement tool-result helper**
 
 Success:
 
@@ -2521,15 +2521,15 @@ Error:
 }
 ```
 
-- [ ] **Step 7: Implement stdio server with `serveStdio`**
+- [x] **Step 7: Implement stdio server with `serveStdio`**
 
 No HTTP listener.
 
-- [ ] **Step 8: Create production `.mcp.json`**
+- [x] **Step 8: Create production `mcp.json`**
 
 Use the exact configuration from section 14.
 
-- [ ] **Step 9: Run focused tests**
+- [x] **Step 9: Run focused tests**
 
 ```powershell
 npm test -- ph02-mcp-schemas tools stdio-smoke
@@ -2537,7 +2537,7 @@ npm run typecheck
 npm run build
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```powershell
 git add src/mcp .mcp.json tests/contract/ph02-mcp-schemas.test.ts tests/mcp

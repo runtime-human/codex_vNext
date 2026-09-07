@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codex-workflow-next",
+  "version": "0.1.0-alpha.1",
+  "description": "Adaptive bounded workflow contracts and deterministic persisted state for Codex."
+}
