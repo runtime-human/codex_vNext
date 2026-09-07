@@ -27,6 +27,31 @@ function openProbeDatabase(root) {
   });
 }
 
+function assertFilePersisted(root, nonce) {
+  if (
+    fs.readFileSync(noncePath(root, nonce), 'utf8') !== `${nonce}\n${nonce}\n`
+  )
+    throw new Error('file readback failed');
+}
+
+function assertSqlitePersisted(root, nonce) {
+  const db = openProbeDatabase(root);
+  try {
+    if (
+      db.prepare('SELECT nonce FROM probe WHERE nonce = ?').get(nonce)
+        ?.nonce !== nonce
+    )
+      throw new Error('SQLite readback failed');
+  } finally {
+    db.close();
+  }
+}
+
+function verifyPersisted(root, nonce) {
+  assertFilePersisted(root, nonce);
+  assertSqlitePersisted(root, nonce);
+}
+
 function write(nonce) {
   const root = probeRoot();
   fs.mkdirSync(root, { recursive: true });
@@ -35,9 +60,9 @@ function write(nonce) {
   fs.writeFileSync(initial, `${nonce}\n`, { flag: 'wx' });
   fs.appendFileSync(initial, `${nonce}\n`);
   fs.renameSync(initial, renamed);
-  const filePass = fs.readFileSync(renamed, 'utf8') === `${nonce}\n${nonce}\n`;
+  assertFilePersisted(root, nonce);
 
-  let db = openProbeDatabase(root);
+  const db = openProbeDatabase(root);
   db.exec('CREATE TABLE IF NOT EXISTS probe (nonce TEXT PRIMARY KEY) STRICT');
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -50,12 +75,7 @@ function write(nonce) {
     db.close();
   }
 
-  db = openProbeDatabase(root);
-  const sqlitePass =
-    db.prepare('SELECT nonce FROM probe WHERE nonce = ?').get(nonce)?.nonce ===
-    nonce;
-  db.close();
-  if (!filePass || !sqlitePass) throw new Error('probe readback failed');
+  assertSqlitePersisted(root, nonce);
   return {
     pluginDataPresent: true,
     create: 'pass',
@@ -69,15 +89,7 @@ function write(nonce) {
 
 function verify(nonce) {
   const root = probeRoot();
-  const filePass =
-    fs.readFileSync(noncePath(root, nonce), 'utf8') === `${nonce}\n${nonce}\n`;
-  const db = openProbeDatabase(root);
-  const sqlitePass =
-    db.prepare('SELECT nonce FROM probe WHERE nonce = ?').get(nonce)?.nonce ===
-    nonce;
-  db.close();
-  if (!filePass || !sqlitePass)
-    throw new Error('restart persistence verification failed');
+  verifyPersisted(root, nonce);
   return { pluginDataPresent: true, restartPersistence: 'pass' };
 }
 
