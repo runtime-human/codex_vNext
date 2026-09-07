@@ -47,11 +47,6 @@ function assertSqlitePersisted(root, nonce) {
   }
 }
 
-function verifyPersisted(root, nonce) {
-  assertFilePersisted(root, nonce);
-  assertSqlitePersisted(root, nonce);
-}
-
 function write(nonce) {
   const root = probeRoot();
   fs.mkdirSync(root, { recursive: true });
@@ -89,7 +84,8 @@ function write(nonce) {
 
 function verify(nonce) {
   const root = probeRoot();
-  verifyPersisted(root, nonce);
+  assertFilePersisted(root, nonce);
+  assertSqlitePersisted(root, nonce);
   return { pluginDataPresent: true, restartPersistence: 'pass' };
 }
 
