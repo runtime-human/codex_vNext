@@ -9,4 +9,5 @@ export * from './policy-trace.js';
 export * from './project.js';
 export * from './run.js';
 export * from './task-envelope.js';
+export * from './transitions.js';
 export * from './work-item.js';
