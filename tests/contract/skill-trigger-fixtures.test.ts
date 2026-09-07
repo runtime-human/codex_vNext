@@ -7,6 +7,8 @@ const expectedSkills = [
   'orchestrate-work',
   'task-envelope',
   'verify-work',
+  'workflow-status',
+  'recover-work',
 ] as const;
 
 function frontmatterValue(source: string, key: string): string | undefined {
@@ -19,11 +21,12 @@ function frontmatterValue(source: string, key: string): string | undefined {
 
 describe('foundational skill contracts', () => {
   it('documents distinct positive and trivial-negative trigger fixtures', () => {
-    expect(skillPromptFixtures).toHaveLength(4);
+    expect(skillPromptFixtures).toHaveLength(8);
     expect(skillPromptFixtures[0]?.expected).toEqual([]);
+    expect(skillPromptFixtures[1]?.expected).toEqual([]);
     expect(
-      skillPromptFixtures.slice(1).flatMap(({ expected }) => expected),
-    ).toEqual(expectedSkills);
+      new Set(skillPromptFixtures.slice(2).flatMap(({ expected }) => expected)),
+    ).toEqual(new Set(expectedSkills));
   });
 
   it('has unique names and descriptions within the compact line budget', async () => {
@@ -44,7 +47,7 @@ describe('foundational skill contracts', () => {
 
     expect(contracts.map(({ name }) => name)).toEqual(expectedSkills);
     expect(new Set(contracts.map(({ description }) => description)).size).toBe(
-      3,
+      5,
     );
     expect(contracts.every(({ description }) => Boolean(description))).toBe(
       true,

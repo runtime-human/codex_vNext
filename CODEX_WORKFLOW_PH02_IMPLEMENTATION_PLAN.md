@@ -2559,7 +2559,7 @@ git commit -m "feat: expose deterministic workflow state over MCP"
 - `recover-work` consumes `workflow.summary` and optionally `work.get`.
 - Neither Skill mutates state.
 
-- [ ] **Step 1: Add trigger fixtures**
+- [x] **Step 1: Add trigger fixtures**
 
 Positive examples:
 
@@ -2576,22 +2576,22 @@ Negative examples:
 "Search the web for the latest MCP spec."
 ```
 
-- [ ] **Step 2: Create `workflow-status` with section 15 behavior**
+- [x] **Step 2: Create `workflow-status` with section 15 behavior**
 
 No native-agent liveness inference.
 
-- [ ] **Step 3: Create `recover-work` with section 16 behavior**
+- [x] **Step 3: Create `recover-work` with section 16 behavior**
 
 No transcript replay.
 
-- [ ] **Step 4: Run Skill validation**
+- [x] **Step 4: Run Skill validation**
 
 ```powershell
 npm run validate:plugin
 npm test -- skill-trigger-fixtures
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add skills tests
