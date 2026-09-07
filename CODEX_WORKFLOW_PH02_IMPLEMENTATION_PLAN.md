@@ -2074,13 +2074,13 @@ git commit -m "feat: add serialized SQLite migrations"
 **Interfaces:**
 - Produces `canonicalJson`, `hashMutationRequest`, `redactSensitiveText`, `executeIdempotent`.
 
-- [ ] **Step 1: Write canonicalization tests**
+- [x] **Step 1: Write canonicalization tests**
 
 Equivalent objects with different key insertion order must hash identically.
 
 Array order must remain significant.
 
-- [ ] **Step 2: Write redaction tests**
+- [x] **Step 2: Write redaction tests**
 
 Cover:
 
@@ -2097,7 +2097,7 @@ sk-secret
 
 Expected secret material never appears in output.
 
-- [ ] **Step 3: Write idempotency RED tests**
+- [x] **Step 3: Write idempotency RED tests**
 
 Required:
 
@@ -2110,18 +2110,18 @@ same command + different tool → IDEMPOTENCY_CONFLICT
 mutation + event + receipt rollback together on fault
 ```
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 Do not store raw request JSON in `command_receipts`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- idempotency
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/canonical-json.ts src/state/redaction.ts src/state/idempotency.ts tests/state/idempotency.test.ts
