@@ -2011,7 +2011,7 @@ git commit -m "feat: add deterministic SQLite state foundation"
 **Interfaces:**
 - Produces `Migration`, `migrateDatabase`, `currentSchemaVersion`, migration checksum validation and backup-before-incompatible behavior.
 
-- [ ] **Step 1: Write RED tests**
+- [x] **Step 1: Write RED tests**
 
 Required:
 
@@ -2027,34 +2027,34 @@ quick_check failure → INTEGRITY_FAILED
 
 For concurrency, spawn two Node child processes against the same temp DB and ensure both exit successfully with exactly one row for migration 001.
 
-- [ ] **Step 2: Define migration 001 SQL exactly as section 5**
+- [x] **Step 2: Define migration 001 SQL exactly as section 5**
 
 No extra PH-03/04/06 tables.
 
-- [ ] **Step 3: Implement checksum**
+- [x] **Step 3: Implement checksum**
 
 ```text
 sha256(migration.sql)
 ```
 
-- [ ] **Step 4: Implement serialized migration apply**
+- [x] **Step 4: Implement serialized migration apply**
 
 Use `BEGIN IMMEDIATE`, re-read migration table inside the lock, and keep schema mutation + migration row atomic.
 
-- [ ] **Step 5: Implement incompatible-backup fixture path**
+- [x] **Step 5: Implement incompatible-backup fixture path**
 
 Use Node `sqlite.backup()` into `${PLUGIN_DATA}/backups`.
 
 Do not create a production incompatible migration.
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```powershell
 npm test -- migrations
 npm run typecheck
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/state/migration.ts src/state/migrations tests/state/migrations.test.ts
