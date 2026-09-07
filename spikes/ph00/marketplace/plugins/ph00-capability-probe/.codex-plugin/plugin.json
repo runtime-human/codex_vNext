@@ -1,0 +1,19 @@
+{
+  "name": "ph00-capability-probe",
+  "version": "0.1.7",
+  "description": "Disposable PH-00 probe for plugin, skill, MCP, UI, and hook capabilities.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "PH-00 Capability Probe",
+    "shortDescription": "Probe current Codex extension capabilities.",
+    "longDescription": "Disposable PH-00 fixture for validating public Codex plugin, skill, MCP, UI, and hook contracts.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": ["Skills", "MCP", "Hooks"],
+    "defaultPrompt": "Run the PH-00 status probe and report the observed public capabilities."
+  },
+  "mcpServers": "./.mcp.json"
+}

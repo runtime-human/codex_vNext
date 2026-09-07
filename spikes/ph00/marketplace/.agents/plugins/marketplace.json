@@ -1,0 +1,20 @@
+{
+  "name": "ph00-local",
+  "interface": {
+    "displayName": "PH-00 Local"
+  },
+  "plugins": [
+    {
+      "name": "ph00-capability-probe",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ph00-capability-probe"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
