@@ -47,3 +47,14 @@ PH-01 contains independently written schemas, Skills and tests. Public OpenAI Co
 | Source | Use | Code reuse |
 |---|---|---|
 | `letya999/workflow-herdr` dev / `b1eab041cf2f97da4605c036900d07ff5426cc40` | operational-safety ideas: preflight, resource journaling, acceptance separation | MIT permits reuse; PH-01 copies no code |
+
+## PH-02
+
+PH-02 uses the public Agent Plugins v1 schemas and current `openai/codex` source
+only to establish the host packaging and `PLUGIN_DATA` contracts. No upstream
+implementation code is copied.
+
+- <https://github.com/openai/codex/blob/main/codex-rs/codex-mcp/src/agent_plugin_config.rs>
+- <https://github.com/openai/codex/blob/main/codex-rs/core-plugins/src/loader.rs>
+- <https://agent-plugins.org/schemas/1.0.0/plugin.schema.json>
+- <https://agent-plugins.org/schemas/1.0.0/mcp.schema.json>

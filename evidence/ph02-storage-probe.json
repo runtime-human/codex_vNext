@@ -1,19 +1,19 @@
 {
   "probeVersion": 1,
-  "date": "2026-09-07",
+  "date": "2026-09-08",
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
-  "pluginFormat": "legacy-codex-plugin",
+  "pluginFormat": "agent-plugins-v1",
   "mcp": {
-    "pluginDataPresent": false,
-    "create": "fail",
-    "append": "not_run",
-    "rename": "not_run",
-    "read": "not_run",
-    "sqliteTransaction": "not_run",
-    "sqliteReopen": "not_run",
-    "restartPersistence": "not_run"
+    "pluginDataPresent": true,
+    "create": "pass",
+    "append": "pass",
+    "rename": "pass",
+    "read": "pass",
+    "sqliteTransaction": "pass",
+    "sqliteReopen": "pass",
+    "restartPersistence": "pass"
   },
   "hook": {
     "configured": true,
@@ -23,5 +23,5 @@
     "write": "fail",
     "classification": "degraded"
   },
-  "storageDecision": "blocked_storage_adr_required"
+  "storageDecision": "plugin_data_sqlite"
 }
