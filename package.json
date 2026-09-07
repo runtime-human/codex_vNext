@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.12 <25"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -18,10 +18,12 @@
     "check": "npm run typecheck && npm test && npm run lint && npm run validate:plugin"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
     "zod": "4.5.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
+    "@modelcontextprotocol/client": "2.0.0",
     "@types/node": "26.4.1",
     "@vitest/coverage-v8": "5.0.0",
     "typescript": "7.0.2",

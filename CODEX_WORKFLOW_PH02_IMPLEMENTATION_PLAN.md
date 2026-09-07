@@ -1861,7 +1861,7 @@ git commit -m "test: prove PH-02 plugin storage capability"
 **Interfaces:**
 - Produces the runtime dependency floor used by all later PH-02 tasks.
 
-- [ ] **Step 1: Write a failing environment contract test**
+- [x] **Step 1: Write a failing environment contract test**
 
 Test:
 
@@ -1875,17 +1875,17 @@ and:
 await import('node:sqlite')
 ```
 
-- [ ] **Step 2: Run RED on an intentionally unsupported version fixture**
+- [x] **Step 2: Run RED on an intentionally unsupported version fixture**
 
 The test helper must be pure and test the version parser without requiring the real process to be unsupported.
 
-- [ ] **Step 3: Raise Node engine floor**
+- [x] **Step 3: Raise Node engine floor**
 
 ```powershell
 npm pkg set engines.node=">=24.12 <25"
 ```
 
-- [ ] **Step 4: Add MCP v2 dependencies**
+- [x] **Step 4: Add MCP v2 dependencies**
 
 ```powershell
 npm install --save-exact @modelcontextprotocol/server
@@ -1894,14 +1894,14 @@ npm install --save-dev --save-exact @modelcontextprotocol/client
 
 Do not install v1 `@modelcontextprotocol/sdk`.
 
-- [ ] **Step 5: Run dependency/type checks**
+- [x] **Step 5: Run dependency/type checks**
 
 ```powershell
 npm run typecheck
 npm test -- ph02-state-contracts
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add package.json package-lock.json tsconfig.json tests/contract/ph02-state-contracts.test.ts
