@@ -1,3 +1,4 @@
+export * from './artifact-store.js';
 export * from './clock.js';
 export * from './canonical-json.js';
 export * from './errors.js';
@@ -7,6 +8,7 @@ export * from './migration.js';
 export * from './project-inspector.js';
 export * from './redaction.js';
 export * from './repositories.js';
+export * from './resource-journal.js';
 export * from './sqlite.js';
 export * from './state-service.js';
 export * from './storage-root.js';

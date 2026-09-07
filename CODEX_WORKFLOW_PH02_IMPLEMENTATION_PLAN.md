@@ -2290,7 +2290,7 @@ git commit -m "feat: add semantic workflow state service"
 **Interfaces:**
 - Produces resource lifecycle methods and content-addressed artifact storage.
 
-- [ ] **Step 1: Write resource lifecycle RED tests**
+- [x] **Step 1: Write resource lifecycle RED tests**
 
 Required:
 
@@ -2306,7 +2306,7 @@ event emitted per mutation
 duplicate command does not duplicate resource/event
 ```
 
-- [ ] **Step 2: Write artifact RED tests**
+- [x] **Step 2: Write artifact RED tests**
 
 Required:
 
@@ -2319,22 +2319,22 @@ metadata row round-trips
 orphan file can be detected
 ```
 
-- [ ] **Step 3: Implement resource service**
+- [x] **Step 3: Implement resource service**
 
 Workers do not call SQLite directly.
 
-- [ ] **Step 4: Implement CAS atomic write**
+- [x] **Step 4: Implement CAS atomic write**
 
 Use same-filesystem temp + rename.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- resource-journal artifact-store
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/resource-journal.ts src/state/artifact-store.ts src/state/index.ts tests/state

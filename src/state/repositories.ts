@@ -712,6 +712,14 @@ export class StateRepositories {
     return row ? artifactFromRow(row) : undefined;
   }
 
+  listArtifacts(): ArtifactRecord[] {
+    return (
+      this.db
+        .prepare('SELECT * FROM artifacts ORDER BY created_at, artifact_id')
+        .all() as Row[]
+    ).map(artifactFromRow);
+  }
+
   putResource(value: ResourceRecord): void {
     this.db
       .prepare(`INSERT INTO resources (
@@ -741,6 +749,47 @@ export class StateRepositories {
       .prepare('SELECT * FROM resources WHERE resource_id = ?')
       .get(resourceId) as Row | undefined;
     return row ? resourceFromRow(row) : undefined;
+  }
+
+  updateResource(
+    resourceId: string,
+    expectedVersion: number,
+    patch: {
+      nativeRef?: string;
+      status: ResourceStatus;
+      cleanupRequired: boolean;
+      lastError?: string | null;
+      evidenceId?: string | null;
+    },
+    updatedAt: string,
+  ): ResourceRecord {
+    const result = this.db
+      .prepare(`UPDATE resources SET
+        native_ref = COALESCE(?, native_ref), status = ?, cleanup_required = ?,
+        last_error = ?, evidence_id = ?, updated_at = ?, version = version + 1
+        WHERE resource_id = ? AND version = ?`)
+      .run(
+        patch.nativeRef ?? null,
+        patch.status,
+        patch.cleanupRequired ? 1 : 0,
+        patch.lastError ?? null,
+        patch.evidenceId ?? null,
+        updatedAt,
+        resourceId,
+        expectedVersion,
+      );
+    if (Number(result.changes) === 0) {
+      if (!this.getResource(resourceId))
+        throw new StateError('NOT_FOUND', 'resource not found');
+      throw new StateError(
+        'VERSION_CONFLICT',
+        'resource version does not match',
+        {
+          expectedVersion,
+        },
+      );
+    }
+    return this.getResource(resourceId) as ResourceRecord;
   }
 
   listCleanupRequiredResources(runId: string): ResourceRecord[] {
