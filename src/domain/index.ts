@@ -8,4 +8,5 @@ export * from './ids.js';
 export * from './policy-trace.js';
 export * from './project.js';
 export * from './run.js';
+export * from './task-envelope.js';
 export * from './work-item.js';
