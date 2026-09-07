@@ -10,5 +10,5 @@
 
 Architecture: `CODEX_WORKFLOW_NEXT_MASTER_PLAN_REV4.md`
 Roadmap: `CODEX_WORKFLOW_NEXT_ROADMAP_REV2.md`
-Current plan: `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`
+Current plan: `docs/plans/PH-01-plugin-foundation.md`
 PH-00 evidence: `docs/compatibility/ph00-baseline.md`
