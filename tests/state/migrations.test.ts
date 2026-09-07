@@ -94,6 +94,7 @@ describe('PH-02 migrations', () => {
     const failed: Migration = {
       version: 1,
       name: 'failed',
+      kind: 'compatible',
       sql: 'CREATE TABLE partial (id INTEGER) STRICT; INSERT INTO missing VALUES (1);',
     };
     try {
@@ -142,7 +143,7 @@ describe('PH-02 migrations', () => {
     const incompatible: Migration = {
       version: 2,
       name: 'incompatible-test-only',
-      incompatible: true,
+      kind: 'incompatible',
       sql: 'INSERT INTO missing VALUES (1);',
     };
     try {

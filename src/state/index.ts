@@ -6,6 +6,7 @@ export * from './ids.js';
 export * from './idempotency.js';
 export * from './migration.js';
 export * from './project-inspector.js';
+export * from './reconciliation.js';
 export * from './redaction.js';
 export * from './repositories.js';
 export * from './resource-journal.js';

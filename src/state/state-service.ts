@@ -21,6 +21,7 @@ import {
   newWorkItemId,
 } from './ids.js';
 import { type InspectedProject, inspectProject } from './project-inspector.js';
+import { buildReconciliationProjection } from './reconciliation.js';
 import { redactSensitiveText } from './redaction.js';
 import {
   type DecisionRecord,
@@ -612,97 +613,14 @@ export class StateService {
         : undefined;
     }
 
-    if (!run || !project) {
-      return {
-        activeWork: [],
-        pendingDecisions: [],
-        evidenceRefs: [],
-        cleanupRequiredResources: [],
-        nextSafeAction: 'start_run' as const,
-      };
-    }
-
-    const inspection =
-      currentInspection ?? (await this.projectInspector(project.repoRoot));
-    const repoDrift = !inspection.gitAvailable
-      ? 'git_unavailable'
-      : inspection.repoFingerprint !== project.repoFingerprint
-        ? 'project_identity_changed'
-        : run.lastObservedRepoHead &&
-            inspection.head !== run.lastObservedRepoHead
-          ? 'head_changed'
-          : 'none';
-    const activeWork = this.repositories
-      .listWorkItems(run.runId)
-      .filter((item) => item.state !== 'done' && item.state !== 'cancelled')
-      .map((item) => ({
-        workItemId: item.workItemId,
-        title: item.title,
-        state: item.state,
-        risk: item.risk,
-        version: item.version,
-        liveness: 'unknown' as const,
-      }));
-    const pendingDecisions = this.repositories
-      .listPendingDecisions(run.runId)
-      .map((item) => ({
-        decisionId: item.decisionId,
-        ...(item.workItemId ? { workItemId: item.workItemId } : {}),
-        question: item.question,
-        authority: item.authority,
-      }));
-    const evidenceRefs = this.repositories
-      .listEvidence(run.runId)
-      .map((item) => ({
-        evidenceId: item.evidenceId,
-        ...(item.workItemId ? { workItemId: item.workItemId } : {}),
-        kind: item.kind,
-        status: item.status,
-        summary: item.summary,
-      }));
-    const cleanupRequiredResources = this.repositories
-      .listCleanupRequiredResources(run.runId)
-      .map((item) => ({
-        resourceId: item.resourceId,
-        type: item.type,
-        ...(item.nativeRef ? { nativeRef: item.nativeRef } : {}),
-        status: item.status,
-      }));
-    const nextSafeAction =
-      pendingDecisions.length > 0
-        ? 'resolve_decision'
-        : repoDrift !== 'none'
-          ? 'inspect_repo_drift'
-          : cleanupRequiredResources.length > 0
-            ? 'inspect_cleanup'
-            : activeWork.some((item) =>
-                  ['running', 'verifying'].includes(item.state),
-                )
-              ? 'reconcile_active_work'
-              : activeWork.some((item) => item.state === 'ready')
-                ? 'resume_work'
-                : 'none';
-
-    return {
-      project: {
-        projectId: project.projectId,
-        repoRoot: project.repoRoot,
-        repoFingerprint: project.repoFingerprint,
-        ...(inspection.head ? { currentHead: inspection.head } : {}),
-        repoDrift,
-      },
-      run: {
-        runId: run.runId,
-        objective: run.objective,
-        state: run.state,
-        startedAt: run.startedAt,
-        updatedAt: run.updatedAt,
-      },
-      activeWork,
-      pendingDecisions,
-      evidenceRefs,
-      cleanupRequiredResources,
-      nextSafeAction,
-    };
+    const inspection = project
+      ? (currentInspection ?? (await this.projectInspector(project.repoRoot)))
+      : undefined;
+    return buildReconciliationProjection({
+      repositories: this.repositories,
+      ...(project ? { project } : {}),
+      ...(run ? { run } : {}),
+      ...(inspection ? { inspection } : {}),
+    });
   }
 }

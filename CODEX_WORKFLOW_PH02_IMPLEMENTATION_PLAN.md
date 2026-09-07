@@ -2357,7 +2357,7 @@ git commit -m "feat: add resource journal and artifact store"
 **Interfaces:**
 - Produces deterministic `workflow.summary` recovery projection and read-only doctor.
 
-- [ ] **Step 1: Write reconciliation RED tests**
+- [x] **Step 1: Write reconciliation RED tests**
 
 Cases:
 
@@ -2389,7 +2389,7 @@ If no persisted run exists:
 nextSafeAction = start_run
 ```
 
-- [ ] **Step 2: Write doctor RED tests**
+- [x] **Step 2: Write doctor RED tests**
 
 Inject:
 
@@ -2410,11 +2410,11 @@ orphan CAS → warn
 cleanup-required resource → warn
 ```
 
-- [ ] **Step 3: Implement doctor**
+- [x] **Step 3: Implement doctor**
 
 No repair/delete path.
 
-- [ ] **Step 4: Add npm script**
+- [x] **Step 4: Add npm script**
 
 ```json
 {
@@ -2422,14 +2422,14 @@ No repair/delete path.
 }
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- reconciliation doctor
 npm run doctor -- --json
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/reconciliation.ts src/doctor scripts/doctor.mjs package.json tests/state

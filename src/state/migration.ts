@@ -11,13 +11,14 @@ import { withImmediateTransaction } from './transaction.js';
 export interface Migration {
   version: number;
   name: string;
+  kind: 'compatible' | 'incompatible';
   sql: string;
-  incompatible?: boolean;
 }
 
 export const INITIAL_MIGRATION: Migration = {
   version: 1,
   name: 'initial',
+  kind: 'compatible',
   sql: INITIAL_MIGRATION_SQL,
 };
 
@@ -97,7 +98,7 @@ export async function migrateDatabase(
     }
 
     if (alreadyApplied) continue;
-    if (migration.incompatible) {
+    if (migration.kind === 'incompatible') {
       const timestamp = clock.nowIso().replaceAll(/[^0-9A-Za-z]/g, '-');
       await backup(
         db,
