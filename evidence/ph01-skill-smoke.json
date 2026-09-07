@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-07",
+  "desktopBuild": "26.901.6511.0",
+  "cliVersion": "codex-cli 0.153.4",
+  "cases": [
+    {
+      "surface": "desktop",
+      "prompt": "Choose whether a bounded refactor should run directly or use a named agent role. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:orchestrate-work",
+      "observedSkill": "codex-workflow-next:orchestrate-work",
+      "passed": true
+    },
+    {
+      "surface": "desktop",
+      "prompt": "Prepare a bounded self-contained assignment for a fresh executor to change auth validation. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:task-envelope",
+      "observedSkill": "codex-workflow-next:task-envelope",
+      "passed": true
+    },
+    {
+      "surface": "desktop",
+      "prompt": "Determine the evidence needed to verify whether this migration is safe for production. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:verify-work",
+      "observedSkill": "codex-workflow-next:verify-work",
+      "passed": true
+    },
+    {
+      "surface": "desktop",
+      "prompt": "What is 2 + 2? Respond only with the answer.",
+      "expectedSkill": null,
+      "observedSkill": null,
+      "passed": true
+    },
+    {
+      "surface": "cli",
+      "prompt": "Choose whether a bounded refactor should run directly or use a named agent role. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:orchestrate-work",
+      "observedSkill": "codex-workflow-next:orchestrate-work",
+      "passed": true
+    },
+    {
+      "surface": "cli",
+      "prompt": "Prepare a bounded self-contained assignment for a fresh executor to change auth validation. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:task-envelope",
+      "observedSkill": "codex-workflow-next:task-envelope",
+      "passed": true
+    },
+    {
+      "surface": "cli",
+      "prompt": "Determine the evidence needed to verify whether this migration is safe for production. Respond only with the applicable installed PH-01 skill name.",
+      "expectedSkill": "codex-workflow-next:verify-work",
+      "observedSkill": "codex-workflow-next:verify-work",
+      "passed": true
+    },
+    {
+      "surface": "cli",
+      "prompt": "Fix the typo in README line 4",
+      "expectedSkill": null,
+      "observedSkill": null,
+      "passed": true
+    }
+  ]
+}

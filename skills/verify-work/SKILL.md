@@ -5,7 +5,7 @@ description: Define the evidence needed to verify a coding or workflow result pr
 
 # Verify Work
 
-Treat worker reports as evidence inputs, not final truth.
+Treat worker reports as evidence inputs, not final truth. Native `idle`, child-stop, or a receipt file is a scheduling/completion signal, not acceptance evidence by itself.
 
 Match verification depth to risk:
 - low: focused deterministic checks may be sufficient;

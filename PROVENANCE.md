@@ -43,3 +43,7 @@ history baseline is `e42bb6b`; PH-00 executes on
 ## PH-01
 
 PH-01 contains independently written schemas, Skills and tests. Public OpenAI Codex documentation and the `openai/codex` repository may be consulted to understand host/plugin contracts; PH-01 copies no external code.
+
+| Source | Use | Code reuse |
+|---|---|---|
+| `letya999/workflow-herdr` dev / `b1eab041cf2f97da4605c036900d07ff5426cc40` | operational-safety ideas: preflight, resource journaling, acceptance separation | MIT permits reuse; PH-01 copies no code |

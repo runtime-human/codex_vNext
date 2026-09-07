@@ -9,7 +9,7 @@ export const PolicyTraceSchema = z
       z.enum([
         'context_companion',
         'investigator',
-        'builder',
+        'executor',
         'verifier',
         'worktree',
         'durable',

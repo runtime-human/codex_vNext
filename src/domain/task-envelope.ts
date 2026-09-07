@@ -92,20 +92,11 @@ export const VerificationRolePayloadSchema = z
   })
   .strict();
 
-export const DocumentationRolePayloadSchema = z
-  .object({
-    kind: z.literal('documentation'),
-    artifacts: z.array(z.string().min(1)).min(1),
-    settledDecisionRefs: z.array(EvidenceRefSchema),
-  })
-  .strict();
-
 export const RolePayloadSchema = z.discriminatedUnion('kind', [
   ContextRolePayloadSchema,
   ResearchRolePayloadSchema,
   ImplementationRolePayloadSchema,
   VerificationRolePayloadSchema,
-  DocumentationRolePayloadSchema,
 ]);
 
 export const TaskPacketSchema = z
@@ -118,10 +109,9 @@ export const TaskPacketSchema = z
     const allowedKindsByRole: Record<string, string[]> = {
       context_companion: ['context'],
       investigator: ['research'],
-      builder: ['implementation'],
-      specialist: ['implementation', 'research', 'context'],
+      executor: ['implementation'],
+      senior_executor: ['implementation'],
       verifier: ['verification'],
-      docs_steward: ['documentation'],
     };
 
     if (

@@ -1,14 +1,20 @@
-# PH-01 Plugin Foundation + Domain Contracts Implementation Plan
+# PH-01 Plugin Foundation + Domain Contracts Implementation Plan — Rev 1.2
 
 > **For agentic workers:** implement this plan task-by-task. Use fresh review boundaries between tasks. Do not enter PH-02. If using isolated execution, use native Codex worktree mechanisms rather than inventing a worktree manager.
 
 **Goal:** Create the production-grade minimal Codex Workflow Next plugin foundation, typed domain contracts and foundational Skills without persistence, hooks, Board or orchestration runtime.
 
-**Architecture:** Single-package Node.js/TypeScript plugin. `.codex-plugin/plugin.json` exposes only Skills in PH-01. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; state transitions/completion rules are pure deterministic functions.
+**Architecture:** Single-package Node.js/TypeScript plugin. `.codex-plugin/plugin.json` exposes only Skills in PH-01. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; semantic agent roles are separated from configurable model/runtime mappings; state transitions/completion rules are pure deterministic functions.
 
 **Tech Stack:** Node.js 24 LTS, TypeScript strict ESM, npm lockfile, Zod, Vitest, Biome (formatter/linter), native Codex plugin/Skills.
 
-**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN_REV4.md` (`MILE-01`, `DOM-*`, `SKL-01..03`, `ADR-04..08`) and `CODEX_WORKFLOW_NEXT_ROADMAP_REV2.md` (`PH-01`, `GATE-01`).
+**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` (`MILE-01`, `DOM-*`, `SKL-01..03`, `POL-09`, `POL-14..15`, `ARC-19`, `ADR-04..08`, `ADR-22`, `ADR-25..27`) and `CODEX_WORKFLOW_NEXT_ROADMAP.md` (`PH-01`, `GATE-01`).
+
+## Execution Status
+
+**PASS — 2026-09-07.** Rev 1.2 was reconciled against the existing PH-01 implementation. The role/runtime contract, Skills, canonical artifact map and provenance were updated; fresh Desktop/CLI smoke is recorded in `evidence/ph01-skill-smoke.json`. `npm ci`, `npm run check` and a clean `npm run build` pass. The contradictory sample assertions that rejected valid `executor` and `senior_executor` roles were corrected to reject only `docs_steward`.
+
+Next action is **TP-02A**. No PH-02 runtime was implemented.
 
 ## Global Constraints
 
@@ -17,21 +23,17 @@
 - No private Codex session/rollout APIs.
 - No Python runtime dependency.
 - Plugin production package in PH-01 must work with Skills only.
+- No documentation subsystem, docs agent, `DocumentationRolePayload`, mandatory docs refresh or duplicate `docs/` tree.
+- Durable project-control artifacts are limited to the canonical Master/Roadmap/current plan, `PROVENANCE.md`, and explicit gate evidence with a real consumer.
+- CapabilityPreflight and RunResourceJournal are architectural invariants only in PH-01; their runtime/state implementations belong PH-04 and PH-02 respectively.
 - Permanent `AGENTS.md` stays small; procedures live in Skills.
 - Do not copy upstream `codex_workflow` prompts/code; preserve clean-room provenance.
 - Task-transfer domain is `TaskEnvelope + RolePayload + TaskDelta + TaskId`, not monolithic TaskCapsule.
-- No implicit/default fork mode is encoded into domain contracts; runtime explicit `fork_turns=none` integration belongs PH-04.
+- No implicit/default fork mode is encoded into domain contracts; runtime explicit `fork_turns=none` integration belongs PH-04. PH-01 freezes safe agent-profile defaults but does not expose a user config loader yet.
 - All deterministic code follows test-first implementation.
+- `workflow-herdr` safety patterns are used only as phase-placement guidance in PH-01: no Herdr dependency, no small/medium/large routing, no Dispatcher hierarchy, no YAML runtime/state files.
 - `package.json` remains `private: true` and `license: UNLICENSED` until public licensing is explicitly decided.
-
-## Execution Status (2026-09-07)
-
-- Tasks 1-8 complete; focused checks and planned commits recorded.
-- PH-01 gate: PASS (`npm clean-install`, `npm run check`, 24 tests, plugin validation, clean `dist/domain` build, Desktop/CLI smoke 4/4).
-- Amendment: `DecisionAlternative`, referenced but undefined by Master DOM-13, is frozen as the strict minimal object `{ label: string; description: string }`.
-- Compatibility resolution: Biome configuration migrated to installed schema 2.5.12 while retaining the recommended rules preset.
-- Compatibility resolution: TypeScript 7 build config sets `rootDir: ./src` so output remains under `dist/domain`.
-- Document-map correction: the final current-plan link targets `docs/plans/PH-01-plugin-foundation.md`.
+- Main model is outside Workflow Next subagent policy. Safe V1 child defaults are Luna `xhigh`/`max`; expensive child models require later explicit user configuration, never implicit escalation.
 
 ---
 
@@ -56,6 +58,7 @@
 │       ├── run.ts
 │       ├── work-item.ts
 │       ├── agents.ts
+│       ├── agent-runtime.ts
 │       ├── authority.ts
 │       ├── acceptance.ts
 │       ├── evidence.ts
@@ -75,13 +78,11 @@
 │   │   └── skill-trigger-fixtures.test.ts
 │   └── fixtures/
 │       └── skill-prompts.ts
-├── docs/
-│   ├── architecture/
-│   │   └── domain-contracts-v1.md
-│   ├── compatibility/
-│   │   └── ph00-baseline.md
-│   └── plans/
-│       └── PH-01-plugin-foundation.md
+├── evidence/
+│   └── ph01-skill-smoke.json
+├── CODEX_WORKFLOW_NEXT_MASTER_PLAN.md
+├── CODEX_WORKFLOW_NEXT_ROADMAP.md
+├── CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md
 ├── PROVENANCE.md
 ├── biome.json
 ├── package.json
@@ -91,7 +92,7 @@
 └── vitest.config.ts
 ```
 
-Existing PH-00 reports may remain wherever currently stored; `docs/compatibility/ph00-baseline.md` is a short project-local pointer/summary, not a rewrite of evidence.
+The three Workflow planning files are pre-existing project-control artifacts and are not generated by PH-01. `evidence/ph01-skill-smoke.json` is gate evidence, not a documentation subsystem. No `docs/` tree is created.
 
 ---
 
@@ -111,25 +112,123 @@ export const ContextIdSchema = z.string().min(1);
 
 IDs remain opaque strings in PH-01. Generation strategy belongs state/runtime phases.
 
-### AgentRole / ModelProfile
+### AgentRole / AgentRuntimeProfile
 
 ```ts
 export const AgentRoleSchema = z.enum([
   'context_companion',
   'investigator',
-  'builder',
-  'specialist',
+  'executor',
+  'senior_executor',
   'verifier',
-  'docs_steward',
 ]);
 
-export const ModelProfileSchema = z.enum([
-  'efficient',
-  'balanced',
-  'deep',
-  'critical',
-]);
+export const SandboxModeSchema = z.enum(['inherit', 'read-only', 'workspace-write']);
+export const NonDefaultModelPolicySchema = z.enum(['disabled', 'explicit_only']);
+
+export const AgentRuntimeProfileSchema = z.object({
+  role: AgentRoleSchema,
+  enabled: z.boolean(),
+  model: z.string().min(1),
+  reasoningEffort: z.string().min(1),
+  sandboxMode: SandboxModeSchema,
+}).strict();
+
+export const AgentProfileSetSchema = z.object({
+  defaultSubagent: z.object({
+    model: z.string().min(1),
+    reasoningEffort: z.string().min(1),
+  }).strict(),
+  maxConcurrentThreads: z.number().int().min(1).max(20),
+  nonDefaultModelPolicy: NonDefaultModelPolicySchema,
+  allowedModels: z.array(z.string().min(1)).min(1),
+  profiles: z.object({
+    context_companion: AgentRuntimeProfileSchema,
+    investigator: AgentRuntimeProfileSchema,
+    executor: AgentRuntimeProfileSchema,
+    senior_executor: AgentRuntimeProfileSchema,
+    verifier: AgentRuntimeProfileSchema,
+  }).strict(),
+}).strict().superRefine((value, ctx) => {
+  const expectedRoles = [
+    'context_companion', 'investigator', 'executor', 'senior_executor', 'verifier',
+  ] as const;
+
+  for (const role of expectedRoles) {
+    const profile = value.profiles[role];
+    if (profile.role !== role) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['profiles', role, 'role'],
+        message: `profile key ${role} must declare the same role`,
+      });
+    }
+    if (!value.allowedModels.includes(profile.model)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['profiles', role, 'model'],
+        message: `model ${profile.model} is not in allowedModels`,
+      });
+    }
+    if (value.nonDefaultModelPolicy === 'disabled' && profile.model !== value.defaultSubagent.model) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['profiles', role, 'model'],
+        message: 'non-default child model requires nonDefaultModelPolicy=explicit_only',
+      });
+    }
+    if (profile.model === 'gpt-5.6-luna' && !['xhigh', 'max'].includes(profile.reasoningEffort)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['profiles', role, 'reasoningEffort'],
+        message: 'Workflow Next V1 does not use Luna below xhigh',
+      });
+    }
+  }
+});
 ```
+
+PH-01 also exports a `DEFAULT_AGENT_PROFILE_SET` constant with these exact defaults:
+
+```ts
+{
+  defaultSubagent: { model: 'gpt-5.6-luna', reasoningEffort: 'xhigh' },
+  maxConcurrentThreads: 4,
+  nonDefaultModelPolicy: 'disabled',
+  allowedModels: ['gpt-5.6-luna'],
+  profiles: {
+    context_companion: { role: 'context_companion', enabled: true, model: 'gpt-5.6-luna', reasoningEffort: 'xhigh', sandboxMode: 'read-only' },
+    investigator: { role: 'investigator', enabled: true, model: 'gpt-5.6-luna', reasoningEffort: 'xhigh', sandboxMode: 'read-only' },
+    executor: { role: 'executor', enabled: true, model: 'gpt-5.6-luna', reasoningEffort: 'max', sandboxMode: 'workspace-write' },
+    senior_executor: { role: 'senior_executor', enabled: true, model: 'gpt-5.6-luna', reasoningEffort: 'max', sandboxMode: 'workspace-write' },
+    verifier: { role: 'verifier', enabled: true, model: 'gpt-5.6-luna', reasoningEffort: 'xhigh', sandboxMode: 'workspace-write' },
+  },
+}
+```
+
+This is a **domain default**, not yet an accepted user configuration file. PH-04 activates TOML loading/precedence and must prove every exposed setting is consumed. The Main model is never part of this structure.
+
+### DelegationIntent / ResolvedAgentRuntime
+
+```ts
+export const DelegationIntentSchema = z.object({
+  taskId: TaskIdSchema,
+  role: AgentRoleSchema,
+  reasonCodes: z.array(z.string().min(1)).min(1),
+  freshContext: z.literal(true),
+  batchKey: z.string().min(1).optional(),
+}).strict();
+
+export const ResolvedAgentRuntimeSchema = z.object({
+  role: AgentRoleSchema,
+  model: z.string().min(1),
+  reasoningEffort: z.string().min(1),
+  sandboxMode: SandboxModeSchema,
+  source: z.enum(['builtin_default', 'user_config', 'project_config', 'session_override']),
+}).strict();
+```
+
+`orchestrate-work` chooses `DelegationIntent`; PH-04 config resolution produces `ResolvedAgentRuntime`. PH-01 does not perform runtime mapping.
 
 ### AuthorityEnvelope
 
@@ -140,12 +239,10 @@ export const AuthorityEnvelopeSchema = z.object({
   destructive: z.boolean(),
   mayCreateTests: z.boolean(),
   maxRetries: z.number().int().min(0).max(10),
-  preferredProfile: ModelProfileSchema,
-  allowEscalationTo: ModelProfileSchema.optional(),
 }).strict();
 ```
 
-PH-01 validates shape only. EffectiveAuthority enforcement belongs PH-05.
+PH-01 validates shape only. EffectiveAuthority enforcement belongs PH-05. Model/role selection is intentionally outside AuthorityEnvelope.
 
 ### Readiness / Acceptance
 
@@ -260,18 +357,12 @@ const VerificationRolePayloadSchema = z.object({
   independenceRequired: z.boolean(),
 }).strict();
 
-const DocumentationRolePayloadSchema = z.object({
-  kind: z.literal('documentation'),
-  artifacts: z.array(z.string().min(1)).min(1),
-  settledDecisionRefs: z.array(EvidenceRefSchema),
-}).strict();
 
 export const RolePayloadSchema = z.discriminatedUnion('kind', [
   ContextRolePayloadSchema,
   ResearchRolePayloadSchema,
   ImplementationRolePayloadSchema,
   VerificationRolePayloadSchema,
-  DocumentationRolePayloadSchema,
 ]);
 ```
 
@@ -285,10 +376,9 @@ export const TaskPacketSchema = z.object({
   const allowedKindsByRole: Record<string, string[]> = {
     context_companion: ['context'],
     investigator: ['research'],
-    builder: ['implementation'],
-    specialist: ['implementation', 'research', 'context'],
+    executor: ['implementation'],
+    senior_executor: ['implementation'],
     verifier: ['verification'],
-    docs_steward: ['documentation'],
   };
 
   if (!allowedKindsByRole[value.envelope.role].includes(value.payload.kind)) {
@@ -389,24 +479,36 @@ PH-01 ships only three production Skills. `recover-work` and `workflow-status` a
 ```markdown
 ---
 name: orchestrate-work
-description: Choose the smallest useful Codex work topology for a substantive coding or research task. Use when deciding whether to work directly, delegate bounded work, isolate writes, investigate externally, or require independent verification. Do not use for trivial direct edits that already have an obvious path.
+description: Choose the smallest useful Codex topology and the correct named agent role for a substantive coding or research task. Use when deciding whether to work directly, delegate bounded work, investigate externally, use a difficult implementation worker, isolate writes, batch independent work, or require independent verification.
 ---
 
 # Orchestrate Work
 
-Keep the current main Codex thread responsible for user intent, architecture, integration, and final claims.
+Keep the current Main responsible for user intent, project architecture, public-contract decisions, cross-package integration, final acceptance, and final claims. Main model selection is controlled by the user, not this Skill.
 
-Prefer direct execution when delegation has no concrete isolation, specialization, parallelism, or verification benefit.
+Prefer direct execution when delegation has no concrete isolation, specialization, parallelism, context-offload, or verification benefit.
 
-When delegation is useful:
+When delegation is useful, choose the semantic role before any model/runtime mapping:
+- `context_companion`: repeated or bulky local repository context, source cross-reference, or reusable context delta;
+- `investigator`: bounded external/current web or documentation research;
+- `executor`: bounded implementation with a reasonably clear implementation path;
+- `senior_executor`: bounded implementation that requires substantial causal/root-cause, concurrency/state, mathematical/algorithmic, or cross-cutting local reasoning; comparison of several plausible internal solutions; or recovery from an Executor reasoning failure;
+- `verifier`: fresh independent acceptance evidence when risk warrants it.
+
+Senior does not own project architecture, public contracts, product trade-offs, ownership expansion, or final acceptance. Escalate those decisions to Main.
+
+For any delegated role:
 - define bounded ownership and acceptance;
 - use the task-envelope Skill to produce a self-contained packet;
 - prefer fresh worker context for Workflow Next workers;
+- before substantive topology/resource mutation, resolve required capabilities/permissions/isolation and name a fallback when degraded;
 - keep writes conservative when scopes or runtime resources can conflict;
 - do not create nested management hierarchies;
 - request independent verification proportionally to risk.
 
-Batch independent work only when all items inform the same main-owned decision and there is no dependency, write overlap, or known runtime collision.
+Batch independent work only when all items inform the same Main-owned decision and there is no dependency, write overlap, or known runtime collision.
+
+Do not select a provider model directly. PH-04 resolves the selected role through typed configuration. No worker may silently upgrade itself to a more expensive provider family; it returns an escalation to Main.
 
 Do not claim token/cost savings from delegation without eval evidence.
 ```
@@ -444,7 +546,7 @@ description: Define the evidence needed to verify a coding or workflow result pr
 
 # Verify Work
 
-Treat worker reports as evidence inputs, not final truth.
+Treat worker reports as evidence inputs, not final truth. Native `idle`, child-stop, or a receipt file is a scheduling/completion signal, not acceptance evidence by itself.
 
 Match verification depth to risk:
 - low: focused deterministic checks may be sufficient;
@@ -625,7 +727,6 @@ git add package.json package-lock.json tsconfig.json tsconfig.build.json vitest.
 - Create: `AGENTS.md`
 - Create: `scripts/validate-plugin.mjs`
 - Create: `PROVENANCE.md`
-- Create: `docs/compatibility/ph00-baseline.md`
 
 **Interfaces:**
 - Produces plugin manifest consumed by local marketplace.
@@ -707,14 +808,13 @@ console.log('plugin validation passed');
 - Follow the current phase plan; do not implement later phases early.
 - Prefer native Codex primitives over custom runtime equivalents.
 - Keep permanent instructions small; procedures belong in Skills.
-- Repository code/docs/ADR are durable truth; generated context is secondary.
+- Repository code/tests and canonical project-control artifacts are durable truth; generated context is secondary.
 - Do not copy unlicensed upstream prompts/code; update PROVENANCE.md for external ideas/code.
 - Do not weaken validation, sandbox or authority to reduce usage.
 
-Architecture: `CODEX_WORKFLOW_NEXT_MASTER_PLAN_REV4.md`
-Roadmap: `CODEX_WORKFLOW_NEXT_ROADMAP_REV2.md`
+Architecture: `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md`
+Roadmap: `CODEX_WORKFLOW_NEXT_ROADMAP.md`
 Current plan: `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`
-PH-00 evidence: `docs/compatibility/ph00-baseline.md`
 ```
 
 - [ ] **Step 5: Create provenance baseline**
@@ -733,35 +833,14 @@ Workflow Next may independently implement architectural ideas observed in extern
 | Source | Use | Code reuse |
 |---|---|---|
 | viettran-edgeAI/codex_workflow experiment v1.1.14 / a224f32c423ef56be322de160d5440bba0a786b2 | architecture/eval hypotheses | prohibited unless license changes |
+| letya999/workflow-herdr dev / b1eab041cf2f97da4605c036900d07ff5426cc40 | operational-safety ideas: preflight, resource journaling, acceptance separation | MIT permits reuse; PH-01 copies no code |
 | openai/codex | public implementation/tests used to understand Codex behavior | follow repository license for any actual code reuse; PH-01 copies no code |
 | OpenAI Codex documentation | host/plugin contracts | documentation reference |
 
 PH-01 contains independently written schemas, Skills and tests.
 ```
 
-- [ ] **Step 6: Record PH-00 baseline pointer**
-
-`docs/compatibility/ph00-baseline.md`:
-
-```markdown
-# PH-00 compatibility baseline
-
-Evidence date: 2026-09-06.
-
-- Windows 11 build 26200.
-- Desktop 26.901.1978.0 tested; latest-stable status not proven by PH-00.
-- CLI 0.153.4.
-- Plugin/Skills/MCP read contract passed.
-- Inline/fullscreen/follow-up passed; `_meta` is not a production guarantee.
-- Windows hooks are degraded; hook `PLUGIN_DATA` write failed EPERM.
-- Explicit `fork_turns=none` worker subset passed task/result 3/3, delta follow-up and two siblings.
-- Descendant public token attribution is partial.
-- Sidebar is unsupported publicly for V1.
-
-Before PH-02 run the targeted MCP `${PLUGIN_DATA}` storage probe defined by Roadmap TP-02A.
-```
-
-- [ ] **Step 7: Validation**
+- [ ] **Step 6: Validation**
 
 After Task 5 creates Skills, run:
 
@@ -771,10 +850,10 @@ npm run validate:plugin
 
 Before Task 5 it is expected to fail only because Skills are intentionally not created yet; do not weaken the validator.
 
-- [ ] **Step 8: Commit non-Skill foundation**
+- [ ] **Step 7: Commit non-Skill foundation**
 
 ```powershell
-git add .codex-plugin AGENTS.md scripts/validate-plugin.mjs PROVENANCE.md docs/compatibility/ph00-baseline.md
+git add .codex-plugin AGENTS.md scripts/validate-plugin.mjs PROVENANCE.md
  git commit -m "feat: add minimal Codex plugin foundation"
 ```
 
@@ -785,6 +864,7 @@ git add .codex-plugin AGENTS.md scripts/validate-plugin.mjs PROVENANCE.md docs/c
 **Files:**
 - Create: `src/domain/ids.ts`
 - Create: `src/domain/agents.ts`
+- Create: `src/domain/agent-runtime.ts`
 - Create: `src/domain/authority.ts`
 - Create: `src/domain/acceptance.ts`
 - Create: `src/domain/evidence.ts`
@@ -801,22 +881,62 @@ Create tests covering:
 import { describe, expect, it } from 'vitest';
 import {
   AcceptanceSpecSchema,
+  AgentProfileSetSchema,
   AgentRoleSchema,
   AuthorityEnvelopeSchema,
+  DEFAULT_AGENT_PROFILE_SET,
   EvidenceSchema,
-  ModelProfileSchema,
 } from '../../src/domain/index.js';
 
 describe('core domain contracts', () => {
-  it('accepts stable semantic roles and profiles', () => {
-    expect(AgentRoleSchema.parse('builder')).toBe('builder');
-    expect(ModelProfileSchema.parse('balanced')).toBe('balanced');
+  it('accepts the five stable semantic worker roles', () => {
+    expect(AgentRoleSchema.parse('executor')).toBe('executor');
+    expect(AgentRoleSchema.parse('senior_executor')).toBe('senior_executor');
+  });
+
+  it('freezes safe Luna-first runtime defaults without touching Main', () => {
+    const parsed = AgentProfileSetSchema.parse(DEFAULT_AGENT_PROFILE_SET);
+    expect(parsed.defaultSubagent).toEqual({ model: 'gpt-5.6-luna', reasoningEffort: 'xhigh' });
+    expect(parsed.profiles.executor.reasoningEffort).toBe('max');
+    expect(parsed.profiles.senior_executor.model).toBe('gpt-5.6-luna');
+    expect(parsed.nonDefaultModelPolicy).toBe('disabled');
+    expect(parsed.allowedModels).toEqual(['gpt-5.6-luna']);
+  });
+
+  it('rejects accidental Sol or Luna effort below xhigh', () => {
+    const accidentalSol = structuredClone(DEFAULT_AGENT_PROFILE_SET);
+    accidentalSol.profiles.senior_executor.model = 'gpt-5.6-sol';
+    expect(() => AgentProfileSetSchema.parse(accidentalSol)).toThrow();
+
+    const lowLuna = structuredClone(DEFAULT_AGENT_PROFILE_SET);
+    lowLuna.profiles.investigator.reasoningEffort = 'medium';
+    expect(() => AgentProfileSetSchema.parse(lowLuna)).toThrow();
+  });
+
+  it('allows an explicit user-style Sol Senior mapping when policy and allowlist opt in', () => {
+    const configured = structuredClone(DEFAULT_AGENT_PROFILE_SET);
+    configured.nonDefaultModelPolicy = 'explicit_only';
+    configured.allowedModels.push('gpt-5.6-sol');
+    configured.profiles.senior_executor.model = 'gpt-5.6-sol';
+    configured.profiles.senior_executor.reasoningEffort = 'medium';
+    expect(AgentProfileSetSchema.parse(configured).profiles.senior_executor.model).toBe('gpt-5.6-sol');
+  });
+
+  it('does not expose a documentation worker role', () => {
+    expect(() => AgentRoleSchema.parse('docs_steward')).toThrow();
   });
 
   it('rejects excessive retry budgets', () => {
     expect(() => AuthorityEnvelopeSchema.parse({
       write: 'none', network: 'none', destructive: false,
-      mayCreateTests: false, maxRetries: 11, preferredProfile: 'efficient',
+      mayCreateTests: false, maxRetries: 11,
+    })).toThrow();
+  });
+
+  it('keeps model/runtime selection out of authority', () => {
+    expect(() => AuthorityEnvelopeSchema.parse({
+      write: 'none', network: 'none', destructive: false,
+      mayCreateTests: false, maxRetries: 1, model: 'gpt-5.6-sol',
     })).toThrow();
   });
 
@@ -846,7 +966,7 @@ Expected: imports/schemas missing.
 
 - [ ] **Step 3: Implement schemas exactly as section 2 defines**
 
-Create the five files with Zod schemas and inferred exported TypeScript types using:
+Create the six files with Zod schemas/defaults and inferred exported TypeScript types using:
 
 ```ts
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
@@ -918,7 +1038,7 @@ export const PolicyTraceSchema = z.object({
   decision: z.enum(['direct', 'delegate', 'delegate_batch', 'blocked']),
   signals: z.array(z.string().min(1)),
   capabilities: z.array(z.enum([
-    'context_companion', 'investigator', 'builder', 'verifier', 'worktree', 'durable',
+    'context_companion', 'investigator', 'executor', 'verifier', 'worktree', 'durable',
   ])),
   reasons: z.array(z.string().min(1)).min(1),
 }).strict();
@@ -967,7 +1087,7 @@ Required tests:
 ```ts
 it('rejects bounded write with no writable scope', ...)
 it('allows read-only context companion packet', ...)
-it('rejects verification payload for builder role', ...)
+it('rejects verification payload for executor role', ...)
 it('requires TaskDelta to contain a real change', ...)
 it('rejects unknown fields to avoid silent protocol drift', ...)
 it('round-trips a self-contained implementation packet', ...)
@@ -980,13 +1100,13 @@ const packet = {
   envelope: {
     envelopeVersion: 1,
     taskId: 'task-17',
-    role: 'builder',
+    role: 'executor',
     objective: 'Add validation for workflow IDs',
     expectedOutcome: 'Invalid empty IDs are rejected by domain schemas',
     writableScope: ['src/domain/**', 'tests/contract/**'],
     protectedScope: ['.github/**'],
     constraints: ['Do not add persistence'],
-    contextRefs: [{ uri: 'CODEX_WORKFLOW_NEXT_MASTER_PLAN_REV4.md#dom-06', summary: 'Task protocol' }],
+    contextRefs: [{ uri: 'CODEX_WORKFLOW_NEXT_MASTER_PLAN.md#dom-06', summary: 'Task protocol' }],
     relevantDecisions: [],
     acceptance: {
       requiredLevel: 'validated_local',
@@ -995,7 +1115,7 @@ const packet = {
     },
     authority: {
       write: 'bounded', network: 'none', destructive: false,
-      mayCreateTests: true, maxRetries: 1, preferredProfile: 'balanced',
+      mayCreateTests: true, maxRetries: 1,
     },
     returnContract: {
       mode: 'compact', includeEvidenceRefs: true,
@@ -1132,7 +1252,7 @@ git add src/domain/transitions.ts src/domain/index.ts tests/contract/transitions
 export const skillPromptFixtures = [
   { prompt: 'Fix the typo in README line 4', expected: [] },
   { prompt: 'Decide whether this refactor should be delegated and verified', expected: ['orchestrate-work'] },
-  { prompt: 'Prepare a bounded assignment for a fresh builder to change auth validation', expected: ['task-envelope'] },
+  { prompt: 'Prepare a bounded assignment for a fresh executor to change auth validation', expected: ['task-envelope'] },
   { prompt: 'Verify whether this migration is actually safe for production', expected: ['verify-work'] },
 ] as const;
 ```
@@ -1164,46 +1284,59 @@ Using the supported local marketplace path proven by PH-00:
 2. start a fresh Codex Desktop chat;
 3. run one representative positive prompt per Skill and one trivial negative prompt;
 4. repeat minimal smoke in CLI;
-5. record result in `docs/compatibility/ph01-smoke.md`.
+5. record the gate evidence in `evidence/ph01-skill-smoke.json`.
 
-Required record fields:
+Required shape:
 
-```text
-Date
-Desktop build
-CLI version
-Prompt
-Expected Skill
-Observed Skill
-Pass/fail
+```json
+{
+  "date": "YYYY-MM-DD",
+  "desktopBuild": "...",
+  "cliVersion": "...",
+  "cases": [
+    {
+      "surface": "desktop",
+      "prompt": "...",
+      "expectedSkill": "orchestrate-work",
+      "observedSkill": "orchestrate-work",
+      "passed": true
+    }
+  ]
+}
 ```
 
-No use of private transcript inspection.
+No private transcript inspection. This file is evidence for GATE-01, not narrative documentation.
 
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add skills tests docs/compatibility/ph01-smoke.md
+git add skills tests evidence/ph01-skill-smoke.json
  git commit -m "feat: add foundational workflow skills"
 ```
 
 ---
 
-### Task 8: Document Domain V1 and verify clean package
+### Task 8: Final contract freeze and clean-package verification
 
 **Files:**
-- Create: `docs/architecture/domain-contracts-v1.md`
-- Copy/save this plan at: `docs/plans/PH-01-plugin-foundation.md`
-- Modify: `PROVENANCE.md` only if implementation added external code/reference not already listed.
+- Modify: `PROVENANCE.md` only if implementation introduced an external source/code dependency not already listed.
+- Read/verify: `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md`, `CODEX_WORKFLOW_NEXT_ROADMAP.md`, `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`.
 
 **Interfaces:**
-- Domain doc becomes human-readable contract for PH-02/03/04 planning.
+- Produces the GATE-01 verification receipt through test/build output, Git diff and `evidence/ph01-skill-smoke.json`.
+- Creates no duplicate architecture/compatibility/plan Markdown.
 
-- [ ] **Step 1: Write domain contract doc**
+- [ ] **Step 1: Verify domain contract coverage**
 
-Must document:
+Confirm tests explicitly prove:
 
 - TaskId is logical, not native thread ID;
+- roles are exactly Companion/Investigator/Executor/Senior Executor/Verifier;
+- Main model is outside the subagent profile contract;
+- default child profile set is Luna-only with `xhigh` fallback and `max` for Executor/Senior;
+- Senior exists as a separate behavioral role even when it shares Luna `max` with Executor;
+- Sol Senior is not enabled by PH-01 and remains an explicit PH-04 user-configuration option;
+- AuthorityEnvelope contains no model/runtime fields;
 - TaskPacket = Envelope + role payload;
 - TaskDelta is follow-up-only and cannot be empty;
 - Authority is narrowing metadata;
@@ -1211,21 +1344,18 @@ Must document:
 - WorkItem transitions;
 - no persistence semantics in PH-01;
 - no `fork_turns` field inside domain packet;
-- no provider/effective model assumptions.
+- no provider/effective-model assumptions;
+- no documentation role/payload.
 
-- [ ] **Step 2: Save current executable plan into repo**
+If a requirement lacks a test, add the smallest focused contract test before continuing.
 
-Store this file verbatim as `docs/plans/PH-01-plugin-foundation.md` or, if it is already the repository copy, verify path and links.
-
-- [ ] **Step 3: Run full verification**
+- [ ] **Step 2: Run full verification**
 
 ```powershell
-npm clean-install
+npm ci
 npm run check
 npm run build
 ```
-
-If `npm clean-install` is unavailable in the installed npm, use the documented equivalent `npm ci`; record which command was used.
 
 Expected:
 
@@ -1234,12 +1364,12 @@ Expected:
 - all tests pass;
 - lint pass;
 - plugin validator pass;
-- build emits `dist/domain` declarations/JS only;
+- build emits domain declarations/JS only;
 - no hooks/MCP/UI/state directories required for runtime.
 
-- [ ] **Step 4: Inspect git diff for scope leakage**
+If the installed npm does not support the expected clean-install path, use the documented current equivalent and record the command in the final executor report.
 
-Run:
+- [ ] **Step 3: Inspect Git diff for scope leakage**
 
 ```powershell
 git status --short
@@ -1253,16 +1383,25 @@ Reject any accidental:
 - `.mcp.json` production config;
 - hooks;
 - Board/UI;
-- custom agent runtime;
+- custom agent runtime and user/project TOML configuration loader;
+- CapabilityPreflight runtime;
+- RunResourceJournal/state runtime;
+- `docs_steward`/DocumentationRolePayload/docs workflow;
 - benchmark code;
-- copied upstream prompt text.
+- copied upstream prompt/source text.
 
-- [ ] **Step 5: Commit docs/final PH-01 state**
+- [ ] **Step 4: Verify project-control artifact hygiene**
+
+Ensure there is exactly one active Master, one Roadmap and one current PH-01 plan in the repository/project source set. PH-01 must not create `docs/architecture`, `docs/compatibility`, `docs/plans`, `agent_docs` or another knowledge cache.
+
+- [ ] **Step 5: Commit final PH-01 state if any verification-only edits were required**
 
 ```powershell
-git add docs PROVENANCE.md
- git commit -m "docs: freeze PH-01 domain contracts"
+git add PROVENANCE.md tests evidence/ph01-skill-smoke.json
+git commit -m "test: close PH-01 foundation gate"
 ```
+
+Skip the commit if there are no new changes after the prior task commits.
 
 ---
 
@@ -1293,22 +1432,24 @@ git add docs PROVENANCE.md
 
 PH-01 is `PASS` only when all are true:
 
-- [ ] `.codex-plugin/plugin.json` installs as a Skills-only plugin on the proven local marketplace path.
-- [ ] `npm ci`/equivalent clean install succeeds.
-- [ ] `npm run check` succeeds.
-- [ ] `npm run build` succeeds.
-- [ ] all domain schemas are strict and exported.
-- [ ] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
-- [ ] bounded write envelope cannot have empty writable scope.
-- [ ] role/payload mismatch is rejected.
-- [ ] empty TaskDelta is rejected.
-- [ ] WorkItem transitions are pure and tested.
-- [ ] completion cannot bypass readiness/evidence/decision requirements.
-- [ ] three foundational Skills exist and have distinct descriptions.
-- [ ] fresh Desktop/CLI Skill smoke is recorded.
-- [ ] root AGENTS contains only durable invariants/map.
-- [ ] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
-- [ ] provenance review finds no copied unlicensed upstream content.
+- [x] `.codex-plugin/plugin.json` installs as a Skills-only plugin on the proven local marketplace path.
+- [x] `npm ci`/equivalent clean install succeeds.
+- [x] `npm run check` succeeds.
+- [x] `npm run build` succeeds.
+- [x] all domain schemas are strict and exported.
+- [x] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
+- [x] bounded write envelope cannot have empty writable scope.
+- [x] role/payload mismatch is rejected.
+- [x] empty TaskDelta is rejected.
+- [x] WorkItem transitions are pure and tested.
+- [x] completion cannot bypass readiness/evidence/decision requirements.
+- [x] three foundational Skills exist and have distinct descriptions.
+- [x] fresh Desktop/CLI Skill smoke is recorded.
+- [x] root AGENTS contains only durable invariants/map.
+- [x] no documentation role/subsystem or duplicate docs tree exists.
+- [x] PH-01 did not implement CapabilityPreflight or RunResourceJournal runtime early.
+- [x] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
+- [x] provenance review finds no copied unlicensed upstream content.
 
 If these pass, next action is **TP-02A**, not immediate blind PH-02 implementation.
 
@@ -1318,10 +1459,10 @@ If these pass, next action is **TP-02A**, not immediate blind PH-02 implementati
 
 If implementation discovers a host/platform issue:
 
-1. record it in `docs/compatibility/ph01-smoke.md`;
+1. record live-skill evidence in `evidence/ph01-skill-smoke.json` when relevant; otherwise include the finding in the executor final report;
 2. classify `blocks PH-01 | blocks later phase | informational`;
 3. do not add workaround runtime from later phases;
-4. amend Master/Roadmap only if it changes a durable architectural assumption.
+4. amend Master/Roadmap only if it changes a durable architectural assumption. Do not create a new Markdown report solely to preserve an informational finding.
 
 Examples:
 
@@ -1339,7 +1480,7 @@ For this phase:
 - work task-by-task, not “implement all architecture”;
 - use direct execution for small deterministic tasks;
 - optional read-only subagent review is allowed, but not required;
-- do not create Context Companion/Builder runtime merely to develop the plugin;
+- do not create Context Companion/Executor runtime merely to develop the plugin;
 - after each task run its focused tests before moving on;
 - after Task 8 run the full PH-01 gate;
 - final report must list commits, tests, live smoke, deviations and next allowed action.

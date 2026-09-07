@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ModelProfileSchema } from './agents.js';
 
 export const AuthorityEnvelopeSchema = z
   .object({
@@ -8,8 +7,6 @@ export const AuthorityEnvelopeSchema = z
     destructive: z.boolean(),
     mayCreateTests: z.boolean(),
     maxRetries: z.number().int().min(0).max(10),
-    preferredProfile: ModelProfileSchema,
-    allowEscalationTo: ModelProfileSchema.optional(),
   })
   .strict();
 

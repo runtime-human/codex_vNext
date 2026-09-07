@@ -5,7 +5,7 @@ const packet = {
   envelope: {
     envelopeVersion: 1,
     taskId: 'task-17',
-    role: 'builder',
+    role: 'executor',
     objective: 'Add validation for workflow IDs',
     expectedOutcome: 'Invalid empty IDs are rejected by domain schemas',
     writableScope: ['src/domain/**', 'tests/contract/**'],
@@ -13,7 +13,7 @@ const packet = {
     constraints: ['Do not add persistence'],
     contextRefs: [
       {
-        uri: 'CODEX_WORKFLOW_NEXT_MASTER_PLAN_REV4.md#dom-06',
+        uri: 'CODEX_WORKFLOW_NEXT_MASTER_PLAN.md#dom-06',
         summary: 'Task protocol',
       },
     ],
@@ -29,7 +29,6 @@ const packet = {
       destructive: false,
       mayCreateTests: true,
       maxRetries: 1,
-      preferredProfile: 'balanced',
     },
     returnContract: {
       mode: 'compact',
@@ -74,7 +73,7 @@ describe('task transfer contracts', () => {
     expect(TaskPacketSchema.parse(contextPacket)).toEqual(contextPacket);
   });
 
-  it('rejects verification payload for builder role', () => {
+  it('rejects verification payload for executor role', () => {
     expect(() =>
       TaskPacketSchema.parse({
         ...packet,
@@ -93,11 +92,27 @@ describe('task transfer contracts', () => {
     ).toThrow(/at least one change/);
   });
 
-  it('rejects unknown fields to avoid silent protocol drift', () => {
+  it('keeps native thread and runtime details outside the logical packet', () => {
+    for (const field of ['nativeThreadId', 'fork_turns', 'effectiveModel']) {
+      expect(() =>
+        TaskPacketSchema.parse({
+          ...packet,
+          envelope: { ...packet.envelope, [field]: 'runtime-owned' },
+        }),
+      ).toThrow();
+    }
+  });
+
+  it('does not expose a documentation role payload', () => {
     expect(() =>
       TaskPacketSchema.parse({
         ...packet,
-        envelope: { ...packet.envelope, nativeThreadId: 'thread-1' },
+        envelope: { ...packet.envelope, role: 'docs_steward' },
+        payload: {
+          kind: 'documentation',
+          artifacts: ['README.md'],
+          settledDecisionRefs: [],
+        },
       }),
     ).toThrow();
   });

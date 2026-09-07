@@ -1,4 +1,5 @@
 export * from './acceptance.js';
+export * from './agent-runtime.js';
 export * from './agents.js';
 export * from './authority.js';
 export * from './context.js';

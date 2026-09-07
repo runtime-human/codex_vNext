@@ -6,7 +6,7 @@ export const skillPromptFixtures = [
   },
   {
     prompt:
-      'Prepare a bounded assignment for a fresh builder to change auth validation',
+      'Prepare a bounded assignment for a fresh executor to change auth validation',
     expected: ['task-envelope'],
   },
   {
