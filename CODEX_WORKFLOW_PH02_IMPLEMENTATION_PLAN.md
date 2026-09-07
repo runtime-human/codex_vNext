@@ -2142,7 +2142,7 @@ git commit -m "feat: add idempotent mutation receipts"
 - Produces typed repositories for projects/runs/work/decisions/evidence/resources/events/artifacts.
 - Repositories are persistence adapters only; legal state transitions remain in `StateService`.
 
-- [ ] **Step 1: Write project-inspector tests**
+- [x] **Step 1: Write project-inspector tests**
 
 Use temporary Git repositories.
 
@@ -2157,31 +2157,31 @@ Git timeout/failure degrades without persisting stderr
 fingerprint excludes HEAD
 ```
 
-- [ ] **Step 2: Write repository round-trip tests**
+- [x] **Step 2: Write repository round-trip tests**
 
 Insert/read each PH-02 entity.
 
 Reject invalid enum/check-constraint values.
 
-- [ ] **Step 3: Verify optimistic work-item update**
+- [x] **Step 3: Verify optimistic work-item update**
 
 ```text
 version=1 + expectedVersion=1 → update version=2
 version=2 + expectedVersion=1 → VERSION_CONFLICT
 ```
 
-- [ ] **Step 4: Implement repository functions with prepared statements**
+- [x] **Step 4: Implement repository functions with prepared statements**
 
 No SQL string interpolation for values.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- state-service
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/project-inspector.ts src/state/repositories.ts src/state/index.ts tests/state/state-service.test.ts
