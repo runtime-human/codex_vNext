@@ -3,12 +3,12 @@ import {
   closeSync,
   existsSync,
   fsyncSync,
+  lstatSync,
   mkdirSync,
   openSync,
   readdirSync,
   readFileSync,
   renameSync,
-  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -18,7 +18,7 @@ import { type Clock, systemClock } from './clock.js';
 import { StateError } from './errors.js';
 import { newArtifactId } from './ids.js';
 import type { ArtifactRecord, StateRepositories } from './repositories.js';
-import type { StorageRoot } from './storage-root.js';
+import { assertSafeStoragePath, type StorageRoot } from './storage-root.js';
 
 const MAX_ARTIFACT_BYTES = 10 * 1024 * 1024;
 
@@ -43,8 +43,13 @@ export function artifactFileMatches(
   absolutePath: string,
 ): boolean {
   try {
-    const { size } = statSync(absolutePath);
-    if (size !== artifact.byteSize || size > MAX_ARTIFACT_BYTES) return false;
+    const stats = lstatSync(absolutePath);
+    if (
+      !stats.isFile() ||
+      stats.size !== artifact.byteSize ||
+      stats.size > MAX_ARTIFACT_BYTES
+    )
+      return false;
     const bytes = readFileSync(absolutePath);
     return createHash('sha256').update(bytes).digest('hex') === artifact.sha256;
   } catch {
@@ -70,6 +75,7 @@ export class ArtifactStore {
     const relativePath = relativeCasPath(sha256);
     const destination = this.insideRoot(relativePath);
     mkdirSync(path.dirname(destination), { recursive: true });
+    this.insideRoot(relativePath);
 
     if (!existsSync(destination)) {
       const temporary = path.join(
@@ -93,6 +99,7 @@ export class ArtifactStore {
         if (!existsSync(destination)) throw error;
       }
     }
+    this.insideRoot(relativePath);
     if (
       !artifactFileMatches(
         { sha256, byteSize: input.bytes.byteLength },
@@ -161,17 +168,7 @@ export class ArtifactStore {
 
   private insideRoot(relativePath: string): string {
     const absolute = path.resolve(this.dependencies.storage.root, relativePath);
-    const relative = path.relative(this.dependencies.storage.root, absolute);
-    if (
-      relative === '..' ||
-      relative.startsWith(`..${path.sep}`) ||
-      path.isAbsolute(relative)
-    ) {
-      throw new StateError(
-        'PATH_OUTSIDE_ROOT',
-        'artifact path escaped PLUGIN_DATA',
-      );
-    }
+    assertSafeStoragePath(this.dependencies.storage.root, absolute);
     return absolute;
   }
 }

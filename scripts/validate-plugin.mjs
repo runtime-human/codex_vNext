@@ -55,5 +55,9 @@ if (
 if (JSON.stringify(server.args) !== JSON.stringify(['./dist/mcp/index.js'])) {
   fail('workflow-next MCP entry point is invalid');
 }
+const mcpEntrypoint = path.resolve(root, server.args[0]);
+if (!fs.existsSync(mcpEntrypoint) || !fs.statSync(mcpEntrypoint).isFile()) {
+  fail('workflow-next MCP entry point has not been built');
+}
 
 console.log('plugin validation passed');

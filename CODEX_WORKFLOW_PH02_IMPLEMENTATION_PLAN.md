@@ -1767,8 +1767,7 @@ The legacy compatibility calls returned `pluginDataPresent=false` and
 `PLUGIN_DATA is not set`. The authoritative Agent Plugins v1 probe then ran
 through two separate official Codex CLI processes against the same installed
 package: process A passed create/append/rename/read/SQLite transaction/reopen;
-process B passed restart persistence; cleanup passed in a third process.
-the first attempted `write`, the second attempted restart `verify`. Per section
+process B passed restart persistence; cleanup passed in a third process. Per section
 2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
 selects the supported Agent Plugins v1 production contract; its fresh TP-02A
 result controls GATE-02.
@@ -2747,11 +2746,19 @@ Shape:
 
 ```json
 {
-  "smokeVersion": 1,
+  "smokeVersion": 2,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
+  "pluginFormat": "agent-plugins-v1",
+  "packageVersion": "0.1.0-alpha.1",
+  "runtimeCommit": "reviewed-runtime-commit",
+  "pluginManifestSha256": "sha256-of-plugin-json",
+  "mcpManifestSha256": "sha256-of-mcp-json",
+  "mcpEntrypointSha256": "sha256-of-built-entrypoint",
+  "hosts": { "desktop": "pass", "cli": "pass" },
+  "cliProcesses": 2,
   "mcp": {
     "start": "pass",
     "createWork": "pass",
@@ -3020,7 +3027,7 @@ Skip if there are no new changes.
 PH-02 is `PASS` only when all are true:
 
 - [x] PH-01 is already PASS.
-- [x] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
+- [x] TP-02A proves the production Agent Plugins v1 loader supplies writable persistent `PLUGIN_DATA`.
 - [x] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
 - [x] No arbitrary storage fallback exists.
 - [x] Node floor is compatible with the chosen built-in SQLite API.

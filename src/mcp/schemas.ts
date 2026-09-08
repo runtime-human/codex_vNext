@@ -8,9 +8,19 @@ import {
   WorkItemStateSchema,
 } from '../domain/index.js';
 
-export const MutationMetaSchema = z
-  .object({ commandId: z.string().min(1).max(160) })
-  .strict();
+const MAX_TEXT_LENGTH = 8_192;
+const MAX_IDENTIFIER_LENGTH = 160;
+const MAX_ARRAY_ITEMS = 64;
+
+const text = z.string().min(1).max(MAX_TEXT_LENGTH);
+const identifier = z.string().min(1).max(MAX_IDENTIFIER_LENGTH);
+
+export const MutationMetaSchema = z.object({ commandId: identifier }).strict();
+
+const boundedAcceptance = AcceptanceSpecSchema.extend({
+  criteria: z.array(text).min(1).max(MAX_ARRAY_ITEMS),
+  requiredEvidenceKinds: z.array(EvidenceKindSchema).max(MAX_ARRAY_ITEMS),
+});
 
 const commandId = MutationMetaSchema.shape.commandId;
 const version = z.number().int().min(1);
@@ -18,8 +28,8 @@ const risk = z.enum(['low', 'medium', 'high', 'critical']);
 
 export const WorkflowSummaryInputSchema = z
   .object({
-    projectRoot: z.string().min(1).optional(),
-    runId: z.string().min(1).optional(),
+    projectRoot: text.optional(),
+    runId: identifier.optional(),
   })
   .strict()
   .superRefine((value, context) => {
@@ -34,45 +44,43 @@ export const WorkflowSummaryInputSchema = z
 export const WorkflowBeginInputSchema = z
   .object({
     commandId,
-    projectRoot: z.string().min(1),
-    objective: z.string().min(1),
-    primaryThreadId: z.string().min(1).optional(),
+    projectRoot: text,
+    objective: text,
+    primaryThreadId: identifier.optional(),
     durable: z.literal(false).default(false),
   })
   .strict();
 
-export const WorkGetInputSchema = z
-  .object({ workItemId: z.string().min(1) })
-  .strict();
+export const WorkGetInputSchema = z.object({ workItemId: identifier }).strict();
 
 export const WorkUpdateInputSchema = z.discriminatedUnion('operation', [
   z
     .object({
       operation: z.literal('create'),
       commandId,
-      runId: z.string().min(1),
-      title: z.string().min(1),
-      objective: z.string().min(1),
+      runId: identifier,
+      title: text,
+      objective: text,
       risk,
       ownerRole: AgentRoleSchema.optional(),
-      acceptance: AcceptanceSpecSchema,
+      acceptance: boundedAcceptance,
     })
     .strict(),
   z
     .object({
       operation: z.literal('patch'),
       commandId,
-      workItemId: z.string().min(1),
+      workItemId: identifier,
       expectedVersion: version,
       patch: z
         .object({
-          title: z.string().min(1).optional(),
-          objective: z.string().min(1).optional(),
+          title: text.optional(),
+          objective: text.optional(),
           risk: risk.optional(),
           ownerRole: AgentRoleSchema.nullable().optional(),
-          nativeThreadId: z.string().min(1).nullable().optional(),
-          worktreeRef: z.string().min(1).nullable().optional(),
-          acceptance: AcceptanceSpecSchema.optional(),
+          nativeThreadId: identifier.nullable().optional(),
+          worktreeRef: text.nullable().optional(),
+          acceptance: boundedAcceptance.optional(),
         })
         .strict(),
     })
@@ -83,7 +91,7 @@ export const WorkTransitionInputSchema = z.discriminatedUnion('to', [
   z
     .object({
       commandId,
-      workItemId: z.string().min(1),
+      workItemId: identifier,
       expectedVersion: version,
       to: z.enum([
         'ready',
@@ -94,19 +102,18 @@ export const WorkTransitionInputSchema = z.discriminatedUnion('to', [
         'blocked',
         'cancelled',
       ]),
-      note: z.string().min(1).optional(),
     })
     .strict(),
   z
     .object({
       commandId,
-      workItemId: z.string().min(1),
+      workItemId: identifier,
       expectedVersion: version,
       to: z.literal('done'),
       completion: z
         .object({
           achievedLevel: ReadinessLevelSchema,
-          evidenceIds: z.array(z.string().min(1)).min(1),
+          evidenceIds: z.array(identifier).min(1).max(MAX_ARRAY_ITEMS),
         })
         .strict(),
     })
@@ -116,21 +123,22 @@ export const WorkTransitionInputSchema = z.discriminatedUnion('to', [
 export const DecisionRequestInputSchema = z
   .object({
     commandId,
-    runId: z.string().min(1),
-    workItemId: z.string().min(1).optional(),
-    question: z.string().min(1),
+    runId: identifier,
+    workItemId: identifier.optional(),
+    question: text,
     alternatives: z
       .array(
         z
           .object({
-            id: z.string().min(1),
-            label: z.string().min(1),
-            consequence: z.string().min(1).optional(),
+            id: identifier,
+            label: text,
+            consequence: text.optional(),
           })
           .strict(),
       )
+      .max(MAX_ARRAY_ITEMS)
       .optional(),
-    recommendation: z.string().min(1).optional(),
+    recommendation: text.optional(),
     authority: z.enum(['main', 'user']),
   })
   .strict();
@@ -138,25 +146,25 @@ export const DecisionRequestInputSchema = z
 export const DecisionResolveInputSchema = z
   .object({
     commandId,
-    decisionId: z.string().min(1),
+    decisionId: identifier,
     expectedVersion: version,
-    resolution: z.string().min(1),
+    resolution: text,
   })
   .strict();
 
 export const EvidenceRecordInputSchema = z
   .object({
     commandId,
-    runId: z.string().min(1),
-    workItemId: z.string().min(1).optional(),
+    runId: identifier,
+    workItemId: identifier.optional(),
     kind: EvidenceKindSchema,
-    summary: z.string().min(1),
+    summary: text,
     status: z.enum(['pass', 'fail', 'partial', 'unknown']),
-    sourceUri: z.string().min(1).optional(),
-    command: z.string().min(1).optional(),
+    sourceUri: text.optional(),
+    command: text.optional(),
     exitCode: z.number().int().optional(),
-    gitSha: z.string().min(1).optional(),
-    artifactId: z.string().min(1).optional(),
+    gitSha: identifier.optional(),
+    artifactId: identifier.optional(),
   })
   .strict();
 
@@ -174,10 +182,10 @@ export const ResourceRecordInputSchema = z.discriminatedUnion('operation', [
     .object({
       operation: z.literal('intent'),
       commandId,
-      runId: z.string().min(1),
-      workItemId: z.string().min(1).optional(),
+      runId: identifier,
+      workItemId: identifier.optional(),
       type: ResourceTypeSchema,
-      owner: z.string().min(1),
+      owner: text,
       cleanupRequired: z.boolean(),
     })
     .strict(),
@@ -185,31 +193,31 @@ export const ResourceRecordInputSchema = z.discriminatedUnion('operation', [
     .object({
       operation: z.literal('observe'),
       commandId,
-      runId: z.string().min(1),
-      workItemId: z.string().min(1).optional(),
+      runId: identifier,
+      workItemId: identifier.optional(),
       type: ResourceTypeSchema,
-      owner: z.string().min(1),
-      nativeRef: z.string().min(1),
+      owner: text,
+      nativeRef: text,
     })
     .strict(),
   z
     .object({
       operation: z.literal('attach'),
       commandId,
-      resourceId: z.string().min(1),
+      resourceId: identifier,
       expectedVersion: version,
-      nativeRef: z.string().min(1),
+      nativeRef: text,
     })
     .strict(),
   z
     .object({
       operation: z.literal('transition'),
       commandId,
-      resourceId: z.string().min(1),
+      resourceId: identifier,
       expectedVersion: version,
       to: z.enum(['running', 'completed', 'failed', 'cleaned']),
-      error: z.string().min(1).optional(),
-      evidenceId: z.string().min(1).optional(),
+      error: text.optional(),
+      evidenceId: identifier.optional(),
     })
     .strict(),
 ]);

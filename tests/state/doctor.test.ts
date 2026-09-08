@@ -1,9 +1,9 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { runDoctor } from '../../src/doctor/index.js';
+import { runDoctor, runDoctorFromEnvironment } from '../../src/doctor/index.js';
 import {
   migrateDatabase,
   openWorkflowDatabase,
@@ -143,5 +143,52 @@ describe('read-only doctor', () => {
       ]),
     );
     expect(await writeFile(orphan, 'still present')).toBeUndefined();
+  });
+
+  it('rejects a child storage path that resolves outside PLUGIN_DATA', async () => {
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-doctor-outside-'),
+    );
+    const outsideStorage = resolveStorageRoot(outside);
+    const outsideDb = openWorkflowDatabase(outsideStorage);
+    await migrateDatabase(outsideDb, outsideStorage);
+    db.close();
+    await rm(path.join(pluginData, 'state'), { recursive: true });
+    const linked = await symlink(
+      outsideStorage.stateDir,
+      path.join(pluginData, 'state'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    ).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) {
+      outsideDb.close();
+      await rm(outside, { recursive: true });
+      return;
+    }
+
+    const previous = process.env.PLUGIN_DATA;
+    process.env.PLUGIN_DATA = pluginData;
+    try {
+      expect(runDoctorFromEnvironment()).toEqual({
+        status: 'fail',
+        checks: [
+          {
+            name: 'plugin_data',
+            status: 'fail',
+            message: 'PLUGIN_DATA layout is unavailable',
+          },
+        ],
+      });
+    } finally {
+      if (previous === undefined) delete process.env.PLUGIN_DATA;
+      else process.env.PLUGIN_DATA = previous;
+      outsideDb.close();
+      await rm(outside, { recursive: true });
+    }
   });
 });

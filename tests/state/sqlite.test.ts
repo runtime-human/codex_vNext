@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -27,6 +27,20 @@ function expectStorageUnavailable(action: () => unknown): void {
     return;
   }
   throw new Error('expected STORAGE_UNAVAILABLE');
+}
+
+async function linkDirectory(target: string, link: string): Promise<boolean> {
+  try {
+    await symlink(
+      target,
+      link,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') return false;
+    throw error;
+  }
 }
 
 afterEach(async () => {
@@ -64,6 +78,62 @@ describe('PH-02 SQLite foundation', () => {
         /^\.\.(?:[\\/]|$)/,
       );
     }
+  });
+
+  it('rejects reparse points in existing storage directories', async () => {
+    const pluginData = await tempRoot();
+    const target = path.join(pluginData, 'state-target');
+    await mkdir(target);
+    const linked = await linkDirectory(target, path.join(pluginData, 'state'));
+    if (!linked) return;
+
+    expect(() => resolveStorageRoot(pluginData)).toThrow(
+      expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+    );
+  });
+
+  it('rejects a reparse point used as PLUGIN_DATA itself', async () => {
+    const parent = await tempRoot();
+    const target = await tempRoot();
+    const pluginData = path.join(parent, 'plugin-data');
+    const linked = await linkDirectory(target, pluginData);
+    if (!linked) return;
+
+    expect(() => resolveStorageRoot(pluginData)).toThrow(
+      expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+    );
+  });
+
+  it('rejects a reparse point used as the existing database target', async () => {
+    const pluginData = await tempRoot();
+    const storage = resolveStorageRoot(pluginData);
+    const target = path.join(pluginData, 'database-target');
+    const linkType = process.platform === 'win32' ? 'junction' : 'file';
+    if (linkType === 'file') await writeFile(target, 'not sqlite');
+    else await mkdir(target);
+    await rm(storage.databasePath, { force: true });
+    const linked = await symlink(target, storage.databasePath, linkType).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) return;
+
+    expect(() => resolveStorageRoot(pluginData)).toThrow(
+      expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+    );
+  });
+
+  it('preserves an existing regular database file', async () => {
+    const pluginData = await tempRoot();
+    const storage = resolveStorageRoot(pluginData);
+    await writeFile(storage.databasePath, 'existing database');
+
+    expect(resolveStorageRoot(pluginData).databasePath).toBe(
+      storage.databasePath,
+    );
   });
 
   it('opens SQLite with the required safety pragmas', async () => {

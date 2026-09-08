@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import {
   mkdir,
   mkdtemp,
   readFile,
   rm,
+  symlink,
   truncate,
   writeFile,
 } from 'node:fs/promises';
@@ -24,6 +26,20 @@ let pluginData: string;
 let storage: StorageRoot;
 let db: DatabaseSync;
 let store: ArtifactStore;
+
+async function linkDirectory(target: string, link: string): Promise<boolean> {
+  try {
+    await symlink(
+      target,
+      link,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') return false;
+    throw error;
+  }
+}
 
 beforeEach(async () => {
   pluginData = await mkdtemp(path.join(tmpdir(), 'workflow-next-artifact-'));
@@ -99,6 +115,71 @@ describe('ArtifactStore', () => {
         target,
       ),
     ).toBe(false);
+  });
+
+  it('rejects a reparse point in an existing CAS directory component', async () => {
+    const bytes = new TextEncoder().encode('cas reparse');
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-cas-outside-'),
+    );
+    const prefix = path.join(storage.artifactSha256Dir, hash.slice(0, 2));
+    const linked = await linkDirectory(outside, prefix);
+    if (!linked) return;
+
+    expect(() =>
+      store.putBytes({ bytes, mediaType: 'text/plain' }),
+    ).toThrowError(expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }));
+    await rm(outside, { recursive: true });
+  });
+
+  it('rejects a reparse point used as an existing CAS target', async () => {
+    const bytes = new TextEncoder().encode('cas target reparse');
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-cas-outside-'),
+    );
+    const target = path.join(outside, 'target');
+    const linkType = process.platform === 'win32' ? 'junction' : 'file';
+    if (linkType === 'file') await writeFile(target, bytes);
+    else await mkdir(target);
+    const destination = path.join(
+      storage.artifactSha256Dir,
+      hash.slice(0, 2),
+      hash,
+    );
+    await mkdir(path.dirname(destination), { recursive: true });
+    const linked = await symlink(target, destination, linkType).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) return;
+
+    expect(() =>
+      store.putBytes({ bytes, mediaType: 'text/plain' }),
+    ).toThrowError(expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }));
+    await rm(outside, { recursive: true });
+  });
+
+  it('preserves an existing regular CAS target', async () => {
+    const bytes = new TextEncoder().encode('existing cas');
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const destination = path.join(
+      storage.artifactSha256Dir,
+      hash.slice(0, 2),
+      hash,
+    );
+    await mkdir(path.dirname(destination), { recursive: true });
+    await writeFile(destination, bytes);
+
+    const artifact = store.putBytes({ bytes, mediaType: 'text/plain' });
+    expect(await readFile(destination)).toEqual(Buffer.from(bytes));
+    expect(artifact.relativePath).toBe(
+      `artifacts/sha256/${hash.slice(0, 2)}/${hash}`,
+    );
   });
 
   it('detects an unreferenced CAS object without deleting it', async () => {

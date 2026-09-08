@@ -1,4 +1,4 @@
-import { mkdirSync, realpathSync, statSync } from 'node:fs';
+import { lstatSync, mkdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { StateError } from './errors.js';
@@ -14,7 +14,7 @@ export interface StorageRoot {
 }
 
 function assertInside(root: string, candidate: string): void {
-  const relative = path.relative(root, candidate);
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
   if (
     relative === '..' ||
     relative.startsWith(`..${path.sep}`) ||
@@ -27,6 +27,40 @@ function assertInside(root: string, candidate: string): void {
   }
 }
 
+export function assertSafeStoragePath(root: string, candidate: string): void {
+  const absoluteRoot = path.resolve(root);
+  const absoluteCandidate = path.resolve(candidate);
+  assertInside(absoluteRoot, absoluteCandidate);
+
+  const rootStats = lstatSync(absoluteRoot);
+  if (rootStats.isSymbolicLink()) {
+    throw new StateError(
+      'PATH_OUTSIDE_ROOT',
+      'storage root uses a symlink or reparse point',
+    );
+  }
+
+  let current = absoluteRoot;
+  const relative = path.relative(absoluteRoot, absoluteCandidate);
+  for (const segment of relative ? relative.split(path.sep) : []) {
+    current = path.join(current, segment);
+    let stats: ReturnType<typeof lstatSync>;
+    try {
+      stats = lstatSync(current);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+      throw error;
+    }
+    if (stats.isSymbolicLink()) {
+      throw new StateError(
+        'PATH_OUTSIDE_ROOT',
+        'storage path uses a symlink or reparse point',
+      );
+    }
+    assertInside(absoluteRoot, realpathSync(current));
+  }
+}
+
 export function resolveStorageRoot(
   pluginData = process.env.PLUGIN_DATA,
 ): StorageRoot {
@@ -35,14 +69,19 @@ export function resolveStorageRoot(
   }
 
   try {
-    mkdirSync(pluginData, { recursive: true });
-    if (!statSync(pluginData).isDirectory())
+    const requestedRoot = path.resolve(pluginData);
+    mkdirSync(requestedRoot, { recursive: true });
+    assertSafeStoragePath(requestedRoot, requestedRoot);
+    if (!statSync(requestedRoot).isDirectory())
       throw new Error('PLUGIN_DATA is not a directory');
 
-    const root = realpathSync(pluginData);
+    const root = realpathSync(requestedRoot);
+    assertSafeStoragePath(root, root);
     const makeDirectory = (...segments: string[]) => {
       const requested = path.join(root, ...segments);
+      assertSafeStoragePath(root, requested);
       mkdirSync(requested, { recursive: true });
+      assertSafeStoragePath(root, requested);
       const resolved = realpathSync(requested);
       assertInside(root, resolved);
       return resolved;
@@ -54,7 +93,7 @@ export function resolveStorageRoot(
     const backupsDir = makeDirectory('backups');
     const tmpDir = makeDirectory('tmp');
     const databasePath = path.join(stateDir, 'workflow-next.sqlite3');
-    assertInside(root, databasePath);
+    assertSafeStoragePath(root, databasePath);
 
     return {
       root,

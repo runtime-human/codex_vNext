@@ -75,7 +75,6 @@ export interface TransitionWorkItemInput {
   workItemId: string;
   expectedVersion: number;
   to: WorkItemState;
-  note?: string;
   completion?: {
     achievedLevel: ReadinessLevel;
     evidenceIds: string[];

@@ -166,11 +166,11 @@ Every material feature must have disable/remove path.
 ```text
 PH-00 COMPLETE: PASS_WITH_AMENDMENTS
           ↓
-PH-01 Plugin + Domain Foundation          ← NOW
+PH-01 Plugin + Domain Foundation          COMPLETE
           ↓
-TP-02A MCP PLUGIN_DATA / Windows hook re-probe
+TP-02A MCP PLUGIN_DATA / Windows hook re-probe   PASS
           ↓
-PH-02 Explicit State + MCP
+PH-02 Explicit State + MCP                ← CURRENT
           ↓
 PH-03 Context Companion
           ↓
@@ -240,7 +240,7 @@ No global H0 rerun.
 ---
 
 <a id="ph-01"></a>
-# [PH-01] Plugin Foundation + Domain Contracts — CURRENT
+# [PH-01] Plugin Foundation + Domain Contracts — COMPLETED
 
 **Goal:** build production foundation without persistence/orchestration complexity.
 
@@ -252,7 +252,8 @@ Node 24, strict ESM, test/lint/build/package scripts.
 
 <a id="deliv-01-02"></a>
 ### [DELIV-01.02] Minimal native plugin
-`.codex-plugin/plugin.json`, local install, no production MCP/hooks required yet.
+Skills-only local install; the forward package layout is superseded by the
+Agent Plugins v1 packaging gate amendment above.
 
 <a id="deliv-01-03"></a>
 ### [DELIV-01.03] Domain V1 contracts

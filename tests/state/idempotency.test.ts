@@ -52,6 +52,16 @@ describe('canonical mutation input', () => {
       hashMutationRequest('work.update', { values: [2, 1] }),
     );
   });
+
+  it('uses code-point ordering for non-ASCII idempotency keys', () => {
+    const first = { z: 1, ä: 2, a: 3 };
+    const second = { a: 3, ä: 2, z: 1 };
+
+    expect(canonicalJson(first)).toBe('{"a":3,"z":1,"ä":2}');
+    expect(hashMutationRequest('work.update', first)).toBe(
+      hashMutationRequest('work.update', second),
+    );
+  });
 });
 
 describe('secret redaction', () => {
@@ -114,6 +124,18 @@ describe('idempotent mutation execution', () => {
     expect(
       db.prepare('SELECT count(*) AS count FROM command_receipts').get(),
     ).toEqual({
+      count: 1,
+    });
+  });
+
+  it('reuses a receipt for reordered non-ASCII fields', () => {
+    expect(run('command-unicode', 'work.update', { z: 1, ä: 2, a: 3 })).toEqual(
+      { value: 'applied' },
+    );
+    expect(
+      run('command-unicode', 'work.update', { a: 3, ä: 2, z: 1 }, 'duplicate'),
+    ).toEqual({ value: 'applied' });
+    expect(db.prepare('SELECT count(*) AS count FROM effects').get()).toEqual({
       count: 1,
     });
   });

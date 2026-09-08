@@ -1437,24 +1437,24 @@ Skip the commit if there are no new changes after the prior task commits.
 
 PH-01 is `PASS` only when all are true:
 
-- [ ] `.codex-plugin/plugin.json` installs as a Skills-only plugin on the proven local marketplace path.
-- [ ] `npm ci`/equivalent clean install succeeds.
-- [ ] `npm run check` succeeds.
-- [ ] `npm run build` succeeds.
-- [ ] all domain schemas are strict and exported.
-- [ ] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
-- [ ] bounded write envelope cannot have empty writable scope.
-- [ ] role/payload mismatch is rejected.
-- [ ] empty TaskDelta is rejected.
-- [ ] WorkItem transitions are pure and tested.
-- [ ] completion cannot bypass readiness/evidence/decision requirements.
-- [ ] three foundational Skills exist and have distinct descriptions.
-- [ ] fresh Desktop/CLI Skill smoke is recorded.
-- [ ] root AGENTS contains only durable invariants/map.
-- [ ] no documentation role/subsystem or duplicate docs tree exists.
-- [ ] PH-01 did not implement CapabilityPreflight or RunResourceJournal runtime early.
-- [ ] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
-- [ ] provenance review finds no copied unlicensed upstream content.
+- [x] The PH-01 Skills-only package installed on the proven local marketplace path; PH-02 later superseded its legacy manifest with Agent Plugins v1.
+- [x] `npm ci`/equivalent clean install succeeds.
+- [x] `npm run check` succeeds.
+- [x] `npm run build` succeeds.
+- [x] all domain schemas are strict and exported.
+- [x] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
+- [x] bounded write envelope cannot have empty writable scope.
+- [x] role/payload mismatch is rejected.
+- [x] empty TaskDelta is rejected.
+- [x] WorkItem transitions are pure and tested.
+- [x] completion cannot bypass readiness/evidence/decision requirements.
+- [x] three foundational Skills exist and have distinct descriptions.
+- [x] fresh Desktop/CLI Skill smoke is recorded.
+- [x] root AGENTS contains only durable invariants/map.
+- [x] no documentation role/subsystem or duplicate docs tree exists.
+- [x] PH-01 did not implement CapabilityPreflight or RunResourceJournal runtime early.
+- [x] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
+- [x] provenance review finds no copied unlicensed upstream content.
 
 If these pass, next action is **TP-02A**, not immediate blind PH-02 implementation.
 

@@ -39,7 +39,7 @@ This file defines:
 - milestone contracts and acceptance gates;
 - provenance and source map.
 
-Implementation order is controlled by `CODEX_WORKFLOW_NEXT_ROADMAP.md`. The currently executable phase plan is `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`.
+Implementation order is controlled by `CODEX_WORKFLOW_NEXT_ROADMAP.md`. The currently executable phase plan is `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`.
 
 ### Stable ID families
 
@@ -667,9 +667,9 @@ SDK/App Server may later support eval/headless/integration, not product correctn
 Native package baseline:
 
 ```text
-.codex-plugin/plugin.json
+plugin.json
 skills/
-.mcp.json                 from PH-02
+mcp.json                  from PH-02
 hooks/                    optional/degraded from PH-02+
 ui/                       PH-07
 ```
@@ -697,7 +697,8 @@ Avoid monorepo until independently releasable packages actually exist.
 
 ```text
 codex-workflow-next/
-├── .codex-plugin/plugin.json
+├── plugin.json
+├── mcp.json                          # activated PH-02+
 ├── AGENTS.md
 ├── skills/
 │   ├── orchestrate-work/SKILL.md
@@ -2486,7 +2487,9 @@ Current reference experimental v1.1.15 / `a596daa...`. Use as policy/reference/e
 ## [SRC-02] Codex plugin creation
 https://learn.chatgpt.com/docs/build-plugins
 
-Native `.codex-plugin/plugin.json`, Skills/MCP, local marketplace.
+Legacy `.codex-plugin/plugin.json` discovery and the current Agent Plugins v1
+root-manifest contract; Workflow Next production uses the latter per the
+packaging decision above.
 
 <a id="src-03"></a>
 ## [SRC-03] Codex Hooks

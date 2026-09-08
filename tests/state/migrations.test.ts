@@ -88,6 +88,38 @@ describe('PH-02 migrations', () => {
     }
   });
 
+  it('rejects a user_version that is outside the applied migration rows', async () => {
+    const storage = resolveStorageRoot(await tempRoot());
+    const db = openWorkflowDatabase(storage);
+    try {
+      await migrateDatabase(db, storage);
+      db.exec('PRAGMA user_version = 0');
+
+      await expect(migrateDatabase(db, storage)).rejects.toMatchObject({
+        code: 'MIGRATION_CONFLICT',
+      });
+    } finally {
+      db.close();
+    }
+  });
+
+  it('rejects unknown migration rows', async () => {
+    const storage = resolveStorageRoot(await tempRoot());
+    const db = openWorkflowDatabase(storage);
+    try {
+      await migrateDatabase(db, storage);
+      db.prepare(
+        'INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)',
+      ).run(99, 'future', 'not-a-real-checksum', '2026-09-09T00:00:00.000Z');
+
+      await expect(migrateDatabase(db, storage)).rejects.toMatchObject({
+        code: 'MIGRATION_CONFLICT',
+      });
+    } finally {
+      db.close();
+    }
+  });
+
   it('rolls back a failed migration completely', async () => {
     const storage = resolveStorageRoot(await tempRoot());
     const db = openWorkflowDatabase(storage);
@@ -157,6 +189,74 @@ describe('PH-02 migrations', () => {
         ),
       ).toHaveLength(1);
       expect(currentSchemaVersion(db)).toBe(1);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('uses distinct backup paths for concurrent incompatible migrations', async () => {
+    const storage = resolveStorageRoot(await tempRoot());
+    const first = openWorkflowDatabase(storage);
+    const second = openWorkflowDatabase(storage);
+    const incompatible: Migration = {
+      version: 2,
+      name: 'concurrent-incompatible-test-only',
+      kind: 'incompatible',
+      sql: 'CREATE TABLE concurrent_backup_probe (id INTEGER) STRICT;',
+    };
+    const fixedClock = { nowIso: () => '2026-09-09T00:00:00.000Z' };
+    try {
+      await migrateDatabase(first, storage);
+      await expect(
+        Promise.all([
+          migrateDatabase(
+            first,
+            storage,
+            [INITIAL_MIGRATION, incompatible],
+            fixedClock,
+          ),
+          migrateDatabase(
+            second,
+            storage,
+            [INITIAL_MIGRATION, incompatible],
+            fixedClock,
+          ),
+        ]),
+      ).resolves.toHaveLength(2);
+
+      const backups = (await readdir(storage.backupsDir)).filter((name) =>
+        name.endsWith('.sqlite3'),
+      );
+      expect(backups).toHaveLength(2);
+      expect(new Set(backups).size).toBe(2);
+      expect(currentSchemaVersion(first)).toBe(2);
+      expect(
+        first.prepare('SELECT count(*) AS count FROM schema_migrations').get(),
+      ).toEqual({ count: 2 });
+    } finally {
+      first.close();
+      second.close();
+    }
+  });
+
+  it('fails closed on foreign-key violations', async () => {
+    const storage = resolveStorageRoot(await tempRoot());
+    const db = openWorkflowDatabase(storage);
+    try {
+      await migrateDatabase(db, storage);
+      db.exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE fk_parent (id INTEGER PRIMARY KEY) STRICT;
+        CREATE TABLE fk_child (
+          parent_id INTEGER REFERENCES fk_parent(id)
+        ) STRICT;
+        INSERT INTO fk_child (parent_id) VALUES (42);
+        PRAGMA foreign_keys = ON;
+      `);
+
+      await expect(migrateDatabase(db, storage)).rejects.toMatchObject({
+        code: 'INTEGRITY_FAILED',
+      });
     } finally {
       db.close();
     }
