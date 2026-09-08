@@ -1836,7 +1836,7 @@ If passed, continue.
 
 The production `.mcp.json` comes later.
 
-- [ ] **Step 10: Commit probe evidence**
+- [x] **Step 10: Commit probe evidence**
 
 ```powershell
 git add tests/probes evidence/ph02-storage-probe.json
