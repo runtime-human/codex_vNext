@@ -1,0 +1,35 @@
+{
+  "smokeVersion": 2,
+  "date": "2026-09-08",
+  "desktopBuild": "8e5b6932251c2c1c",
+  "cliVersion": "0.153.4",
+  "nodeVersion": "v24.19.0",
+  "pluginFormat": "agent-plugins-v1",
+  "packageVersion": "0.1.0-alpha.1",
+  "hosts": {
+    "desktop": "pass",
+    "cli": "pass"
+  },
+  "cliProcesses": 2,
+  "publicIds": {
+    "runId": "run_42228d82-e039-4a37-b75e-ce0fa97658f9",
+    "workItemId": "work_eb071b89-a4ee-4ab6-a426-433071e037d7",
+    "evidenceId": "evidence_3e871033-be44-42a8-86e7-146bc7d0e20a"
+  },
+  "mcp": {
+    "start": "pass",
+    "createWork": "pass",
+    "duplicateIdempotency": "pass",
+    "idempotencyConflict": "pass",
+    "optimisticConflict": "pass",
+    "completionGuard": "pass",
+    "restartPersistence": "pass",
+    "repoDrift": "pass"
+  },
+  "skills": {
+    "workflowStatus": "pass",
+    "recoverWork": "pass"
+  },
+  "doctor": "pass",
+  "hooks": "degraded"
+}

@@ -4,7 +4,12 @@
 
 **Goal:** Create the production-grade minimal Codex Workflow Next plugin foundation, typed domain contracts and foundational Skills without persistence, hooks, Board or orchestration runtime.
 
-**Architecture:** Single-package Node.js/TypeScript plugin. `.codex-plugin/plugin.json` exposes only Skills in PH-01. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; semantic agent roles are separated from configurable model/runtime mappings; state transitions/completion rules are pure deterministic functions.
+**Architecture:** Single-package Node.js/TypeScript plugin. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; semantic agent roles are separated from configurable model/runtime mappings; state transitions/completion rules are pure deterministic functions.
+
+**Packaging amendment 2026-09-08:** PH-01's legacy Skills-only package was a
+valid phase result, but PH-02 proved its MCP parser does not inject `PLUGIN_DATA`.
+The forward production baseline is therefore Agent Plugins v1 root
+`plugin.json` plus root `mcp.json`; no legacy compatibility overlay is retained.
 
 **Tech Stack:** Node.js 24 LTS, TypeScript strict ESM, npm lockfile, Zod, Vitest, Biome (formatter/linter), native Codex plugin/Skills.
 

@@ -10,6 +10,29 @@
 
 **Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.3, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.3 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.3.
 
+## Implementation Amendment 2026-09-08 — PLUGIN_DATA resolution
+
+The legacy `.codex-plugin/plugin.json` plus `.mcp.json` parser was exercised by
+two separate official Codex CLI 0.153.4 processes and both proved that it does
+not inject `PLUGIN_DATA`. This is retained as a negative compatibility result,
+not the production storage contract. Per `ADR-PH02-001` and the explicit owner
+decision to resolve the blocker, production uses the supported Agent Plugins v1
+format: root `plugin.json` plus root `mcp.json`. The host-managed Agent Plugin
+loader creates and injects `PLUGIN_ROOT` and `PLUGIN_DATA`; the server still
+fails closed when `PLUGIN_DATA` is absent and has no fallback.
+
+Within PH-02, all production references to `.codex-plugin/plugin.json` and
+`.mcp.json` are replaced by root Agent Plugins v1 `plugin.json` and `mcp.json`.
+TP-02A must be repeated on that format before GATE-02. Agent Plugin hooks are
+not loaded by the current loader, so hooks remain `DEGRADED`, Task 12 is skipped,
+and explicit MCP state remains the only correctness path. This amendment
+overrides conflicting legacy packaging text below without expanding PH-02.
+
+Execution status: Tasks 0-11 and 13 are complete; Task 12 is intentionally
+skipped under `BR-PH02-02`. The acceptance and security checklists are the
+authoritative completion record; unchecked task steps below remain the original
+execution recipe rather than current status.
+
 ## Global Constraints
 
 - PH-01 must already be `PASS`; otherwise stop before implementation.
@@ -1738,12 +1761,17 @@ Unit tests include a test-only incompatible migration to prove backup-before-app
 
 ## Task 0: Execute TP-02A and freeze storage branch
 
-**Rev 1.1 execution result (2026-09-08): `BLOCKED`.** Two separate official
+**Rev 1.1 legacy compatibility result (2026-09-08): `FAIL`.** Two separate official
 Codex CLI 0.153.4 processes loaded the same installed legacy plugin package.
-Both MCP calls returned `pluginDataPresent=false` and `PLUGIN_DATA is not set`;
+The legacy compatibility calls returned `pluginDataPresent=false` and
+`PLUGIN_DATA is not set`. The authoritative Agent Plugins v1 probe then ran
+through two separate official Codex CLI processes against the same installed
+package: process A passed create/append/rename/read/SQLite transaction/reopen;
+process B passed restart persistence; cleanup passed in a third process.
 the first attempted `write`, the second attempted restart `verify`. Per section
-2.6 and BR-PH02-01, no alternate storage root or packaging substitution is
-allowed and this revision cannot promote the existing experimental SQLite work.
+2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
+selects the supported Agent Plugins v1 production contract; its fresh TP-02A
+result controls GATE-02.
 
 **Files:**
 - Create: `tests/probes/tp02a-mcp-storage-probe.mjs`
@@ -2991,36 +3019,36 @@ Skip if there are no new changes.
 
 PH-02 is `PASS` only when all are true:
 
-- [ ] PH-01 is already PASS.
-- [ ] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
-- [ ] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
-- [ ] No arbitrary storage fallback exists.
-- [ ] Node floor is compatible with the chosen built-in SQLite API.
-- [ ] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
-- [ ] migrations are serialized and checksum-validated.
-- [ ] incompatible-migration backup behavior is tested.
-- [ ] every state mutation is idempotent by `commandId`.
-- [ ] same idempotency key with changed payload is rejected.
-- [ ] work-item optimistic version conflicts are detected.
-- [ ] entity mutation + event + command receipt are atomic.
-- [ ] PH-01 transition rules are enforced by persisted transitions.
-- [ ] `done` cannot bypass readiness/evidence/pending-decision checks.
-- [ ] native `idle`/stop is not treated as acceptance.
-- [ ] RunResourceJournal records intent/observed ownership truthfully.
-- [ ] observed resources cannot claim cleanup ownership.
-- [ ] artifact contents are outside SQLite and content-addressed.
-- [ ] state/artifacts are contained under plugin data.
-- [ ] secret-bearing text is redacted before persistence.
-- [ ] raw prompts/private source/chain-of-thought are not stored.
-- [ ] `workflow.summary` reports repo drift and liveness uncertainty honestly.
-- [ ] doctor detects integrity/schema/artifact/resource problems without mutating.
-- [ ] schema-first stdio MCP tools work in Desktop and CLI.
-- [ ] MCP annotations are truthful.
-- [ ] `workflow-status` and `recover-work` are active and read-only.
-- [ ] restart recovery does not depend on transcript replay.
-- [ ] hook failure does not break explicit state semantics.
-- [ ] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
-- [ ] no docs subsystem/agent_docs was introduced.
+- [x] PH-01 is already PASS.
+- [x] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
+- [x] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
+- [x] No arbitrary storage fallback exists.
+- [x] Node floor is compatible with the chosen built-in SQLite API.
+- [x] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
+- [x] migrations are serialized and checksum-validated.
+- [x] incompatible-migration backup behavior is tested.
+- [x] every state mutation is idempotent by `commandId`.
+- [x] same idempotency key with changed payload is rejected.
+- [x] work-item optimistic version conflicts are detected.
+- [x] entity mutation + event + command receipt are atomic.
+- [x] PH-01 transition rules are enforced by persisted transitions.
+- [x] `done` cannot bypass readiness/evidence/pending-decision checks.
+- [x] native `idle`/stop is not treated as acceptance.
+- [x] RunResourceJournal records intent/observed ownership truthfully.
+- [x] observed resources cannot claim cleanup ownership.
+- [x] artifact contents are outside SQLite and content-addressed.
+- [x] state/artifacts are contained under plugin data.
+- [x] secret-bearing text is redacted before persistence.
+- [x] raw prompts/private source/chain-of-thought are not stored.
+- [x] `workflow.summary` reports repo drift and liveness uncertainty honestly.
+- [x] doctor detects integrity/schema/artifact/resource problems without mutating.
+- [x] schema-first stdio MCP tools work in Desktop and CLI.
+- [x] MCP annotations are truthful.
+- [x] `workflow-status` and `recover-work` are active and read-only.
+- [x] restart recovery does not depend on transcript replay.
+- [x] hook failure does not break explicit state semantics.
+- [x] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
+- [x] no docs subsystem/agent_docs was introduced.
 
 If all pass, next allowed phase is **PH-03 Context Index + Conditional Companion**.
 
@@ -3111,25 +3139,25 @@ PH-06 may benchmark the substrate later if it becomes material to end-to-end cos
 
 Before GATE-02:
 
-- [ ] `PLUGIN_DATA` is host supplied and validated.
-- [ ] no path traversal from tool inputs reaches DB/artifact paths.
-- [ ] artifact paths are generated from hashes.
-- [ ] SQLite extensions are disabled.
-- [ ] defensive mode enabled.
-- [ ] trusted schema disabled.
-- [ ] SQL values are bound parameters.
-- [ ] no dynamic table/column names from model input.
-- [ ] repo inspection uses `execFile`, not shell interpolation.
-- [ ] Git remote credentials are stripped before storage.
-- [ ] secrets are redacted in evidence/error text.
-- [ ] no raw prompt storage.
-- [ ] no chain-of-thought storage.
-- [ ] no raw private session-file parser.
-- [ ] MCP errors omit stack traces.
-- [ ] destructive/idempotent/open-world/read-only annotations match actual tools.
-- [ ] hook input is treated as untrusted optional telemetry.
-- [ ] no hook can mark work done or resolve a decision.
-- [ ] no tool can delete history in PH-02.
+- [x] `PLUGIN_DATA` is host supplied and validated.
+- [x] no path traversal from tool inputs reaches DB/artifact paths.
+- [x] artifact paths are generated from hashes.
+- [x] SQLite extensions are disabled.
+- [x] defensive mode enabled.
+- [x] trusted schema disabled.
+- [x] SQL values are bound parameters.
+- [x] no dynamic table/column names from model input.
+- [x] repo inspection uses `execFile`, not shell interpolation.
+- [x] Git remote credentials are stripped before storage.
+- [x] secrets are redacted in evidence/error text.
+- [x] no raw prompt storage.
+- [x] no chain-of-thought storage.
+- [x] no raw private session-file parser.
+- [x] MCP errors omit stack traces.
+- [x] destructive/idempotent/open-world/read-only annotations match actual tools.
+- [x] hook input is treated as untrusted optional telemetry.
+- [x] no hook can mark work done or resolve a decision.
+- [x] no tool can delete history in PH-02.
 
 ---
 

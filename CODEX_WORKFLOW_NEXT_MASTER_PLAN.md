@@ -10,6 +10,12 @@
 **Executed platform baseline:** Windows 11 build 26200, Desktop `26.901.1978.0`, CLI `0.153.4`  
 **PH-00 outcome:** **PASS_WITH_AMENDMENTS**
 
+**Packaging decision 2026-09-08:** Workflow Next production uses Agent Plugins
+v1 root `plugin.json` + `mcp.json`. The legacy Codex plugin MCP parser was proven
+not to inject `PLUGIN_DATA`; it remains compatibility evidence only. Persistent
+state is allowed solely under the host-managed Agent Plugin `PLUGIN_DATA` root,
+with no fallback. Hooks remain optional/degraded.
+
 > This revision consolidates the original Desktop-first design, trace-based eval architecture, the `v1.1.13..v1.1.15` upstream review, the actual PH-00 capability evidence, configurable native-agent profiles, and the latest decision to adopt upstream context-routing/ownership ideas without inheriting its route/doc/runtime architecture. Earlier amendment files are historical only; this document is the new architectural source of truth.
 >
 > The product is **not another Codex runtime**. It is a minimal policy/context/evidence/attention layer that uses native Codex primitives and must prove its marginal value against modern native Codex before Board/Durable expansion.

@@ -3,8 +3,13 @@
 **Status:** normative post-H0 roadmap  
 **Revision:** **2.3**  
 **Date:** 2026-09-08  
+
+**Packaging gate amendment:** PH-02 production and later phases use Agent
+Plugins v1 root manifests. Legacy MCP packaging is a negative compatibility
+probe only because it does not receive `PLUGIN_DATA`; no storage fallback is
+permitted and hooks remain non-blocking telemetry.
 **Master:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md`  
-**Current executable plan:** `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`  
+**Current executable plan:** `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`
 **PH-00:** completed as **PASS_WITH_AMENDMENTS**
 
 > Roadmap controls sequencing and gates. Master defines architecture. Per-phase detailed plans define exact implementation work.
@@ -760,7 +765,7 @@ Each phase plan must contain:
 10. security/provenance;
 11. phase gate checklist.
 
-Current plan: `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`.
+Current plan: `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -769,9 +774,9 @@ Current plan: `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`.
 ```text
 PH-00  COMPLETE / PASS_WITH_AMENDMENTS
           ↓
-PH-01  FOUNDATION                         NOW
+PH-01  FOUNDATION                         COMPLETE
           ↓
-TP-02A  MCP STORAGE RE-PROBE
+TP-02A  MCP STORAGE RE-PROBE              PASS
           ↓
 PH-02  STATE + MCP
           ↓
