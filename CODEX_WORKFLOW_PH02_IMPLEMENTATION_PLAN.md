@@ -240,6 +240,8 @@ Commit only:
 evidence/ph02-storage-probe.json
 tests/probes/tp02a-mcp-storage-probe.mjs
 tests/probes/tp02a-hook-probe.mjs
+tests/probes/tp02a-agent-plugin/plugin.json
+tests/probes/tp02a-agent-plugin/mcp.json
 ```
 
 Evidence shape:

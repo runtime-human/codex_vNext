@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "workflow-next-tp02a-agent",
+  "version": "0.1.1-live",
+  "description": "Disposable final TP-02A Agent Plugins v1 storage probe."
+}
