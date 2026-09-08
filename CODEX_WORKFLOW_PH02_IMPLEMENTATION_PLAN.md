@@ -2689,7 +2689,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [ ] **Step 8: Test repo drift behavior**
+- [x] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2710,7 +2710,7 @@ Use a fresh CLI invocation and the same plugin.
 
 Verify read-only status and one idempotent mutation.
 
-- [ ] **Step 10: Run doctor**
+- [x] **Step 10: Run doctor**
 
 ```powershell
 npm run doctor -- --json
@@ -2718,7 +2718,7 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
@@ -2750,7 +2750,7 @@ Shape:
 
 Do not store absolute paths or raw transcripts.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```powershell
 git add evidence/ph02-state-mcp-smoke.json
