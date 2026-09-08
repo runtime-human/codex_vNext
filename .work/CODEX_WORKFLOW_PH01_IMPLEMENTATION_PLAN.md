@@ -1,4 +1,4 @@
-# PH-01 Plugin Foundation + Domain Contracts Implementation Plan — Rev 1.3
+# PH-01 Plugin Foundation + Domain Contracts Implementation Plan — Rev 1.2
 
 > **For agentic workers:** implement this plan task-by-task. Use fresh review boundaries between tasks. Do not enter PH-02. If using isolated execution, use native Codex worktree mechanisms rather than inventing a worktree manager.
 
@@ -8,7 +8,13 @@
 
 **Tech Stack:** Node.js 24 LTS, TypeScript strict ESM, npm lockfile, Zod, Vitest, Biome (formatter/linter), native Codex plugin/Skills.
 
-**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` (`MILE-01`, `DOM-*`, `SKL-01..03`, `POL-09`, `POL-14..15`, `ARC-19`, `ADR-04..08`, `ADR-22`, `ADR-25..30`) and `CODEX_WORKFLOW_NEXT_ROADMAP.md` (`PH-01`, `GATE-01`).
+**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` (`MILE-01`, `DOM-*`, `SKL-01..03`, `POL-09`, `POL-14..15`, `ARC-19`, `ADR-04..08`, `ADR-22`, `ADR-25..27`) and `CODEX_WORKFLOW_NEXT_ROADMAP.md` (`PH-01`, `GATE-01`).
+
+## Execution Status
+
+**PASS — 2026-09-07.** Rev 1.2 was reconciled against the existing PH-01 implementation. The role/runtime contract, Skills, canonical artifact map and provenance were updated; fresh Desktop/CLI smoke is recorded in `evidence/ph01-skill-smoke.json`. `npm ci`, `npm run check` and a clean `npm run build` pass. The contradictory sample assertions that rejected valid `executor` and `senior_executor` roles were corrected to reject only `docs_steward`.
+
+Next action is **TP-02A**. No PH-02 runtime was implemented.
 
 ## Global Constraints
 
@@ -21,11 +27,9 @@
 - Durable project-control artifacts are limited to the canonical Master/Roadmap/current plan, `PROVENANCE.md`, and explicit gate evidence with a real consumer.
 - CapabilityPreflight and RunResourceJournal are architectural invariants only in PH-01; their runtime/state implementations belong PH-04 and PH-02 respectively.
 - Permanent `AGENTS.md` stays small; procedures live in Skills.
-- Do not fork or copy upstream `codex_workflow` prompts/code as the foundation; preserve clean-room provenance. v1.1.15 is a policy/reference/eval input only.
+- Do not copy upstream `codex_workflow` prompts/code; preserve clean-room provenance.
 - Task-transfer domain is `TaskEnvelope + RolePayload + TaskDelta + TaskId`, not monolithic TaskCapsule.
 - No implicit/default fork mode is encoded into domain contracts; runtime explicit `fork_turns=none` integration belongs PH-04. PH-01 freezes safe agent-profile defaults but does not expose a user config loader yet.
-- `Direct / Companion / Investigator` is a later working-context routing policy, not a persisted PH-01 domain entity. PH-01 only updates role semantics: Investigator may cover a bounded local-project or external evidence gap; PH-04 owns runtime routing.
-- Delegated-package non-duplication is a policy invariant for PH-04 runtime; PH-01 must not add worker lifecycle state to enforce it.
 - All deterministic code follows test-first implementation.
 - `workflow-herdr` safety patterns are used only as phase-placement guidance in PH-01: no Herdr dependency, no small/medium/large routing, no Dispatcher hierarchy, no YAML runtime/state files.
 - `package.json` remains `private: true` and `license: UNLICENSED` until public licensing is explicitly decided.
@@ -504,7 +508,7 @@ For any delegated role:
 
 Batch independent work only when all items inform the same Main-owned decision and there is no dependency, write overlap, or known runtime collision.
 
-Do not select a provider model directly. PH-04 resolves the selected role through typed configuration. Treat `Direct / Companion / Investigator` as context-routing semantics: keep decision-critical material direct, use Companion for bulky/reusable local context, and use Investigator for one bounded unfamiliar evidence gap over project evidence, Internet sources, or both. No worker may silently upgrade itself to a more expensive provider family; it returns an escalation to Main.
+Do not select a provider model directly. PH-04 resolves the selected role through typed configuration. No worker may silently upgrade itself to a more expensive provider family; it returns an escalation to Main.
 
 Do not claim token/cost savings from delegation without eval evidence.
 ```
@@ -828,7 +832,7 @@ Workflow Next may independently implement architectural ideas observed in extern
 
 | Source | Use | Code reuse |
 |---|---|---|
-| viettran-edgeAI/codex_workflow main experimental v1.1.15 / a596daaee01bffaff9c04c31e85d378b139cd6c7 | policy/context-routing/ownership/eval hypotheses | prohibited unless license permits; do not fork as PH-01 foundation |
+| viettran-edgeAI/codex_workflow experiment v1.1.14 / a224f32c423ef56be322de160d5440bba0a786b2 | architecture/eval hypotheses | prohibited unless license changes |
 | letya999/workflow-herdr dev / b1eab041cf2f97da4605c036900d07ff5426cc40 | operational-safety ideas: preflight, resource journaling, acceptance separation | MIT permits reuse; PH-01 copies no code |
 | openai/codex | public implementation/tests used to understand Codex behavior | follow repository license for any actual code reuse; PH-01 copies no code |
 | OpenAI Codex documentation | host/plugin contracts | documentation reference |
@@ -920,8 +924,6 @@ describe('core domain contracts', () => {
 
   it('does not expose a documentation worker role', () => {
     expect(() => AgentRoleSchema.parse('docs_steward')).toThrow();
-    expect(() => AgentRoleSchema.parse('senior_executor')).toThrow();
-    expect(() => AgentRoleSchema.parse('executor')).toThrow();
   });
 
   it('rejects excessive retry budgets', () => {
@@ -1330,8 +1332,6 @@ Confirm tests explicitly prove:
 
 - TaskId is logical, not native thread ID;
 - roles are exactly Companion/Investigator/Executor/Senior Executor/Verifier;
-- Investigator semantics allow bounded project-local and/or external evidence, while Main keeps causal/architecture/acceptance decisions;
-- no Light/Medium/Heavy route enum, `agent_docs`, Archivist or mandatory Companion contract is introduced;
 - Main model is outside the subagent profile contract;
 - default child profile set is Luna-only with `xhigh` fallback and `max` for Executor/Senior;
 - Senior exists as a separate behavioral role even when it shares Luna `max` with Executor;
@@ -1432,24 +1432,24 @@ Skip the commit if there are no new changes after the prior task commits.
 
 PH-01 is `PASS` only when all are true:
 
-- [ ] `.codex-plugin/plugin.json` installs as a Skills-only plugin on the proven local marketplace path.
-- [ ] `npm ci`/equivalent clean install succeeds.
-- [ ] `npm run check` succeeds.
-- [ ] `npm run build` succeeds.
-- [ ] all domain schemas are strict and exported.
-- [ ] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
-- [ ] bounded write envelope cannot have empty writable scope.
-- [ ] role/payload mismatch is rejected.
-- [ ] empty TaskDelta is rejected.
-- [ ] WorkItem transitions are pure and tested.
-- [ ] completion cannot bypass readiness/evidence/decision requirements.
-- [ ] three foundational Skills exist and have distinct descriptions.
-- [ ] fresh Desktop/CLI Skill smoke is recorded.
-- [ ] root AGENTS contains only durable invariants/map.
-- [ ] no documentation role/subsystem or duplicate docs tree exists.
-- [ ] PH-01 did not implement CapabilityPreflight or RunResourceJournal runtime early.
-- [ ] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
-- [ ] provenance review finds no copied unlicensed upstream content.
+- [x] `.codex-plugin/plugin.json` installs as a Skills-only plugin on the proven local marketplace path.
+- [x] `npm ci`/equivalent clean install succeeds.
+- [x] `npm run check` succeeds.
+- [x] `npm run build` succeeds.
+- [x] all domain schemas are strict and exported.
+- [x] TaskEnvelope + RolePayload + TaskDelta + TaskId contract is tested.
+- [x] bounded write envelope cannot have empty writable scope.
+- [x] role/payload mismatch is rejected.
+- [x] empty TaskDelta is rejected.
+- [x] WorkItem transitions are pure and tested.
+- [x] completion cannot bypass readiness/evidence/decision requirements.
+- [x] three foundational Skills exist and have distinct descriptions.
+- [x] fresh Desktop/CLI Skill smoke is recorded.
+- [x] root AGENTS contains only durable invariants/map.
+- [x] no documentation role/subsystem or duplicate docs tree exists.
+- [x] PH-01 did not implement CapabilityPreflight or RunResourceJournal runtime early.
+- [x] no persistence/hooks/MCP production state/Board/runtime orchestration entered scope.
+- [x] provenance review finds no copied unlicensed upstream content.
 
 If these pass, next action is **TP-02A**, not immediate blind PH-02 implementation.
 

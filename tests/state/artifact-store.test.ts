@@ -91,7 +91,11 @@ describe('ArtifactStore', () => {
 
     expect(
       artifactFileMatches(
-        { sha256: 'a'.repeat(64), byteSize: 10 * 1024 * 1024 + 1 },
+        {
+          sha256:
+            '0c2725e0d4ae4ae669bdd6c88b253997198efb67d962d217c52e6cbfd318fe0c',
+          byteSize: 10 * 1024 * 1024 + 1,
+        },
         target,
       ),
     ).toBe(false);

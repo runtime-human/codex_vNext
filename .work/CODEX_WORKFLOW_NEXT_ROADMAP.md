@@ -1,8 +1,8 @@
 # Codex Workflow Next — Product & Engineering Roadmap
 
 **Status:** normative post-H0 roadmap  
-**Revision:** **2.3**  
-**Date:** 2026-09-08  
+**Revision:** **2.2**  
+**Date:** 2026-09-07  
 **Master:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md`  
 **Current executable plan:** `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md`  
 **PH-00:** completed as **PASS_WITH_AMENDMENTS**
@@ -87,8 +87,6 @@ Durable project-control artifacts remain, but no phase may introduce a permanent
 ## [RM-10] Safety patterns enter at the phase that owns the mutation
 
 Preflight-before-mutation and resource journaling are cross-cutting invariants, not reasons to pull runtime/state into PH-01. PH-02 owns the transactional resource journal; PH-04 owns orchestration-time capability preflight; PH-08 extends preflight for runtime isolation.
-
-`codex_workflow` v1.1.15 remains a policy/reference baseline, not the implementation base. We adopt its tri-lane context-routing and delegated-ownership hypotheses selectively, while rejecting mandatory Companion, fixed Light/Medium/Heavy ownership, `agent_docs`/Archivist and Python lifecycle as defaults. Fork/adopt is reconsidered only if upstream later converges on the plugin/MCP/SQLite/evidence/recovery/Board product layer and wins a measured comparison.
 
 ---
 
@@ -355,9 +353,9 @@ Restart/retry/duplicate command/degraded hook behavior must preserve correct sta
 ---
 
 <a id="ph-03"></a>
-# [PH-03] Context Index + Conditional Companion
+# [PH-03] Conditional Context Companion
 
-**Goal:** provenance-aware hot context isolation and the substrate for later tri-lane context routing.
+**Goal:** provenance-aware hot context isolation.
 
 ## Production subset
 
@@ -366,9 +364,7 @@ Restart/retry/duplicate command/degraded hook behavior must preserve correct sta
 - one fresh Companion per substantive run;
 - lazy hydration;
 - Context Delta;
-- Context Index with source hash/staleness;
-- no `agent_docs`/mandatory read-all bootstrap;
-- Companion activation remains `adaptive` by default (`off|adaptive|always` is the future config/eval surface).
+- Context Index with source hash/staleness.
 
 No economic claim yet.
 
@@ -400,10 +396,6 @@ Failure narrows PH-04 to sequential writes.
 ## Deliverables
 
 - explicit direct/delegate + role-selection decision table;
-- explicit working-context route: `Direct / Companion / Investigator`;
-- `Direct` keeps decision-critical material with Main;
-- Companion handles bulky/repeated supporting local context;
-- Investigator handles one bounded unfamiliar/ambiguous evidence gap using project inspection, Internet sources, or both;
 - roles: Companion, Investigator, Executor, Senior Executor, Verifier;
 - versioned TOML configuration loader/resolver with built-in < user < project < session precedence;
 - default Luna-only child policy: Companion/Investigator/Verifier `xhigh`, Executor/Senior `max`;
@@ -413,10 +405,10 @@ Failure narrows PH-04 to sequential writes.
 - runtime TaskEnvelope + RolePayload + TaskDelta;
 - named custom-agent profiles and explicit `fork_turns=none`;
 - evidence-guided retry/escalation back to Main;
-- delegated-package non-duplication policy + instrumentation;
+- no duplicate-work instrumentation;
 - **DecisionBatch candidate** for independent work.
 
-Senior is selected for difficult **bounded implementation reasoning**, not merely task size. Architecture/public-contract/scope-expansion decisions remain Main-owned. Once a bounded package is delegated, Main evaluates decision-critical evidence but does not duplicate the worker's routine implementation/test/diagnostic loop unless takeover/reassignment is evidence-based.
+Senior is selected for difficult **bounded implementation reasoning**, not merely task size. Architecture/public-contract/scope-expansion decisions remain Main-owned.
 
 Batch is disabled where dependency, write overlap or runtime collision exists.
 
@@ -469,7 +461,7 @@ Native Codex Multi-Agent best-practice without Workflow Next semantics.
 Workflow Next Core.
 
 ### D optional
-Latest upstream `codex_workflow` **main/release resolved and SHA-pinned at campaign freeze**. Current reference is experimental v1.1.15 / `a596daa...`.
+Latest `codex_workflow experiment` **resolved and pinned at campaign freeze**. Current reference is v1.1.14 / `a224f32c...`.
 
 D preflight must run package/test/runtime checks; upstream report does not define neutral measurement window.
 
@@ -495,8 +487,7 @@ selective replication
 
 ## Targeted ablations
 
-- Companion `off` vs `adaptive` vs `always`;
-- tri-lane `Direct/Companion/Investigator` routing vs simpler routing;
+- Companion on/off;
 - Verifier on/off;
 - Executor Luna `xhigh` vs Luna `max`;
 - hard bounded tasks: Executor profile vs Senior Executor profile while holding model constant at Luna `max`;
@@ -625,7 +616,7 @@ Disable affected delegation path and re-probe explicit `fork_turns=none`.
 
 <a id="br-05"></a>
 ## [BR-05] Companion negative ROI
-Keep/raise adaptive threshold, prefer `off` for losing task classes, and do not adopt upstream mandatory-Companion behavior.
+Raise activation threshold or remove default Companion.
 
 <a id="br-06"></a>
 ## [BR-06] Batching negative ROI
@@ -654,11 +645,6 @@ Benchmark then migrate/delete redundant custom layer.
 ## [BR-11] Herdr/native runtime adapter remains deferred
 
 Do not introduce a RuntimeAdapter just because workflow-herdr exists. Only after PH-06/PH-08 evidence shows a concrete native Codex limitation may a pinned Herdr experiment be compared on quality, total tokens, latency, recovery/conflicts and observability. No measured win → no adapter.
-
-<a id="br-12"></a>
-## [BR-12] Upstream `codex_workflow` converges on our goals
-
-Track upstream as a pinned reference. If it later gains native plugin state/evidence/recovery/config/Board capabilities equivalent to ours, benchmark `fork/adopt` versus continued independent development. Do not fork merely because prompt-level policies converge.
 
 # 7. Roadmap Risks
 

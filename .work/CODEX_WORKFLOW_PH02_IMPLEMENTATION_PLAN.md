@@ -1,4 +1,4 @@
-# PH-02 Deterministic State + MCP Substrate Implementation Plan — Rev 1.1
+# PH-02 Deterministic State + MCP Substrate Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,33 @@
 
 **Tech Stack:** Node.js 24 LTS with a PH-02 minimum of `>=24.12 <25`, TypeScript strict ESM, Zod v4, Vitest, Biome, built-in `node:sqlite`, MCP TypeScript SDK v2 (`@modelcontextprotocol/server`; test client via `@modelcontextprotocol/client`), native Codex local plugin + stdio MCP.
 
-**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.3, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.3 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.3.
+**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.2, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.2 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.2.
+
+## Implementation Amendment 2026-09-08
+
+The initial TP-02A run proved that the legacy `.codex-plugin/plugin.json` plus
+`.mcp.json` path loads MCP but does not inject `PLUGIN_DATA`. The required
+storage review selected the current supported Agent Plugins v1 package format:
+root `plugin.json` plus root `mcp.json`. Two independent Codex CLI 0.153.4 MCP
+processes then passed write, SQLite reopen, and restart persistence under the
+host-provided `PLUGIN_DATA` root. `ADR-PH02-001` records the decision.
+
+For PH-02, references to the production `.codex-plugin/plugin.json` and
+`.mcp.json` are replaced by root Agent Plugins v1 `plugin.json` and `mcp.json`.
+Hooks remain `DEGRADED` and Task 12 is skipped because the current Codex loader
+does not load hooks for Agent Plugin packages. All other scope and correctness
+constraints remain unchanged.
+
+Independent implementation and specification review on 2026-09-08 found and
+accepted six release-blocking gaps: legacy/root manifest coexistence, generic
+MCP success payload schemas, fail-open URI/remote secret persistence,
+nondeterministic equal-timestamp run selection, unchecked CAS reuse, and a
+doctor check that verified CAS presence without content integrity. The fixes
+remove the legacy manifest, validate that it cannot coexist, define strict
+per-tool outputs, sanitize URI-bearing state before idempotency persistence,
+use SQLite insertion order as the stable run tie-breaker, and verify CAS size
+and SHA-256 on write and in doctor. Focused regression tests and the complete
+project check pass; independent re-review remains the final merge gate.
 
 ## Global Constraints
 
@@ -31,9 +57,6 @@
 - Do not use private `~/.codex/sessions` state as product input.
 - Public MCP tool annotations must truthfully match behavior.
 - Existing PH-01 role/model policy remains unchanged; PH-02 does not resolve or spawn roles.
-- Upstream `codex_workflow` v1.1.15 context-routing changes do not change PH-02 storage scope. Do not persist `Direct/Companion/Investigator` as a new table or workflow state; later policy may emit compact PolicyTrace/evidence using existing generic mechanisms.
-- Do not add mandatory Companion, `agent_docs`, Archivist, Light/Medium/Heavy route state, deployment markers or upstream Python lifecycle concepts.
-- Delegated-package non-duplication belongs PH-04 orchestration; PH-02 may provide generic audit/resource primitives but must not infer worker ownership from transcripts or native idle state.
 - No deletion/retention policy for historical runs in PH-02; state cleanup policy belongs a later phase.
 - The Main thread owns semantic intent and acceptance. SQLite/MCP owns deterministic state mutation. Workers never rewrite a shared run document.
 
@@ -1738,13 +1761,6 @@ Unit tests include a test-only incompatible migration to prove backup-before-app
 
 ## Task 0: Execute TP-02A and freeze storage branch
 
-**Rev 1.1 execution result (2026-09-08): `BLOCKED`.** Two separate official
-Codex CLI 0.153.4 processes loaded the same installed legacy plugin package.
-Both MCP calls returned `pluginDataPresent=false` and `PLUGIN_DATA is not set`;
-the first attempted `write`, the second attempted restart `verify`. Per section
-2.6 and BR-PH02-01, no alternate storage root or packaging substitution is
-allowed and this revision cannot promote the existing experimental SQLite work.
-
 **Files:**
 - Create: `tests/probes/tp02a-mcp-storage-probe.mjs`
 - Create: `tests/probes/tp02a-hook-probe.mjs`
@@ -1800,11 +1816,11 @@ Expected:
 restartPersistence = PASS
 ```
 
-- [ ] **Step 5: Invoke cleanup**
+- [x] **Step 5: Invoke cleanup**
 
 Expected: only the probe-owned `${PLUGIN_DATA}/tp02a` content is removed.
 
-- [ ] **Step 6: Re-probe one minimal trusted plugin hook**
+- [x] **Step 6: Re-probe one minimal trusted plugin hook**
 
 Attempt the same `PLUGIN_DATA` marker write.
 
@@ -1836,7 +1852,7 @@ If passed, continue.
 
 The production `.mcp.json` comes later.
 
-- [ ] **Step 10: Commit probe evidence**
+- [x] **Step 10: Commit probe evidence**
 
 ```powershell
 git add tests/probes evidence/ph02-storage-probe.json
@@ -1856,7 +1872,7 @@ git commit -m "test: prove PH-02 plugin storage capability"
 **Interfaces:**
 - Produces the runtime dependency floor used by all later PH-02 tasks.
 
-- [ ] **Step 1: Write a failing environment contract test**
+- [x] **Step 1: Write a failing environment contract test**
 
 Test:
 
@@ -1870,17 +1886,17 @@ and:
 await import('node:sqlite')
 ```
 
-- [ ] **Step 2: Run RED on an intentionally unsupported version fixture**
+- [x] **Step 2: Run RED on an intentionally unsupported version fixture**
 
 The test helper must be pure and test the version parser without requiring the real process to be unsupported.
 
-- [ ] **Step 3: Raise Node engine floor**
+- [x] **Step 3: Raise Node engine floor**
 
 ```powershell
 npm pkg set engines.node=">=24.12 <25"
 ```
 
-- [ ] **Step 4: Add MCP v2 dependencies**
+- [x] **Step 4: Add MCP v2 dependencies**
 
 ```powershell
 npm install --save-exact @modelcontextprotocol/server
@@ -1889,14 +1905,14 @@ npm install --save-dev --save-exact @modelcontextprotocol/client
 
 Do not install v1 `@modelcontextprotocol/sdk`.
 
-- [ ] **Step 5: Run dependency/type checks**
+- [x] **Step 5: Run dependency/type checks**
 
 ```powershell
 npm run typecheck
 npm test -- ph02-state-contracts
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add package.json package-lock.json tsconfig.json tests/contract/ph02-state-contracts.test.ts
@@ -1921,7 +1937,7 @@ git commit -m "build: add PH-02 state and MCP runtime dependencies"
 - Produces `resolveStorageRoot`, `openWorkflowDatabase`, `withImmediateTransaction`, ID generators and clock injection.
 - Later repository/service code must not open SQLite directly.
 
-- [ ] **Step 1: Write failing storage-root tests**
+- [x] **Step 1: Write failing storage-root tests**
 
 Required cases:
 
@@ -1932,7 +1948,7 @@ valid temp directory → resolves
 state/artifacts/backups/tmp directories stay inside root
 ```
 
-- [ ] **Step 2: Write failing SQLite pragma tests**
+- [x] **Step 2: Write failing SQLite pragma tests**
 
 Against a temp directory, assert:
 
@@ -1944,7 +1960,7 @@ quick_check = ok
 extensions cannot be enabled
 ```
 
-- [ ] **Step 3: Write a transaction rollback test**
+- [x] **Step 3: Write a transaction rollback test**
 
 Inside `withImmediateTransaction`:
 
@@ -1955,7 +1971,7 @@ throw sentinel
 
 Expected: row does not exist.
 
-- [ ] **Step 4: Write an async-callback rejection test**
+- [x] **Step 4: Write an async-callback rejection test**
 
 Pass a callback returning a Promise.
 
@@ -1966,7 +1982,7 @@ transaction rolls back
 error = write transaction callback must be synchronous
 ```
 
-- [ ] **Step 5: Implement minimal code**
+- [x] **Step 5: Implement minimal code**
 
 Use:
 
@@ -1980,14 +1996,14 @@ new DatabaseSync(path, {
 
 Then apply the required pragmas.
 
-- [ ] **Step 6: Verify GREEN**
+- [x] **Step 6: Verify GREEN**
 
 ```powershell
 npm test -- sqlite
 npm run typecheck
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/state tests/state/sqlite.test.ts
@@ -2006,7 +2022,7 @@ git commit -m "feat: add deterministic SQLite state foundation"
 **Interfaces:**
 - Produces `Migration`, `migrateDatabase`, `currentSchemaVersion`, migration checksum validation and backup-before-incompatible behavior.
 
-- [ ] **Step 1: Write RED tests**
+- [x] **Step 1: Write RED tests**
 
 Required:
 
@@ -2022,34 +2038,34 @@ quick_check failure → INTEGRITY_FAILED
 
 For concurrency, spawn two Node child processes against the same temp DB and ensure both exit successfully with exactly one row for migration 001.
 
-- [ ] **Step 2: Define migration 001 SQL exactly as section 5**
+- [x] **Step 2: Define migration 001 SQL exactly as section 5**
 
 No extra PH-03/04/06 tables.
 
-- [ ] **Step 3: Implement checksum**
+- [x] **Step 3: Implement checksum**
 
 ```text
 sha256(migration.sql)
 ```
 
-- [ ] **Step 4: Implement serialized migration apply**
+- [x] **Step 4: Implement serialized migration apply**
 
 Use `BEGIN IMMEDIATE`, re-read migration table inside the lock, and keep schema mutation + migration row atomic.
 
-- [ ] **Step 5: Implement incompatible-backup fixture path**
+- [x] **Step 5: Implement incompatible-backup fixture path**
 
 Use Node `sqlite.backup()` into `${PLUGIN_DATA}/backups`.
 
 Do not create a production incompatible migration.
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```powershell
 npm test -- migrations
 npm run typecheck
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/state/migration.ts src/state/migrations tests/state/migrations.test.ts
@@ -2069,13 +2085,13 @@ git commit -m "feat: add serialized SQLite migrations"
 **Interfaces:**
 - Produces `canonicalJson`, `hashMutationRequest`, `redactSensitiveText`, `executeIdempotent`.
 
-- [ ] **Step 1: Write canonicalization tests**
+- [x] **Step 1: Write canonicalization tests**
 
 Equivalent objects with different key insertion order must hash identically.
 
 Array order must remain significant.
 
-- [ ] **Step 2: Write redaction tests**
+- [x] **Step 2: Write redaction tests**
 
 Cover:
 
@@ -2092,7 +2108,7 @@ sk-secret
 
 Expected secret material never appears in output.
 
-- [ ] **Step 3: Write idempotency RED tests**
+- [x] **Step 3: Write idempotency RED tests**
 
 Required:
 
@@ -2105,18 +2121,18 @@ same command + different tool → IDEMPOTENCY_CONFLICT
 mutation + event + receipt rollback together on fault
 ```
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 Do not store raw request JSON in `command_receipts`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- idempotency
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/canonical-json.ts src/state/redaction.ts src/state/idempotency.ts tests/state/idempotency.test.ts
@@ -2137,7 +2153,7 @@ git commit -m "feat: add idempotent mutation receipts"
 - Produces typed repositories for projects/runs/work/decisions/evidence/resources/events/artifacts.
 - Repositories are persistence adapters only; legal state transitions remain in `StateService`.
 
-- [ ] **Step 1: Write project-inspector tests**
+- [x] **Step 1: Write project-inspector tests**
 
 Use temporary Git repositories.
 
@@ -2152,31 +2168,31 @@ Git timeout/failure degrades without persisting stderr
 fingerprint excludes HEAD
 ```
 
-- [ ] **Step 2: Write repository round-trip tests**
+- [x] **Step 2: Write repository round-trip tests**
 
 Insert/read each PH-02 entity.
 
 Reject invalid enum/check-constraint values.
 
-- [ ] **Step 3: Verify optimistic work-item update**
+- [x] **Step 3: Verify optimistic work-item update**
 
 ```text
 version=1 + expectedVersion=1 → update version=2
 version=2 + expectedVersion=1 → VERSION_CONFLICT
 ```
 
-- [ ] **Step 4: Implement repository functions with prepared statements**
+- [x] **Step 4: Implement repository functions with prepared statements**
 
 No SQL string interpolation for values.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- state-service
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/project-inspector.ts src/state/repositories.ts src/state/index.ts tests/state/state-service.test.ts
@@ -2204,25 +2220,25 @@ git commit -m "feat: add PH-02 state repositories"
   - `recordEvidence`
 - Uses PH-01 `canTransition` and `validateCompletion`.
 
-- [ ] **Step 1: Write failing begin/idempotency tests**
+- [x] **Step 1: Write failing begin/idempotency tests**
 
 Duplicate `workflow.begin` command returns exactly the same run ID.
 
 `durable=true` is rejected in PH-02.
 
-- [ ] **Step 2: Write work create/patch tests**
+- [x] **Step 2: Write work create/patch tests**
 
 State cannot be patched through `work.update`.
 
 Version conflict is deterministic.
 
-- [ ] **Step 3: Write every legal/illegal transition integration test**
+- [x] **Step 3: Write every legal/illegal transition integration test**
 
 Reuse the PH-01 transition matrix as the authority.
 
 Persistence must reject an edge that PH-01 rejects.
 
-- [ ] **Step 4: Write completion gate tests**
+- [x] **Step 4: Write completion gate tests**
 
 A `done` transition fails when:
 
@@ -2237,11 +2253,11 @@ pending run-level decision exists
 
 It passes only when all PH-01 completion requirements are met.
 
-- [ ] **Step 5: Inject a failure between entity update and event append**
+- [x] **Step 5: Inject a failure between entity update and event append**
 
 Expected: neither entity mutation nor event nor receipt commits.
 
-- [ ] **Step 6: Implement semantic service**
+- [x] **Step 6: Implement semantic service**
 
 Each mutation must run:
 
@@ -2257,14 +2273,14 @@ validate input/domain
 → COMMIT
 ```
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```powershell
 npm test -- state-service
 npm run typecheck
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add src/state/state-service.ts src/state/index.ts tests/state/state-service.test.ts
@@ -2285,7 +2301,7 @@ git commit -m "feat: add semantic workflow state service"
 **Interfaces:**
 - Produces resource lifecycle methods and content-addressed artifact storage.
 
-- [ ] **Step 1: Write resource lifecycle RED tests**
+- [x] **Step 1: Write resource lifecycle RED tests**
 
 Required:
 
@@ -2301,7 +2317,7 @@ event emitted per mutation
 duplicate command does not duplicate resource/event
 ```
 
-- [ ] **Step 2: Write artifact RED tests**
+- [x] **Step 2: Write artifact RED tests**
 
 Required:
 
@@ -2314,22 +2330,22 @@ metadata row round-trips
 orphan file can be detected
 ```
 
-- [ ] **Step 3: Implement resource service**
+- [x] **Step 3: Implement resource service**
 
 Workers do not call SQLite directly.
 
-- [ ] **Step 4: Implement CAS atomic write**
+- [x] **Step 4: Implement CAS atomic write**
 
 Use same-filesystem temp + rename.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- resource-journal artifact-store
 npm run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/resource-journal.ts src/state/artifact-store.ts src/state/index.ts tests/state
@@ -2352,7 +2368,7 @@ git commit -m "feat: add resource journal and artifact store"
 **Interfaces:**
 - Produces deterministic `workflow.summary` recovery projection and read-only doctor.
 
-- [ ] **Step 1: Write reconciliation RED tests**
+- [x] **Step 1: Write reconciliation RED tests**
 
 Cases:
 
@@ -2384,7 +2400,7 @@ If no persisted run exists:
 nextSafeAction = start_run
 ```
 
-- [ ] **Step 2: Write doctor RED tests**
+- [x] **Step 2: Write doctor RED tests**
 
 Inject:
 
@@ -2405,11 +2421,11 @@ orphan CAS → warn
 cleanup-required resource → warn
 ```
 
-- [ ] **Step 3: Implement doctor**
+- [x] **Step 3: Implement doctor**
 
 No repair/delete path.
 
-- [ ] **Step 4: Add npm script**
+- [x] **Step 4: Add npm script**
 
 ```json
 {
@@ -2417,14 +2433,14 @@ No repair/delete path.
 }
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```powershell
 npm test -- reconciliation doctor
 npm run doctor -- --json
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/state/reconciliation.ts src/doctor scripts/doctor.mjs package.json tests/state
@@ -2450,7 +2466,7 @@ git commit -m "feat: add recovery reconciliation and doctor"
 - Exposes the exact nine-tool PH-02 surface from section 12.
 - Uses only `StateService`, `ResourceJournal`, `ProjectInspector` and read-only projections.
 
-- [ ] **Step 1: Write schema RED tests**
+- [x] **Step 1: Write schema RED tests**
 
 For every tool:
 
@@ -2463,11 +2479,11 @@ non-done transition rejects completion payload
 resource union operation validated
 ```
 
-- [ ] **Step 2: Write annotation tests**
+- [x] **Step 2: Write annotation tests**
 
 Assert exact table from section 13.
 
-- [ ] **Step 3: Write in-memory MCP tests**
+- [x] **Step 3: Write in-memory MCP tests**
 
 Use the MCP SDK's linked in-memory transport/client where possible.
 
@@ -2482,17 +2498,17 @@ work.transition(done)
 workflow.summary
 ```
 
-- [ ] **Step 4: Write idempotency through MCP**
+- [x] **Step 4: Write idempotency through MCP**
 
 Call the same mutating MCP request twice.
 
 Expected one event/mutation and identical structured result.
 
-- [ ] **Step 5: Write error-envelope tests**
+- [x] **Step 5: Write error-envelope tests**
 
 `VERSION_CONFLICT`, `COMPLETION_BLOCKED`, `IDEMPOTENCY_CONFLICT` return bounded structured error objects and no stack trace.
 
-- [ ] **Step 6: Implement tool-result helper**
+- [x] **Step 6: Implement tool-result helper**
 
 Success:
 
@@ -2516,15 +2532,15 @@ Error:
 }
 ```
 
-- [ ] **Step 7: Implement stdio server with `serveStdio`**
+- [x] **Step 7: Implement stdio server with `serveStdio`**
 
 No HTTP listener.
 
-- [ ] **Step 8: Create production `.mcp.json`**
+- [x] **Step 8: Create production `mcp.json`**
 
 Use the exact configuration from section 14.
 
-- [ ] **Step 9: Run focused tests**
+- [x] **Step 9: Run focused tests**
 
 ```powershell
 npm test -- ph02-mcp-schemas tools stdio-smoke
@@ -2532,7 +2548,7 @@ npm run typecheck
 npm run build
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```powershell
 git add src/mcp .mcp.json tests/contract/ph02-mcp-schemas.test.ts tests/mcp
@@ -2554,7 +2570,7 @@ git commit -m "feat: expose deterministic workflow state over MCP"
 - `recover-work` consumes `workflow.summary` and optionally `work.get`.
 - Neither Skill mutates state.
 
-- [ ] **Step 1: Add trigger fixtures**
+- [x] **Step 1: Add trigger fixtures**
 
 Positive examples:
 
@@ -2571,22 +2587,22 @@ Negative examples:
 "Search the web for the latest MCP spec."
 ```
 
-- [ ] **Step 2: Create `workflow-status` with section 15 behavior**
+- [x] **Step 2: Create `workflow-status` with section 15 behavior**
 
 No native-agent liveness inference.
 
-- [ ] **Step 3: Create `recover-work` with section 16 behavior**
+- [x] **Step 3: Create `recover-work` with section 16 behavior**
 
 No transcript replay.
 
-- [ ] **Step 4: Run Skill validation**
+- [x] **Step 4: Run Skill validation**
 
 ```powershell
 npm run validate:plugin
 npm test -- skill-trigger-fixtures
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add skills tests
@@ -2604,7 +2620,7 @@ git commit -m "feat: add workflow status and recovery skills"
 - Produces GATE-02 live evidence.
 - Does not use private session files.
 
-- [ ] **Step 1: Build and reload the plugin**
+- [x] **Step 1: Build and reload the plugin**
 
 ```powershell
 npm run build
@@ -2613,7 +2629,7 @@ npm run validate:plugin
 
 Reload through the same supported local marketplace flow proven by PH-00/PH-01.
 
-- [ ] **Step 2: Start a controlled workflow via MCP**
+- [x] **Step 2: Start a controlled workflow via MCP**
 
 In a fresh Desktop chat, explicitly request use of Workflow Next MCP to:
 
@@ -2626,7 +2642,7 @@ workflow.begin
 
 Record returned public IDs in the smoke evidence file.
 
-- [ ] **Step 3: Test duplicate command idempotency**
+- [x] **Step 3: Test duplicate command idempotency**
 
 Repeat one mutation with the same `commandId`.
 
@@ -2638,7 +2654,7 @@ no duplicate event
 no version increment
 ```
 
-- [ ] **Step 4: Test conflict**
+- [x] **Step 4: Test conflict**
 
 Repeat the same `commandId` with a changed payload.
 
@@ -2648,7 +2664,7 @@ Expected:
 IDEMPOTENCY_CONFLICT
 ```
 
-- [ ] **Step 5: Test optimistic conflict**
+- [x] **Step 5: Test optimistic conflict**
 
 Use an old `expectedVersion`.
 
@@ -2658,7 +2674,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [ ] **Step 6: Test evidence-bound completion**
+- [x] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2676,7 +2692,7 @@ Expected:
 done
 ```
 
-- [ ] **Step 7: Restart Desktop/MCP process**
+- [x] **Step 7: Restart Desktop/MCP process**
 
 Start a fresh chat after restart.
 
@@ -2684,7 +2700,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [ ] **Step 8: Test repo drift behavior**
+- [x] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2699,13 +2715,13 @@ nextSafeAction=inspect_repo_drift
 
 No claim that old worker is alive.
 
-- [ ] **Step 9: Repeat minimal smoke in CLI**
+- [x] **Step 9: Repeat minimal smoke in CLI**
 
 Use a fresh CLI invocation and the same plugin.
 
 Verify read-only status and one idempotent mutation.
 
-- [ ] **Step 10: Run doctor**
+- [x] **Step 10: Run doctor**
 
 ```powershell
 npm run doctor -- --json
@@ -2713,7 +2729,7 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
@@ -2745,7 +2761,7 @@ Shape:
 
 Do not store absolute paths or raw transcripts.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```powershell
 git add evidence/ph02-state-mcp-smoke.json
@@ -2824,7 +2840,7 @@ If conditions are not met, skip this task and keep `hooks=degraded` in evidence.
 - Produces GATE-02 result.
 - Creates no narrative compatibility report.
 
-- [ ] **Step 1: Run clean install and full verification**
+- [x] **Step 1: Run clean install and full verification**
 
 ```powershell
 npm ci
@@ -2835,7 +2851,7 @@ npm run doctor -- --json
 
 Expected all pass.
 
-- [ ] **Step 2: Run state/MCP tests twice**
+- [x] **Step 2: Run state/MCP tests twice**
 
 ```powershell
 npm test
@@ -2844,7 +2860,7 @@ npm test
 
 The second run must not depend on stale temp state.
 
-- [ ] **Step 3: Inspect package/runtime dependencies**
+- [x] **Step 3: Inspect package/runtime dependencies**
 
 Confirm:
 
@@ -2858,7 +2874,7 @@ no Python runtime
 no HTTP server
 ```
 
-- [ ] **Step 4: Inspect semantic correctness path**
+- [x] **Step 4: Inspect semantic correctness path**
 
 Confirm each mutation is:
 
@@ -2873,7 +2889,7 @@ MCP schema
 
 No hook-only path exists.
 
-- [ ] **Step 5: Inspect scope leakage**
+- [x] **Step 5: Inspect scope leakage**
 
 Reject accidental:
 
@@ -2891,13 +2907,13 @@ docs/agent_docs
 private Codex session parsing
 ```
 
-- [ ] **Step 6: Verify storage isolation**
+- [x] **Step 6: Verify storage isolation**
 
 All runtime writes must remain under validated `PLUGIN_DATA`.
 
 Repository writes are limited to source/tests/evidence/project-control files explicitly implemented by the developer.
 
-- [ ] **Step 7: Verify event/privacy constraints**
+- [x] **Step 7: Verify event/privacy constraints**
 
 Search code and test fixtures for:
 
@@ -2911,7 +2927,7 @@ Authorization/Bearer secrets
 
 Expected no production path persists them by default.
 
-- [ ] **Step 8: Verify restart/retry properties**
+- [x] **Step 8: Verify restart/retry properties**
 
 Evidence must cover:
 
@@ -2925,11 +2941,11 @@ repo drift
 degraded hooks
 ```
 
-- [ ] **Step 9: Update provenance only if needed**
+- [x] **Step 9: Update provenance only if needed**
 
 Record MCP SDK and current official source references at a high level; do not copy upstream implementation text.
 
-- [ ] **Step 10: Commit final verification-only edits if any**
+- [x] **Step 10: Commit final verification-only edits if any**
 
 ```powershell
 git add PROVENANCE.md evidence tests
@@ -2991,38 +3007,38 @@ Skip if there are no new changes.
 
 PH-02 is `PASS` only when all are true:
 
-- [ ] PH-01 is already PASS.
-- [ ] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
-- [ ] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
-- [ ] No arbitrary storage fallback exists.
-- [ ] Node floor is compatible with the chosen built-in SQLite API.
-- [ ] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
-- [ ] migrations are serialized and checksum-validated.
-- [ ] incompatible-migration backup behavior is tested.
-- [ ] every state mutation is idempotent by `commandId`.
-- [ ] same idempotency key with changed payload is rejected.
-- [ ] work-item optimistic version conflicts are detected.
-- [ ] entity mutation + event + command receipt are atomic.
-- [ ] PH-01 transition rules are enforced by persisted transitions.
-- [ ] `done` cannot bypass readiness/evidence/pending-decision checks.
-- [ ] native `idle`/stop is not treated as acceptance.
-- [ ] RunResourceJournal records intent/observed ownership truthfully.
-- [ ] observed resources cannot claim cleanup ownership.
-- [ ] artifact contents are outside SQLite and content-addressed.
-- [ ] state/artifacts are contained under plugin data.
-- [ ] secret-bearing text is redacted before persistence.
-- [ ] raw prompts/private source/chain-of-thought are not stored.
-- [ ] `workflow.summary` reports repo drift and liveness uncertainty honestly.
-- [ ] doctor detects integrity/schema/artifact/resource problems without mutating.
-- [ ] schema-first stdio MCP tools work in Desktop and CLI.
-- [ ] MCP annotations are truthful.
-- [ ] `workflow-status` and `recover-work` are active and read-only.
-- [ ] restart recovery does not depend on transcript replay.
-- [ ] hook failure does not break explicit state semantics.
-- [ ] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
-- [ ] no docs subsystem/agent_docs was introduced.
+- [x] PH-01 is already PASS.
+- [x] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
+- [x] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
+- [x] No arbitrary storage fallback exists.
+- [x] Node floor is compatible with the chosen built-in SQLite API.
+- [x] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
+- [x] migrations are serialized and checksum-validated.
+- [x] incompatible-migration backup behavior is tested.
+- [x] every state mutation is idempotent by `commandId`.
+- [x] same idempotency key with changed payload is rejected.
+- [x] work-item optimistic version conflicts are detected.
+- [x] entity mutation + event + command receipt are atomic.
+- [x] PH-01 transition rules are enforced by persisted transitions.
+- [x] `done` cannot bypass readiness/evidence/pending-decision checks.
+- [x] native `idle`/stop is not treated as acceptance.
+- [x] RunResourceJournal records intent/observed ownership truthfully.
+- [x] observed resources cannot claim cleanup ownership.
+- [x] artifact contents are outside SQLite and content-addressed.
+- [x] state/artifacts are contained under plugin data.
+- [x] secret-bearing text is redacted before persistence.
+- [x] raw prompts/private source/chain-of-thought are not stored.
+- [x] `workflow.summary` reports repo drift and liveness uncertainty honestly.
+- [x] doctor detects integrity/schema/artifact/resource problems without mutating.
+- [x] schema-first stdio MCP tools work in Desktop and CLI.
+- [x] MCP annotations are truthful.
+- [x] `workflow-status` and `recover-work` are active and read-only.
+- [x] restart recovery does not depend on transcript replay.
+- [x] hook failure does not break explicit state semantics.
+- [x] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
+- [x] no docs subsystem/agent_docs was introduced.
 
-If all pass, next allowed phase is **PH-03 Context Index + Conditional Companion**.
+If all pass, next allowed phase is **PH-03 Conditional Context Companion**.
 
 ---
 
@@ -3111,25 +3127,25 @@ PH-06 may benchmark the substrate later if it becomes material to end-to-end cos
 
 Before GATE-02:
 
-- [ ] `PLUGIN_DATA` is host supplied and validated.
-- [ ] no path traversal from tool inputs reaches DB/artifact paths.
-- [ ] artifact paths are generated from hashes.
-- [ ] SQLite extensions are disabled.
-- [ ] defensive mode enabled.
-- [ ] trusted schema disabled.
-- [ ] SQL values are bound parameters.
-- [ ] no dynamic table/column names from model input.
-- [ ] repo inspection uses `execFile`, not shell interpolation.
-- [ ] Git remote credentials are stripped before storage.
-- [ ] secrets are redacted in evidence/error text.
-- [ ] no raw prompt storage.
-- [ ] no chain-of-thought storage.
-- [ ] no raw private session-file parser.
-- [ ] MCP errors omit stack traces.
-- [ ] destructive/idempotent/open-world/read-only annotations match actual tools.
-- [ ] hook input is treated as untrusted optional telemetry.
-- [ ] no hook can mark work done or resolve a decision.
-- [ ] no tool can delete history in PH-02.
+- [x] `PLUGIN_DATA` is host supplied and validated.
+- [x] no path traversal from tool inputs reaches DB/artifact paths.
+- [x] artifact paths are generated from hashes.
+- [x] SQLite extensions are disabled.
+- [x] defensive mode enabled.
+- [x] trusted schema disabled.
+- [x] SQL values are bound parameters.
+- [x] no dynamic table/column names from model input.
+- [x] repo inspection uses `execFile`, not shell interpolation.
+- [x] Git remote credentials are stripped before storage.
+- [x] secrets are redacted in evidence/error text.
+- [x] no raw prompt storage.
+- [x] no chain-of-thought storage.
+- [x] no raw private session-file parser.
+- [x] MCP errors omit stack traces.
+- [x] destructive/idempotent/open-world/read-only annotations match actual tools.
+- [x] hook input is treated as untrusted optional telemetry.
+- [x] no hook can mark work done or resolve a decision.
+- [x] no tool can delete history in PH-02.
 
 ---
 
@@ -3191,7 +3207,7 @@ Deviations
 - ...
 
 Next allowed action
-- PH-03 Context Index + Conditional Companion
+- PH-03 Conditional Context Companion
 ```
 
 ---
@@ -3237,6 +3253,5 @@ Normative/primary references used to shape this plan:
    - synchronous durability;
    - foreign keys;
    - integrity checks.
-7. `viettran-edgeAI/codex_workflow` main experimental v1.1.15 (`a596daa...`) as a policy/reference baseline only. Its new `Direct/Companion/Investigator`, mandatory-Companion and Heavy ownership contracts inform later PH-03/04 eval hypotheses, not PH-02 persistence design.
 
-Do not copy implementation code from `workflow-herdr` or `codex_workflow`; their operational patterns are provenance/reference inputs only. Workflow Next remains a separate plugin/state/evidence product, not a fork.
+Do not copy implementation code from `workflow-herdr` or `codex_workflow`; their operational patterns are provenance/reference inputs only.

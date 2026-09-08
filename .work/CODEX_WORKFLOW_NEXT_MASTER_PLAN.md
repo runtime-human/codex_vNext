@@ -1,16 +1,16 @@
 # Codex Workflow Next — Consolidated Master Architecture & Implementation Plan
 
 **Статус:** post-H0 architecture baseline; normative replacement for earlier Master Plan revisions/amendments  
-**Ревизия:** **4.3 — Upstream v1.1.15 context-routing and ownership alignment**  
-**Дата среза:** 2026-09-08  
+**Ревизия:** **4.2 — Configurable native-agent profile architecture**  
+**Дата среза:** 2026-09-07  
 **Продукт:** **Codex Workflow Next / Codex Director**  
 **Primary host:** ChatGPT Desktop / Codex  
 **Compatible host:** Codex CLI  
-**Current upstream references:** `viettran-edgeAI/codex_workflow` `main` **v1.1.15**, SHA `a596daaee01bffaff9c04c31e85d378b139cd6c7`; `letya999/workflow-herdr` `dev`, SHA `b1eab041cf2f97da4605c036900d07ff5426cc40` (operational-safety reference only)  
+**Current upstream references:** `viettran-edgeAI/codex_workflow` `experiment/beta-install-prompt` **v1.1.14**, SHA `a224f32c423ef56be322de160d5440bba0a786b2`; `letya999/workflow-herdr` `dev`, SHA `b1eab041cf2f97da4605c036900d07ff5426cc40` (operational-safety reference only)  
 **Executed platform baseline:** Windows 11 build 26200, Desktop `26.901.1978.0`, CLI `0.153.4`  
 **PH-00 outcome:** **PASS_WITH_AMENDMENTS**
 
-> This revision consolidates the original Desktop-first design, trace-based eval architecture, the `v1.1.13..v1.1.15` upstream review, the actual PH-00 capability evidence, configurable native-agent profiles, and the latest decision to adopt upstream context-routing/ownership ideas without inheriting its route/doc/runtime architecture. Earlier amendment files are historical only; this document is the new architectural source of truth.
+> This revision consolidates the original Desktop-first design, trace-based eval architecture, the `v1.1.13/v1.1.14` upstream review, the actual PH-00 capability evidence, and the post-H0 decision to separate semantic agent roles from configurable model/runtime mappings. Earlier amendment files are historical only; this document is the new architectural source of truth.
 >
 > The product is **not another Codex runtime**. It is a minimal policy/context/evidence/attention layer that uses native Codex primitives and must prove its marginal value against modern native Codex before Board/Durable expansion.
 
@@ -417,39 +417,27 @@ The architectural gate is **PASS_WITH_AMENDMENTS**, not BLOCKED, because unresol
 - descendant trace → partial-claim rule.
 
 <a id="cap-14"></a>
-## [CAP-14] Current upstream `codex_workflow` reference
+## [CAP-14] Current upstream experimental reference
 
-As of 2026-09-08 `main` points to experimental release `v1.1.15`, SHA `a596daa...`. Relative to the previously reviewed `v1.1.14` experiment, the material policy changes are:
+As of 2026-09-06 the experiment branch points to `v1.1.14`, SHA `a224f32c...`.
 
-- exactly one persistent Companion on first Medium/Heavy deployment entry;
-- an explicit working-context map: `Direct / Companion / Investigator`;
-- Investigator broadened from Internet-only research to bounded project **or** Internet evidence gaps;
-- a stronger Heavy ownership boundary: once work is assigned, Main should evaluate evidence and revise packages rather than duplicate routine Executor/Tester operations;
-- stronger anti-polling/batched worker guidance.
-
-Useful hypotheses retained/adapted:
+Useful hypotheses retained:
 
 - explicit fresh workers;
 - stable Task ID;
 - role-specific packets;
 - delta-only follow-up;
-- `Direct / Companion / Investigator` context routing;
-- bounded local-or-external Investigator evidence lanes;
-- delegated-package non-duplication;
+- on-demand Companion;
 - temporary batching of independent work;
 - compact decision-ready reports.
 
 Not adopted as defaults without evidence:
 
-- mandatory Companion on every substantive deployment;
-- fixed Light/Medium/Heavy route ownership;
+- fixed word budgets;
 - mandatory full `agent_docs` read;
 - mandatory Archivist/closure ritual;
 - Python lifecycle runtime;
-- upstream's statement that aggregate subagent token use is not an optimization target;
-- unbounded/default-high concurrency.
-
-Upstream runtime-contract tests are useful specification regression tests, but they are not treated as proof of end-to-end quality, latency or token advantage.
+- `20` as recommended concurrency.
 
 ---
 
@@ -1075,7 +1063,7 @@ Role decision table:
 |---|---|
 | no concrete isolation/specialization/parallelism/verification benefit | Main works directly |
 | repeated/bulky local repository context or source cross-referencing | `context_companion` |
-| bounded unfamiliar/ambiguous evidence gap requiring independent project inspection, Internet research, or both | `investigator` |
+| bounded external/current web/docs research | `investigator` |
 | bounded implementation with a reasonably clear path | `executor` |
 | bounded implementation requiring substantial local causal, concurrency, algorithmic or cross-cutting reasoning; several plausible internal solutions; or an Executor failed because of reasoning complexity | `senior_executor` |
 | independent acceptance evidence is useful by risk | `verifier` |
@@ -1086,7 +1074,7 @@ Outputs/reasons include:
 
 - direct vs delegate;
 - selected `AgentRole`;
-- selected context lane (`Direct`, `Companion`, or `Investigator`) when context routing is relevant;
+- need Companion/Investigator;
 - verifier requirement;
 - isolation requirement;
 - temporary batch eligibility;
@@ -1148,7 +1136,7 @@ Fresh, read-only, conditional. Handles bulky/repeated local repository context a
 <a id="agt-03"></a>
 ## [AGT-03] Investigator
 
-Bounded independent evidence investigation over a **project-local or external/Internet** evidence gap that Main does not already understand. Returns source-linked evidence, freshness/uncertainty and implications; Main retains root-cause, architecture, implementation and acceptance decisions. Default runtime: Luna `xhigh`, read-only. Separate from Companion because Investigator is disposable and question-bounded, while Companion is persistent within one substantive run and optimized for reusable local context.
+Bounded external/current research with source-linked synthesis. Default runtime: Luna `xhigh`, read-only. Separate from Companion because trust/freshness/source semantics differ.
 
 <a id="agt-04"></a>
 ## [AGT-04] Executor
@@ -1170,27 +1158,14 @@ Default runtime is Luna `max`. An optional user configuration may map this role 
 # 9. Context Architecture
 
 <a id="ctx-01"></a>
-## [CTX-01] Three-lane working-context routing
+## [CTX-01] Three-level operational model
 
-Context is routed by decision relevance, not through a mandatory hierarchy:
-
-```text
-Direct
-  decision-critical code/contracts/evidence Main must understand
-
-Companion
-  bulky/repeated supporting local project context worth retaining within the run
-
-Investigator
-  one bounded unfamiliar/ambiguous evidence gap, project-local or external
-```
-
-`Direct` is not delegation. `Companion` and `Investigator` are optional capabilities. The durable repository/Context Index remains source-linked truth/cache beneath all three lanes; no lane creates a competing knowledge base.
+Main → Companion → durable repo/index.
 
 <a id="ctx-02"></a>
 ## [CTX-02] Companion is conditional
 
-Default mode is `adaptive`. Activate only when context pressure, bulky supporting material, repeated reuse or context-isolation benefit is concrete. `always` and `off` remain configurable/eval modes; upstream v1.1.15 mandatory-Companion behavior is a PH-06 hypothesis, not our default.
+Activate only when context pressure or reuse benefit exists.
 
 <a id="ctx-03"></a>
 ## [CTX-03] No whole-repo scan at session start
@@ -1236,16 +1211,6 @@ Private transcript may be diagnostic only.
 ## [CTX-11] Upstream full-doc bootstrap is an eval hypothesis
 
 Do not require Main to read every durable doc once. Compare progressive hydration vs read-all only in suitable PH-06 ablation.
-
-<a id="ctx-13"></a>
-## [CTX-13] Context routing is ephemeral policy state
-
-`Direct / Companion / Investigator` routing is working-state policy output, not a durable domain entity and not a new docs/cache subsystem. It may be logged as a compact PolicyTrace reason, but PH-02 does not pre-create tables for it. Runtime routing belongs PH-04; PH-03 supplies the Context Index/Companion substrate.
-
-<a id="ctx-14"></a>
-## [CTX-14] Investigator does not own causal truth
-
-Investigator may inspect a bounded local project surface, Internet sources, or both. It returns evidence and implications only. Main remains owner of causal/root-cause, architecture, scope, implementation-direction and final acceptance decisions.
 
 <a id="ctx-12"></a>
 ## [CTX-12] Context isolation claim boundaries
@@ -1346,11 +1311,6 @@ Select Senior only for difficult bounded implementation reasoning. “Large task
 ## [POL-15] Non-default-model subagents are opt-in configuration
 
 Safe defaults keep all child profiles on Luna, with Luna effort never below `xhigh`. `senior_executor = Sol medium` is supported only as an explicit user/project configuration choice after capability validation. No worker can request or apply a provider-family upgrade by itself.
-
-<a id="pol-16"></a>
-## [POL-16] Delegated package ownership forbids routine duplication
-
-Once Main delegates a bounded package to an Executor/Senior Executor/Verifier, Main does not simultaneously repeat that package's routine implementation, test execution, operational diagnosis or repair. Main may inspect decision-critical evidence and remains responsible for scope, architecture, integration and acceptance. Takeover/reassignment requires a concrete reason such as worker failure, boundary conflict, invalidated assumptions, security/migration risk or explicit cancellation.
 
 # 11. State, MCP and Hooks
 
@@ -1477,7 +1437,7 @@ Core configurable surfaces:
 - per-role sandbox default;
 - allowed subagent models / expensive-subagent policy;
 - max concurrency;
-- Companion mode (`off|adaptive|always`);
+- Companion mode (`off|adaptive`);
 - Senior mode (`off|adaptive`);
 - DecisionBatch mode (`off|adaptive`);
 - verification mode (`risk_based|always|off`).
@@ -1880,7 +1840,7 @@ C — Workflow Next Core.
 <a id="obs-08"></a>
 ## [OBS-08] Optional D reference
 
-D is the **latest upstream `codex_workflow` main/release resolved and SHA-pinned at campaign freeze**, not a permanently hard-coded version. Current reference: experimental v1.1.15 / `a596daa...`.
+D is the **latest experimental `codex_workflow` release pinned at campaign freeze**, not a permanently hard-coded release. Current reference: v1.1.14 / `a224f32c...`.
 
 Before D benchmark:
 
@@ -1931,8 +1891,7 @@ Compare resource metrics only after acceptance/correctness threshold.
 
 After baseline C:
 
-- Companion `off` vs `adaptive` vs `always`;
-- context routing: progressive `Direct/Companion/Investigator` vs simpler routing;
+- Companion on/off;
 - Verifier on/off;
 - agent-runtime mapping / role-routing variants;
 - TaskDelta vs repeated full packet;
@@ -2104,9 +2063,9 @@ State correctness does not depend on hooks; restart/retry/idempotency/reconcilia
 ---
 
 <a id="mile-03"></a>
-## [MILE-03] Context Index + Conditional Companion
+## [MILE-03] Conditional Context Companion
 
-Fresh read-only Companion, `fork_turns=none`, Context Index/fingerprint/hydration/delta. Default runtime Luna `xhigh`; default activation remains adaptive. Establish the substrate needed for later `Direct / Companion / Investigator` routing without creating `agent_docs` or mandatory session bootstrap. Economic value not claimed until PH-06.
+Fresh read-only Companion, `fork_turns=none`, Context Index/fingerprint/hydration/delta. Default runtime Luna `xhigh`. Economic value not claimed until PH-06.
 
 <a id="ac-13"></a>
 ### [AC-13] MILE-03 acceptance
@@ -2123,9 +2082,6 @@ Correctness/provenance capability only.
 - TaskEnvelope/RolePayload/TaskDelta runtime use;
 - named agent roles + configurable runtime mappings;
 - fresh Executor/Senior Executor/Investigator;
-- explicit `Direct / Companion / Investigator` context-route decision;
-- Investigator may use bounded project-local evidence, external sources, or both;
-- delegated-package non-duplication enforcement/instrumentation;
 - bounded recovery;
 - temporary DecisionBatch candidate.
 
@@ -2454,27 +2410,15 @@ Accepted for PH-02+. Main owns semantic intent; MCP/SQLite owns transactional st
 ## [ADR-27] Herdr is a reference/optional future adapter candidate, not a V1 runtime dependency
 Accepted. No RuntimeAdapter abstraction is introduced until a later eval demonstrates a native Codex gap worth abstracting.
 
-<a id="adr-28"></a>
-## [ADR-28] Workflow Next remains a separate product, not a `codex_workflow` fork
-Accepted. Upstream is a strong prompt/policy reference and benchmark baseline, but its fixed route model, `agent_docs`/Archivist lifecycle and Markdown-driven coordination are not the foundation for our plugin/MCP/SQLite/evidence/Board architecture. Reuse ideas and, where licensing permits, isolated patterns only when they fit our invariants.
-
-<a id="adr-29"></a>
-## [ADR-29] Adopt tri-lane context routing, not mandatory Companion
-Accepted. `Direct / Companion / Investigator` is the target working-context model. Companion default remains `adaptive`; `always` is an eval/config option. Investigator covers bounded project-local or external evidence gaps.
-
-<a id="adr-30"></a>
-## [ADR-30] Delegation transfers routine package execution ownership
-Accepted. After explicit delegation, Main owns decisions/integration/acceptance but should not duplicate routine worker implementation, verification or operational diagnosis without an evidence-based takeover/reassignment reason.
-
 ---
 
 # 19. Source Map
 
 <a id="src-01"></a>
-## [SRC-01] `codex_workflow` upstream
-https://github.com/viettran-edgeAI/codex_workflow/tree/main
+## [SRC-01] `codex_workflow` experiment
+https://github.com/viettran-edgeAI/codex_workflow/tree/experiment/beta-install-prompt
 
-Current reference experimental v1.1.15 / `a596daa...`. Use as policy/reference/eval baseline; do not inherit fixed routes, `agent_docs`, Archivist or Python lifecycle by default. Code reuse remains license-governed.
+Current reference v1.1.14 / `a224f32c...`; ideas only unless license permits code reuse.
 
 <a id="src-02"></a>
 ## [SRC-02] Codex plugin creation

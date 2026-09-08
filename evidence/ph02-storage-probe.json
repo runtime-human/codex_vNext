@@ -4,24 +4,24 @@
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
-  "pluginFormat": "agent-plugins-v1",
+  "pluginFormat": "legacy-codex-plugin",
   "mcp": {
-    "pluginDataPresent": true,
-    "create": "pass",
-    "append": "pass",
-    "rename": "pass",
-    "read": "pass",
-    "sqliteTransaction": "pass",
-    "sqliteReopen": "pass",
-    "restartPersistence": "pass"
+    "pluginDataPresent": false,
+    "create": "fail",
+    "append": "fail",
+    "rename": "fail",
+    "read": "fail",
+    "sqliteTransaction": "fail",
+    "sqliteReopen": "fail",
+    "restartPersistence": "fail"
   },
   "hook": {
-    "configured": true,
-    "trusted": true,
+    "configured": false,
+    "trusted": false,
     "executed": false,
     "pluginDataPresent": false,
     "write": "fail",
     "classification": "degraded"
   },
-  "storageDecision": "plugin_data_sqlite"
+  "storageDecision": "blocked"
 }
