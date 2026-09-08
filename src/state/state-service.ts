@@ -22,7 +22,7 @@ import {
 } from './ids.js';
 import { type InspectedProject, inspectProject } from './project-inspector.js';
 import { buildReconciliationProjection } from './reconciliation.js';
-import { redactSensitiveText } from './redaction.js';
+import { redactSensitiveText, sanitizePersistedUri } from './redaction.js';
 import {
   type DecisionRecord,
   type EvidenceRecord,
@@ -539,51 +539,66 @@ export class StateService {
   }
 
   recordEvidence(input: RecordEvidenceInput): EvidenceRecord {
+    const sourceUri = input.sourceUri
+      ? sanitizePersistedUri(input.sourceUri)
+      : undefined;
+    const {
+      sourceUri: _sourceUri,
+      command: _command,
+      summary: _summary,
+      ...safeFields
+    } = input;
+    const safeInput: RecordEvidenceInput = {
+      ...safeFields,
+      summary: redactSensitiveText(input.summary),
+      ...(sourceUri ? { sourceUri } : {}),
+      ...(input.command ? { command: redactSensitiveText(input.command) } : {}),
+    };
     const evidenceId = newEvidenceId();
     return executeIdempotent({
       db: this.dependencies.db,
       toolName: 'evidence.record',
-      commandId: input.commandId,
-      runId: input.runId,
-      normalizedInput: withoutCommandId(input),
+      commandId: safeInput.commandId,
+      runId: safeInput.runId,
+      normalizedInput: withoutCommandId(safeInput),
       clock: this.clock,
       mutate: () => {
-        if (!this.repositories.getRun(input.runId))
+        if (!this.repositories.getRun(safeInput.runId))
           throw new StateError('NOT_FOUND', 'run not found');
-        if (input.workItemId) {
-          const workItem = this.repositories.getWorkItem(input.workItemId);
-          if (!workItem || workItem.runId !== input.runId)
+        if (safeInput.workItemId) {
+          const workItem = this.repositories.getWorkItem(safeInput.workItemId);
+          if (!workItem || workItem.runId !== safeInput.runId)
             throw new StateError('NOT_FOUND', 'work item not found in run');
         }
         if (
-          input.artifactId &&
-          !this.repositories.getArtifact(input.artifactId)
+          safeInput.artifactId &&
+          !this.repositories.getArtifact(safeInput.artifactId)
         )
           throw new StateError('NOT_FOUND', 'artifact not found');
         const evidence: EvidenceRecord = {
           evidenceId,
-          runId: input.runId,
-          ...(input.workItemId ? { workItemId: input.workItemId } : {}),
-          kind: input.kind,
-          summary: redactSensitiveText(input.summary),
-          status: input.status,
-          ...(input.sourceUri ? { sourceUri: input.sourceUri } : {}),
-          ...(input.command
-            ? { command: redactSensitiveText(input.command) }
+          runId: safeInput.runId,
+          ...(safeInput.workItemId ? { workItemId: safeInput.workItemId } : {}),
+          kind: safeInput.kind,
+          summary: safeInput.summary,
+          status: safeInput.status,
+          ...(safeInput.sourceUri ? { sourceUri: safeInput.sourceUri } : {}),
+          ...(safeInput.command ? { command: safeInput.command } : {}),
+          ...(safeInput.exitCode !== undefined
+            ? { exitCode: safeInput.exitCode }
             : {}),
-          ...(input.exitCode !== undefined ? { exitCode: input.exitCode } : {}),
-          ...(input.gitSha ? { gitSha: input.gitSha } : {}),
-          ...(input.artifactId ? { artifactId: input.artifactId } : {}),
+          ...(safeInput.gitSha ? { gitSha: safeInput.gitSha } : {}),
+          ...(safeInput.artifactId ? { artifactId: safeInput.artifactId } : {}),
           createdAt: this.clock.nowIso(),
         };
         this.repositories.putEvidence(evidence);
         this.appendEvent(
-          input.runId,
+          safeInput.runId,
           'evidence',
           evidenceId,
           'evidence.recorded',
           { kind: evidence.kind, status: evidence.status },
-          input.commandId,
+          safeInput.commandId,
         );
         return evidence;
       },

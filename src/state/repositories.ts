@@ -439,7 +439,7 @@ export class StateRepositories {
   getLatestRunForProject(projectId: string): RunRecord | undefined {
     const row = this.db
       .prepare(
-        'SELECT * FROM runs WHERE project_id = ? ORDER BY updated_at DESC LIMIT 1',
+        'SELECT * FROM runs WHERE project_id = ? ORDER BY updated_at DESC, rowid DESC LIMIT 1',
       )
       .get(projectId) as Row | undefined;
     return row ? runFromRow(row) : undefined;

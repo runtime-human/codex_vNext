@@ -5,6 +5,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 
 import { canonicalJson } from './canonical-json.js';
+import { sanitizePersistedUri } from './redaction.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -42,20 +43,6 @@ async function runGit(
   }
 }
 
-export function sanitizeRemoteUrl(value: string): string {
-  if (!/^https?:\/\//i.test(value) && !/^ssh:\/\//i.test(value)) return value;
-  try {
-    const url = new URL(value);
-    url.username = '';
-    url.password = '';
-    url.search = '';
-    url.hash = '';
-    return url.toString().replace(/\/$/, '');
-  } catch {
-    return value;
-  }
-}
-
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -82,7 +69,7 @@ export async function inspectProject(
     safeGit(['remote', 'get-url', 'origin'], repoRoot),
     safeGit(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], repoRoot),
   ]);
-  const remoteUrl = rawRemote ? sanitizeRemoteUrl(rawRemote) : undefined;
+  const remoteUrl = rawRemote ? sanitizePersistedUri(rawRemote) : undefined;
   const defaultBranch = rawDefaultBranch?.replace(/^origin\//, '');
   const repoKey = sha256(repoRoot);
   const repoFingerprint = sha256(

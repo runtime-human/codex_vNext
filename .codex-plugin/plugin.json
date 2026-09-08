@@ -1,6 +1,0 @@
-{
-  "name": "codex-workflow-next",
-  "version": "0.1.0-alpha.1",
-  "description": "Adaptive bounded workflow contracts for Codex.",
-  "skills": "./skills/"
-}

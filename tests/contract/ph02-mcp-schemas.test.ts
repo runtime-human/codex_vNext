@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   MCP_INPUT_SCHEMAS,
+  MCP_OUTPUT_SCHEMAS,
   ResourceRecordInputSchema,
   WorkflowSummaryInputSchema,
   WorkTransitionInputSchema,
@@ -13,6 +14,31 @@ describe('PH-02 MCP input schemas', () => {
     expect(
       WorkflowSummaryInputSchema.safeParse({ runId: 'run-1', extra: true })
         .success,
+    ).toBe(false);
+  });
+
+  it('uses strict per-tool output contracts', () => {
+    const summary = {
+      ok: true,
+      value: {
+        activeWork: [],
+        pendingDecisions: [],
+        evidenceRefs: [],
+        cleanupRequiredResources: [],
+        nextSafeAction: 'start_run',
+      },
+    };
+    expect(
+      MCP_OUTPUT_SCHEMAS['workflow.summary'].safeParse(summary).success,
+    ).toBe(true);
+    expect(
+      MCP_OUTPUT_SCHEMAS['workflow.summary'].safeParse({
+        ok: true,
+        value: { arbitrary: true },
+      }).success,
+    ).toBe(false);
+    expect(
+      MCP_OUTPUT_SCHEMAS['workflow.begin'].safeParse(summary).success,
     ).toBe(false);
   });
 

@@ -14,8 +14,8 @@ import {
   DecisionRequestInputSchema,
   DecisionResolveInputSchema,
   EvidenceRecordInputSchema,
+  MCP_OUTPUT_SCHEMAS,
   ResourceRecordInputSchema,
-  ToolOutputSchema,
   WorkflowBeginInputSchema,
   WorkflowSummaryInputSchema,
   WorkGetInputSchema,
@@ -72,7 +72,7 @@ export function registerWorkflowTools(
     {
       description: 'Return the bounded persisted workflow projection.',
       inputSchema: WorkflowSummaryInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['workflow.summary'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['workflow.summary'],
     },
     (input) =>
@@ -89,7 +89,7 @@ export function registerWorkflowTools(
     {
       description: 'Start one idempotent persisted workflow run.',
       inputSchema: WorkflowBeginInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['workflow.begin'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['workflow.begin'],
     },
     (input) =>
@@ -103,7 +103,7 @@ export function registerWorkflowTools(
     {
       description: 'Read one work item with bounded evidence and decisions.',
       inputSchema: WorkGetInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['work.get'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['work.get'],
     },
     (input) =>
@@ -117,7 +117,7 @@ export function registerWorkflowTools(
     {
       description: 'Create or patch a work item idempotently.',
       inputSchema: WorkUpdateInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['work.update'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['work.update'],
     },
     (input) =>
@@ -131,7 +131,7 @@ export function registerWorkflowTools(
     {
       description: 'Apply a guarded work-state transition idempotently.',
       inputSchema: WorkTransitionInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['work.transition'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['work.transition'],
     },
     (input) =>
@@ -145,7 +145,7 @@ export function registerWorkflowTools(
     {
       description: 'Record a pending decision idempotently.',
       inputSchema: DecisionRequestInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['decision.request'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['decision.request'],
     },
     (input) =>
@@ -159,7 +159,7 @@ export function registerWorkflowTools(
     {
       description: 'Resolve a pending decision idempotently.',
       inputSchema: DecisionResolveInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['decision.resolve'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['decision.resolve'],
     },
     (input) =>
@@ -173,7 +173,7 @@ export function registerWorkflowTools(
     {
       description: 'Record curated workflow evidence idempotently.',
       inputSchema: EvidenceRecordInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['evidence.record'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['evidence.record'],
     },
     (input) =>
@@ -187,7 +187,7 @@ export function registerWorkflowTools(
     {
       description: 'Record or transition a native resource lifecycle.',
       inputSchema: ResourceRecordInputSchema,
-      outputSchema: ToolOutputSchema,
+      outputSchema: MCP_OUTPUT_SCHEMAS['resource.record'],
       annotations: WORKFLOW_TOOL_ANNOTATIONS['resource.record'],
     },
     (input) =>

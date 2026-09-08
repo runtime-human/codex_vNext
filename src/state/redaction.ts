@@ -15,3 +15,20 @@ export function redactSensitiveText(value: string): string {
     .replace(/\bghp_[A-Za-z0-9_]+/g, REDACTED)
     .replace(/\bsk-[A-Za-z0-9_-]+/g, REDACTED);
 }
+
+export function sanitizePersistedUri(value: string): string | undefined {
+  const redacted = redactSensitiveText(value);
+  const scpLike = /^[^@\s]+@([^:\s]+):(.+)$/.exec(redacted);
+  if (scpLike) return `${scpLike[1]}:${scpLike[2]}`;
+  if (!/^[a-z][a-z\d+.-]*:/i.test(redacted)) return redacted;
+  try {
+    const url = new URL(redacted);
+    url.username = '';
+    url.password = '';
+    url.search = '';
+    url.hash = '';
+    return redactSensitiveText(url.toString()).replace(/\/$/, '');
+  } catch {
+    return undefined;
+  }
+}

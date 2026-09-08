@@ -25,6 +25,17 @@ Hooks remain `DEGRADED` and Task 12 is skipped because the current Codex loader
 does not load hooks for Agent Plugin packages. All other scope and correctness
 constraints remain unchanged.
 
+Independent implementation and specification review on 2026-09-08 found and
+accepted six release-blocking gaps: legacy/root manifest coexistence, generic
+MCP success payload schemas, fail-open URI/remote secret persistence,
+nondeterministic equal-timestamp run selection, unchecked CAS reuse, and a
+doctor check that verified CAS presence without content integrity. The fixes
+remove the legacy manifest, validate that it cannot coexist, define strict
+per-tool outputs, sanitize URI-bearing state before idempotency persistence,
+use SQLite insertion order as the stable run tie-breaker, and verify CAS size
+and SHA-256 on write and in doctor. Focused regression tests and the complete
+project check pass; independent re-review remains the final merge gate.
+
 ## Global Constraints
 
 - PH-01 must already be `PASS`; otherwise stop before implementation.

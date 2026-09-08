@@ -4,6 +4,7 @@ import path from 'node:path';
 const root = process.cwd();
 const manifestPath = path.join(root, 'plugin.json');
 const mcpPath = path.join(root, 'mcp.json');
+const legacyManifestPath = path.join(root, '.codex-plugin', 'plugin.json');
 
 function fail(message) {
   console.error(`plugin validation failed: ${message}`);
@@ -11,6 +12,11 @@ function fail(message) {
 }
 
 if (!fs.existsSync(manifestPath)) fail('plugin.json is missing');
+if (fs.existsSync(legacyManifestPath)) {
+  fail(
+    'legacy .codex-plugin/plugin.json must not coexist with Agent Plugins v1',
+  );
+}
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 for (const key of ['$schema', 'name', 'version', 'description']) {

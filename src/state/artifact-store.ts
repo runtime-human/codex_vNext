@@ -6,6 +6,7 @@ import {
   mkdirSync,
   openSync,
   readdirSync,
+  readFileSync,
   renameSync,
   unlinkSync,
   writeFileSync,
@@ -34,6 +35,21 @@ interface PutBytesInput {
 
 function relativeCasPath(hash: string): string {
   return `artifacts/sha256/${hash.slice(0, 2)}/${hash}`;
+}
+
+export function artifactFileMatches(
+  artifact: Pick<ArtifactRecord, 'sha256' | 'byteSize'>,
+  absolutePath: string,
+): boolean {
+  try {
+    const bytes = readFileSync(absolutePath);
+    return (
+      bytes.byteLength === artifact.byteSize &&
+      createHash('sha256').update(bytes).digest('hex') === artifact.sha256
+    );
+  } catch {
+    return false;
+  }
 }
 
 export class ArtifactStore {
@@ -76,6 +92,14 @@ export class ArtifactStore {
         unlinkSync(temporary);
         if (!existsSync(destination)) throw error;
       }
+    }
+    if (
+      !artifactFileMatches(
+        { sha256, byteSize: input.bytes.byteLength },
+        destination,
+      )
+    ) {
+      throw new StateError('INTEGRITY_FAILED', 'CAS object content mismatch');
     }
 
     const existing = this.dependencies.repositories.getArtifactBySha256(sha256);

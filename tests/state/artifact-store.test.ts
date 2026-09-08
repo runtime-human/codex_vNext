@@ -66,6 +66,16 @@ describe('ArtifactStore', () => {
     ).toThrowError(expect.objectContaining({ code: 'INVALID_ARGUMENT' }));
   });
 
+  it('rejects a corrupt existing CAS object instead of trusting its path', async () => {
+    const bytes = new TextEncoder().encode('artifact');
+    const artifact = store.putBytes({ bytes, mediaType: 'text/plain' });
+    await writeFile(store.resolvePath(artifact.artifactId), 'corrupt');
+
+    expect(() =>
+      store.putBytes({ bytes, mediaType: 'text/plain' }),
+    ).toThrowError(expect.objectContaining({ code: 'INTEGRITY_FAILED' }));
+  });
+
   it('detects an unreferenced CAS object without deleting it', async () => {
     const hash = 'f'.repeat(64);
     const directory = path.join(storage.artifactSha256Dir, 'ff');

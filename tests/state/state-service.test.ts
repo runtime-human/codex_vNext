@@ -13,6 +13,7 @@ import {
   resolveStorageRoot,
   StateRepositories,
   StateService,
+  sanitizePersistedUri,
 } from '../../src/state/index.js';
 
 const execFileAsync = promisify(execFile);
@@ -124,6 +125,16 @@ describe('project inspector', () => {
     expect(inspected).not.toHaveProperty('error');
     expect(JSON.stringify(inspected)).not.toContain('private stderr');
     expect(failedCalls.every((args) => args.length > 0)).toBe(true);
+  });
+
+  it('sanitizes non-HTTP and malformed credential-bearing remotes fail-closed', () => {
+    expect(
+      sanitizePersistedUri('ftp://user:secret@example.com/repo?token=hidden'),
+    ).toBe('ftp://example.com/repo');
+    expect(sanitizePersistedUri('git@example.com:org/repo.git')).toBe(
+      'example.com:org/repo.git',
+    );
+    expect(sanitizePersistedUri('https://user:secret@@')).toBeUndefined();
   });
 });
 
@@ -276,6 +287,25 @@ describe('state repositories', () => {
     } finally {
       db.close();
     }
+  });
+
+  it('uses insertion order to break equal run timestamps deterministically', async () => {
+    const { repositories } = await stateRuntime();
+    seedRun(repositories);
+    repositories.putRun({
+      runId: 'run-2',
+      projectId: 'project-1',
+      objective: 'newer insertion',
+      state: 'active',
+      durable: false,
+      startedAt: at,
+      updatedAt: at,
+      version: 1,
+    });
+
+    expect(repositories.getLatestRunForProject('project-1')?.runId).toBe(
+      'run-2',
+    );
   });
 
   it('updates work items with optimistic version checks', async () => {
@@ -757,7 +787,7 @@ describe('semantic state service', () => {
   });
 
   it('records and resolves decisions, redacts evidence, and projects a summary', async () => {
-    const { service, pluginData } = await stateRuntime();
+    const { service, pluginData, db } = await stateRuntime();
     const run = await service.beginWorkflow({
       commandId: 'begin-projection',
       projectRoot: pluginData,
@@ -802,9 +832,28 @@ describe('semantic state service', () => {
       summary: 'passed token=secret-value',
       status: 'pass',
       command: 'Authorization: Bearer private-value',
+      sourceUri:
+        'https://user:source-password@example.com/report?token=source-secret',
     });
     expect(evidence.summary).toBe('passed token=[REDACTED]');
     expect(evidence.command).toBe('Authorization: Bearer [REDACTED]');
+    expect(evidence.sourceUri).toBe('https://example.com/report');
+    const persisted = JSON.stringify({
+      evidence: db
+        .prepare(
+          'SELECT summary, source_uri, command FROM evidence WHERE evidence_id = ?',
+        )
+        .get(evidence.evidenceId),
+      receipt: db
+        .prepare(
+          'SELECT result_json FROM command_receipts WHERE command_id = ?',
+        )
+        .get('evidence-projection'),
+    });
+    expect(persisted).not.toContain('secret-value');
+    expect(persisted).not.toContain('private-value');
+    expect(persisted).not.toContain('source-password');
+    expect(persisted).not.toContain('source-secret');
     expect(service.getWorkItem(work.workItemId)).toMatchObject({
       evidenceRefs: [{ evidenceId: evidence.evidenceId }],
       pendingDecisions: [],

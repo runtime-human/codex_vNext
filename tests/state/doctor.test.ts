@@ -74,6 +74,28 @@ describe('read-only doctor', () => {
     );
   });
 
+  it('fails referenced artifacts whose bytes do not match metadata', async () => {
+    const hash = 'a'.repeat(64);
+    const relativePath = `artifacts/sha256/aa/${hash}`;
+    const absolutePath = path.join(storage.root, relativePath);
+    await mkdir(path.dirname(absolutePath), { recursive: true });
+    await writeFile(absolutePath, 'corrupt');
+    repositories.putArtifact({
+      artifactId: 'artifact-corrupt',
+      sha256: hash,
+      byteSize: 1,
+      mediaType: 'text/plain',
+      relativePath,
+      createdAt: at,
+    });
+
+    const report = runDoctor({ storage, db, repositories });
+    expect(report.status).toBe('fail');
+    expect(report.checks).toContainEqual(
+      expect.objectContaining({ name: 'artifact_targets', status: 'fail' }),
+    );
+  });
+
   it('warns for orphan CAS and cleanup-required resources without deleting them', async () => {
     repositories.putProject({
       projectId: 'project-1',

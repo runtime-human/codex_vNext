@@ -5,6 +5,7 @@ import type { DatabaseSync } from 'node:sqlite';
 
 import {
   ArtifactStore,
+  artifactFileMatches,
   INITIAL_MIGRATION,
   StateRepositories,
   type StorageRoot,
@@ -178,7 +179,8 @@ export function runDoctor(input: {
         relative !== '..' &&
         !relative.startsWith(`..${path.sep}`) &&
         !path.isAbsolute(relative) &&
-        existsSync(absolute)
+        existsSync(absolute) &&
+        artifactFileMatches(artifact, absolute)
       );
     });
   } catch {
@@ -189,8 +191,8 @@ export function runDoctor(input: {
     'artifact_targets',
     artifactTargetsHealthy,
     'fail',
-    'artifact targets exist',
-    'referenced artifact target missing',
+    'artifact targets exist and match metadata',
+    'referenced artifact target is missing or corrupt',
   );
 
   let orphanCount: number | undefined;
