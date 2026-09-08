@@ -6,6 +6,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import {
   ArtifactStore,
   artifactFileMatches,
+  assertSafeStoragePath,
   INITIAL_MIGRATION,
   StateRepositories,
   type StorageRoot,
@@ -129,11 +130,20 @@ export function runDoctor(input: {
     .digest('hex');
   let migrationHealthy = false;
   try {
-    const row = db
-      .prepare('SELECT name, checksum FROM schema_migrations WHERE version = 1')
-      .get() as { name: string; checksum: string } | undefined;
+    const rows = db
+      .prepare(
+        'SELECT version, name, checksum FROM schema_migrations ORDER BY version',
+      )
+      .all() as unknown as Array<{
+      version: number;
+      name: string;
+      checksum: string;
+    }>;
     migrationHealthy =
-      row?.name === INITIAL_MIGRATION.name && row.checksum === expectedChecksum;
+      rows.length === 1 &&
+      rows[0]?.version === INITIAL_MIGRATION.version &&
+      rows[0].name === INITIAL_MIGRATION.name &&
+      rows[0].checksum === expectedChecksum;
   } catch {
     migrationHealthy = false;
   }
@@ -174,14 +184,8 @@ export function runDoctor(input: {
   try {
     artifactTargetsHealthy = repositories.listArtifacts().every((artifact) => {
       const absolute = path.resolve(storage.root, artifact.relativePath);
-      const relative = path.relative(storage.root, absolute);
-      return (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative) &&
-        existsSync(absolute) &&
-        artifactFileMatches(artifact, absolute)
-      );
+      assertSafeStoragePath(storage.root, absolute);
+      return existsSync(absolute) && artifactFileMatches(artifact, absolute);
     });
   } catch {
     artifactTargetsHealthy = false;

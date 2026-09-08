@@ -56,8 +56,21 @@ if (JSON.stringify(server.args) !== JSON.stringify(['./dist/mcp/index.js'])) {
   fail('workflow-next MCP entry point is invalid');
 }
 const mcpEntrypoint = path.resolve(root, server.args[0]);
-if (!fs.existsSync(mcpEntrypoint) || !fs.statSync(mcpEntrypoint).isFile()) {
+if (!fs.existsSync(mcpEntrypoint)) {
   fail('workflow-next MCP entry point has not been built');
+}
+const mcpEntrypointStats = fs.lstatSync(mcpEntrypoint);
+if (mcpEntrypointStats.isSymbolicLink() || !mcpEntrypointStats.isFile()) {
+  fail('workflow-next MCP entry point must be a regular package file');
+}
+const resolvedEntrypoint = fs.realpathSync(mcpEntrypoint);
+const entrypointRelative = path.relative(root, resolvedEntrypoint);
+if (
+  entrypointRelative === '..' ||
+  entrypointRelative.startsWith(`..${path.sep}`) ||
+  path.isAbsolute(entrypointRelative)
+) {
+  fail('workflow-next MCP entry point escapes the package root');
 }
 
 console.log('plugin validation passed');

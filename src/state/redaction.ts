@@ -1,15 +1,54 @@
 const REDACTED = '[REDACTED]';
 
+const SENSITIVE_KEY =
+  '(?:access[-_]?token|x[-_]?api[-_]?key|api[-_]?key|apikey|password|client[-_]?secret|secret|token)';
+
+function redactValue(value: string): string {
+  if (value.length >= 2 && value[0] === value[value.length - 1]) {
+    return `${value[0]}${REDACTED}${value[value.length - 1]}`;
+  }
+  return REDACTED;
+}
+
 export function redactSensitiveText(value: string): string {
   return value
     .replace(
-      /Authorization:\s*Bearer\s+\S+/gi,
-      `Authorization: Bearer ${REDACTED}`,
+      /(\bAuthorization\s*:\s*["']?)(Basic|Bearer)(\s+)([^\s"']+)(["']?)/gi,
+      (
+        _match,
+        prefix: string,
+        scheme: string,
+        whitespace: string,
+        _secret: string,
+        suffix: string,
+      ) => `${prefix}${scheme}${whitespace}${REDACTED}${suffix}`,
     )
     .replace(/\bBearer\s+\S+/gi, `Bearer ${REDACTED}`)
     .replace(
-      /\b(token|api_key|apikey|password|secret)\s*=\s*[^\s&,;]+/gi,
-      (_match, key: string) => `${key}=${REDACTED}`,
+      new RegExp(
+        `(?<![\\w-])(?<key>${SENSITIVE_KEY})(?<keyQuote>["']?)(?<separator>\\s*(?:=|:)\\s*)(?<secret>"(?:\\\\.|[^"\\\\\\r\\n])*"|'(?:\\\\.|[^'\\\\\\r\\n])*'|[^\\s&,;}\\]"']+)`,
+        'gi',
+      ),
+      (
+        _match,
+        key: string,
+        keyQuote: string,
+        separator: string,
+        secret: string,
+      ) => `${key}${keyQuote}${separator}${redactValue(secret)}`,
+    )
+    .replace(
+      new RegExp(
+        `(?<![\\w-])(?<prefix>--${SENSITIVE_KEY}(?:\\s+|=))(?<secret>"(?:\\\\.|[^"\\\\\\r\\n])*"|'(?:\\\\.|[^'\\\\\\r\\n])*'|[^\\s&,;]+)`,
+        'gi',
+      ),
+      (_match, prefix: string, secret: string) =>
+        `${prefix}${redactValue(secret)}`,
+    )
+    .replace(
+      /\b([a-z][a-z\d+.-]*:\/\/)([^/\s?#@]+):([^/\s?#@]+)@/gi,
+      (_match, scheme: string, username: string) =>
+        `${scheme}${username}:${REDACTED}@`,
     )
     .replace(/\bgithub_pat_[A-Za-z0-9_]+/g, REDACTED)
     .replace(/\bghp_[A-Za-z0-9_]+/g, REDACTED)

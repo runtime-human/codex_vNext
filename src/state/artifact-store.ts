@@ -153,11 +153,15 @@ export class ArtifactStore {
         withFileTypes: true,
       },
     )) {
+      const prefixPath = path.join(
+        this.dependencies.storage.artifactSha256Dir,
+        prefix.name,
+      );
+      assertSafeStoragePath(this.dependencies.storage.root, prefixPath);
       if (!prefix.isDirectory()) continue;
-      for (const item of readdirSync(
-        path.join(this.dependencies.storage.artifactSha256Dir, prefix.name),
-        { withFileTypes: true },
-      )) {
+      for (const item of readdirSync(prefixPath, { withFileTypes: true })) {
+        const itemPath = path.join(prefixPath, item.name);
+        assertSafeStoragePath(this.dependencies.storage.root, itemPath);
         if (!item.isFile()) continue;
         const relative = `artifacts/sha256/${prefix.name}/${item.name}`;
         if (!known.has(relative)) found.push(relative);

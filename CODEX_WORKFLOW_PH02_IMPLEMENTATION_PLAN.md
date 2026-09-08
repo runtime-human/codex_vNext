@@ -147,7 +147,10 @@ Create:
 
 ```text
 tests/probes/
-├── tp02a-mcp-storage-probe.mjs
+├── tp02a-agent-plugin/
+│   ├── plugin.json
+│   ├── mcp.json
+│   └── tp02a-mcp-storage-probe.mjs
 └── tp02a-hook-probe.mjs
 ```
 
@@ -195,7 +198,7 @@ For the live probe only, create a temporary root `.mcp.json`:
     "workflow-next-tp02a": {
       "type": "stdio",
       "command": "node",
-      "args": ["./tests/probes/tp02a-mcp-storage-probe.mjs"],
+      "args": ["./tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs"],
       "cwd": ".",
       "startup_timeout_sec": 30
     }
@@ -238,7 +241,7 @@ Commit only:
 
 ```text
 evidence/ph02-storage-probe.json
-tests/probes/tp02a-mcp-storage-probe.mjs
+tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs
 tests/probes/tp02a-hook-probe.mjs
 tests/probes/tp02a-agent-plugin/plugin.json
 tests/probes/tp02a-agent-plugin/mcp.json
@@ -379,7 +382,10 @@ The target tree after PH-02 is:
 │   │   ├── tools.test.ts
 │   │   └── stdio-smoke.test.ts
 │   └── probes/
-│       ├── tp02a-mcp-storage-probe.mjs
+│       ├── tp02a-agent-plugin/
+│       │   ├── plugin.json
+│       │   ├── mcp.json
+│       │   └── tp02a-mcp-storage-probe.mjs
 │       └── tp02a-hook-probe.mjs
 ├── evidence/
 │   ├── ph01-skill-smoke.json           # existing
@@ -1400,7 +1406,6 @@ z.discriminatedUnion('to', [
       'blocked',
       'cancelled',
     ]),
-    note: z.string().min(1).optional(),
   }).strict(),
 
   z.object({
@@ -1415,6 +1420,10 @@ z.discriminatedUnion('to', [
   }).strict(),
 ]);
 ```
+
+`work.transition` intentionally has no free-form `note`: transition reasons must
+be recorded through bounded evidence, decision resolution, or an explicit work
+item update so idempotency and durable audit content cannot diverge.
 
 For `to='done'`:
 
@@ -1791,7 +1800,7 @@ selects the supported Agent Plugins v1 production contract; its fresh TP-02A
 result controls GATE-02.
 
 **Files:**
-- Create: `tests/probes/tp02a-mcp-storage-probe.mjs`
+- Create: `tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs`
 - Create: `tests/probes/tp02a-hook-probe.mjs`
 - Create: `evidence/ph02-storage-probe.json`
 - Temporary only: `.mcp.json`

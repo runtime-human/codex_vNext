@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -104,6 +105,20 @@ describe('PH-02 SQLite foundation', () => {
     );
   });
 
+  it('rejects a reparse point in the PLUGIN_DATA ancestor chain before mkdir', async () => {
+    const parent = await tempRoot();
+    const target = await tempRoot();
+    const linkedParent = path.join(parent, 'linked-parent');
+    const linked = await linkDirectory(target, linkedParent);
+    if (!linked) return;
+
+    const pluginData = path.join(linkedParent, 'plugin-data');
+    expect(() => resolveStorageRoot(pluginData)).toThrow(
+      expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+    );
+    expect(existsSync(path.join(target, 'plugin-data'))).toBe(false);
+  });
+
   it('rejects a reparse point used as the existing database target', async () => {
     const pluginData = await tempRoot();
     const storage = resolveStorageRoot(pluginData);
@@ -125,6 +140,35 @@ describe('PH-02 SQLite foundation', () => {
       expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
     );
   });
+
+  it.each(['-wal', '-shm'])(
+    'rejects a reparse point used as the SQLite %s sidecar before WAL activation',
+    async (suffix) => {
+      const pluginData = await tempRoot();
+      const storage = resolveStorageRoot(pluginData);
+      const initial = openWorkflowDatabase(storage);
+      initial.close();
+
+      const target = await tempRoot();
+      const sidecar = `${storage.databasePath}${suffix}`;
+      const linked = await symlink(
+        target,
+        sidecar,
+        process.platform === 'win32' ? 'junction' : 'file',
+      ).then(
+        () => true,
+        (error: NodeJS.ErrnoException) => {
+          if (error.code === 'EPERM') return false;
+          throw error;
+        },
+      );
+      if (!linked) return;
+
+      expect(() => openWorkflowDatabase(storage)).toThrow(
+        expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+      );
+    },
+  );
 
   it('preserves an existing regular database file', async () => {
     const pluginData = await tempRoot();

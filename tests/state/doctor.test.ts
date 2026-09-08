@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -55,6 +56,18 @@ describe('read-only doctor', () => {
         expect.objectContaining({ name: 'migration_checksum', status: 'fail' }),
         expect.objectContaining({ name: 'foreign_key_check', status: 'fail' }),
       ]),
+    );
+  });
+
+  it('fails unknown migration rows', () => {
+    db.prepare(
+      "INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (99, 'unknown', 'bad', ?)",
+    ).run(at);
+
+    const report = runDoctor({ storage, db, repositories });
+    expect(report.status).toBe('fail');
+    expect(report.checks).toContainEqual(
+      expect.objectContaining({ name: 'migration_checksum', status: 'fail' }),
     );
   });
 
@@ -188,6 +201,106 @@ describe('read-only doctor', () => {
       if (previous === undefined) delete process.env.PLUGIN_DATA;
       else process.env.PLUGIN_DATA = previous;
       outsideDb.close();
+      await rm(outside, { recursive: true });
+    }
+  });
+
+  it('rejects a reparse point in the PLUGIN_DATA ancestor chain', async () => {
+    const parent = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-doctor-parent-'),
+    );
+    const target = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-doctor-target-'),
+    );
+    const outsidePluginData = path.join(target, 'plugin-data');
+    const outsideStorage = resolveStorageRoot(outsidePluginData);
+    const outsideDb = openWorkflowDatabase(outsideStorage);
+    await migrateDatabase(outsideDb, outsideStorage);
+    const linkedParent = path.join(parent, 'linked-parent');
+    const linked = await symlink(
+      target,
+      linkedParent,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    ).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) {
+      outsideDb.close();
+      await rm(parent, { recursive: true });
+      await rm(target, { recursive: true });
+      return;
+    }
+
+    const previous = process.env.PLUGIN_DATA;
+    process.env.PLUGIN_DATA = path.join(linkedParent, 'plugin-data');
+    try {
+      expect(runDoctorFromEnvironment()).toEqual({
+        status: 'fail',
+        checks: [
+          {
+            name: 'plugin_data',
+            status: 'fail',
+            message: 'PLUGIN_DATA layout is unavailable',
+          },
+        ],
+      });
+    } finally {
+      if (previous === undefined) delete process.env.PLUGIN_DATA;
+      else process.env.PLUGIN_DATA = previous;
+      outsideDb.close();
+      await rm(parent, { recursive: true });
+      await rm(target, { recursive: true });
+    }
+  });
+
+  it('fails artifact validation when a parent component escapes PLUGIN_DATA', async () => {
+    const bytes = Buffer.from('artifact outside plugin data');
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-doctor-artifact-outside-'),
+    );
+    const outsideArtifact = path.join(outside, hash);
+    await writeFile(outsideArtifact, bytes);
+    const linkedParent = path.join(storage.artifactSha256Dir, hash.slice(0, 2));
+    const linked = await symlink(
+      outside,
+      linkedParent,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    ).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) {
+      await rm(outside, { recursive: true });
+      return;
+    }
+
+    repositories.putArtifact({
+      artifactId: 'artifact-escaped-parent',
+      sha256: hash,
+      byteSize: bytes.byteLength,
+      mediaType: 'text/plain',
+      relativePath: `artifacts/sha256/${hash.slice(0, 2)}/${hash}`,
+      createdAt: at,
+    });
+
+    try {
+      const report = runDoctor({ storage, db, repositories });
+      expect(report.status).toBe('fail');
+      expect(report.checks).toContainEqual(
+        expect.objectContaining({ name: 'artifact_targets', status: 'fail' }),
+      );
+      expect(report.checks).toContainEqual(
+        expect.objectContaining({ name: 'orphan_cas', status: 'fail' }),
+      );
+    } finally {
       await rm(outside, { recursive: true });
     }
   });

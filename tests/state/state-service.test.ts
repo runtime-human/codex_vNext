@@ -869,4 +869,57 @@ describe('semantic state service', () => {
       nextSafeAction: 'inspect_repo_drift',
     });
   });
+
+  it('does not persist raw secrets from flags, structured text, headers, or URI userinfo', async () => {
+    const { service, pluginData, db } = await stateRuntime();
+    const run = await service.beginWorkflow({
+      commandId: 'begin-secret-regression',
+      projectRoot: pluginData,
+      objective: 'Secret regression',
+      durable: false,
+    });
+    const evidence = service.recordEvidence({
+      commandId: 'evidence-secret-regression',
+      runId: run.runId,
+      kind: 'test',
+      summary:
+        '--token flag-secret {"token":"json-secret"} X-Api-Key: header-secret client_secret=client-secret access_token=access-secret api_key=api-secret password=password-secret secret=secret-value token=plain-token-secret',
+      status: 'pass',
+      command:
+        'Authorization: Basic basic-secret Authorization: Bearer bearer-secret',
+      sourceUri:
+        'https://user:uri-secret@example.com/report?token=query-secret&access_token=query-access-secret',
+    });
+    const persisted = JSON.stringify({
+      evidence: db
+        .prepare(
+          'SELECT summary, source_uri, command FROM evidence WHERE evidence_id = ?',
+        )
+        .get(evidence.evidenceId),
+      receipt: db
+        .prepare(
+          'SELECT result_json FROM command_receipts WHERE command_id = ?',
+        )
+        .get('evidence-secret-regression'),
+    });
+
+    for (const secret of [
+      'flag-secret',
+      'json-secret',
+      'header-secret',
+      'client-secret',
+      'access-secret',
+      'api-secret',
+      'password-secret',
+      'secret-value',
+      'plain-token-secret',
+      'basic-secret',
+      'bearer-secret',
+      'uri-secret',
+      'query-secret',
+      'query-access-secret',
+    ]) {
+      expect(persisted).not.toContain(secret);
+    }
+  });
 });

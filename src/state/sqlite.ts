@@ -1,7 +1,11 @@
 import { DatabaseSync } from 'node:sqlite';
 
 import { StateError } from './errors.js';
-import { resolveStorageRoot, type StorageRoot } from './storage-root.js';
+import {
+  assertSafeStoragePath,
+  resolveStorageRoot,
+  type StorageRoot,
+} from './storage-root.js';
 
 function pragmaValue(
   db: DatabaseSync,
@@ -16,6 +20,10 @@ function pragmaValue(
 export function openWorkflowDatabase(
   storage: StorageRoot = resolveStorageRoot(),
 ): DatabaseSync {
+  assertSafeStoragePath(storage.root, storage.databasePath);
+  assertSafeStoragePath(storage.root, `${storage.databasePath}-wal`);
+  assertSafeStoragePath(storage.root, `${storage.databasePath}-shm`);
+
   const db = new DatabaseSync(storage.databasePath, {
     timeout: 5_000,
     defensive: true,

@@ -25,6 +25,7 @@ export function runDoctorFromEnvironment(): DoctorReport {
   let storage: StorageRoot;
   try {
     const requestedRoot = path.resolve(pluginData);
+    assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
     assertSafeStoragePath(requestedRoot, requestedRoot);
     const root = realpathSync(requestedRoot);
     if (!statSync(root).isDirectory())
@@ -44,6 +45,8 @@ export function runDoctorFromEnvironment(): DoctorReport {
     const tmpDir = existingDirectory('tmp');
     const databasePath = path.join(stateDir, 'workflow-next.sqlite3');
     assertSafeStoragePath(root, databasePath);
+    assertSafeStoragePath(root, `${databasePath}-wal`);
+    assertSafeStoragePath(root, `${databasePath}-shm`);
     storage = {
       root,
       stateDir,

@@ -12,7 +12,7 @@ type ProbeResult = {
 
 const probeScript = path.join(
   process.cwd(),
-  'tests/probes/tp02a-mcp-storage-probe.mjs',
+  'tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs',
 );
 const fixtures: string[] = [];
 

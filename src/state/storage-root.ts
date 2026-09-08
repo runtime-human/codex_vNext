@@ -70,6 +70,7 @@ export function resolveStorageRoot(
 
   try {
     const requestedRoot = path.resolve(pluginData);
+    assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
     mkdirSync(requestedRoot, { recursive: true });
     assertSafeStoragePath(requestedRoot, requestedRoot);
     if (!statSync(requestedRoot).isDirectory())

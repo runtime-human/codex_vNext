@@ -67,7 +67,14 @@ describe('canonical mutation input', () => {
 describe('secret redaction', () => {
   it.each([
     ['Authorization: Bearer auth-secret', 'auth-secret'],
+    ['Authorization: Basic basic-secret', 'basic-secret'],
     ['Bearer bearer-secret', 'bearer-secret'],
+    ['--token flag-secret', 'flag-secret'],
+    ['--access-token access-flag-secret', 'access-flag-secret'],
+    ['{"token":"json-secret"}', 'json-secret'],
+    ['X-Api-Key: header-secret', 'header-secret'],
+    ['client_secret=client-secret', 'client-secret'],
+    ['access_token=query-secret', 'query-secret'],
     ['token=token-secret', 'token-secret'],
     ['api_key=api-secret', 'api-secret'],
     ['apikey=apikey-secret', 'apikey-secret'],
@@ -76,10 +83,16 @@ describe('secret redaction', () => {
     ['github_pat_patsecret', 'github_pat_patsecret'],
     ['ghp_ghsecret', 'ghp_ghsecret'],
     ['sk-sksecret', 'sk-sksecret'],
+    ['https://user:uri-secret@example.com/repo', 'uri-secret'],
   ])('removes secret material from %s', (input, secret) => {
     const redacted = redactSensitiveText(input);
     expect(redacted).toContain('[REDACTED]');
     expect(redacted).not.toContain(secret);
+  });
+
+  it('preserves ordinary text and non-secret URI query values', () => {
+    const input = 'status=pass https://example.com/report?filter=visible';
+    expect(redactSensitiveText(input)).toBe(input);
   });
 });
 
