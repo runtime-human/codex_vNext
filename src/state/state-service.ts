@@ -251,11 +251,13 @@ export class StateService {
     if (!workItem) throw new StateError('NOT_FOUND', 'work item not found');
     return {
       ...workItem,
-      evidenceRefs: this.repositories
-        .listEvidence(workItem.runId)
-        .filter((item) => item.workItemId === workItemId),
+      evidenceRefs: this.repositories.listEvidenceForWorkItem(
+        workItem.runId,
+        workItemId,
+        100,
+      ),
       pendingDecisions: this.repositories
-        .listPendingDecisions(workItem.runId, workItemId)
+        .listPendingDecisions(workItem.runId, workItemId, 100)
         .filter((item) => item.workItemId === workItemId),
     };
   }

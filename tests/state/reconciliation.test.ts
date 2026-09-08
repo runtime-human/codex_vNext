@@ -157,4 +157,22 @@ describe('reconciliation projection', () => {
       'start_run',
     );
   });
+
+  it('bounds user-facing projection collections', () => {
+    for (let index = 0; index < 101; index += 1) {
+      repositories.putEvidence({
+        evidenceId: `evidence-${index.toString().padStart(3, '0')}`,
+        runId: 'run-1',
+        kind: 'test',
+        summary: 'pass',
+        status: 'pass',
+        createdAt: at,
+      });
+    }
+
+    expect(
+      buildReconciliationProjection({ project, run, inspection, repositories })
+        .evidenceRefs,
+    ).toHaveLength(100);
+  });
 });

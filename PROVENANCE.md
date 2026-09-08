@@ -58,3 +58,10 @@ implementation code is copied.
 - <https://github.com/openai/codex/blob/main/codex-rs/core-plugins/src/loader.rs>
 - <https://agent-plugins.org/schemas/1.0.0/plugin.schema.json>
 - <https://agent-plugins.org/schemas/1.0.0/mcp.schema.json>
+- <https://ts.sdk.modelcontextprotocol.io/v2/>
+- <https://nodejs.org/docs/latest-v24.x/api/sqlite.html>
+- <https://www.sqlite.org/wal.html>
+- <https://www.sqlite.org/pragma.html>
+
+The MCP SDK is used through its published v2 API; SQLite uses only the Node.js
+built-in module. No upstream implementation text was copied.

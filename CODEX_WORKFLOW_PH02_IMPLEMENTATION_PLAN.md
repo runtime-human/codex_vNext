@@ -2829,7 +2829,7 @@ If conditions are not met, skip this task and keep `hooks=degraded` in evidence.
 - Produces GATE-02 result.
 - Creates no narrative compatibility report.
 
-- [ ] **Step 1: Run clean install and full verification**
+- [x] **Step 1: Run clean install and full verification**
 
 ```powershell
 npm ci
@@ -2840,7 +2840,7 @@ npm run doctor -- --json
 
 Expected all pass.
 
-- [ ] **Step 2: Run state/MCP tests twice**
+- [x] **Step 2: Run state/MCP tests twice**
 
 ```powershell
 npm test
@@ -2849,7 +2849,7 @@ npm test
 
 The second run must not depend on stale temp state.
 
-- [ ] **Step 3: Inspect package/runtime dependencies**
+- [x] **Step 3: Inspect package/runtime dependencies**
 
 Confirm:
 
@@ -2863,7 +2863,7 @@ no Python runtime
 no HTTP server
 ```
 
-- [ ] **Step 4: Inspect semantic correctness path**
+- [x] **Step 4: Inspect semantic correctness path**
 
 Confirm each mutation is:
 
@@ -2878,7 +2878,7 @@ MCP schema
 
 No hook-only path exists.
 
-- [ ] **Step 5: Inspect scope leakage**
+- [x] **Step 5: Inspect scope leakage**
 
 Reject accidental:
 
@@ -2896,13 +2896,13 @@ docs/agent_docs
 private Codex session parsing
 ```
 
-- [ ] **Step 6: Verify storage isolation**
+- [x] **Step 6: Verify storage isolation**
 
 All runtime writes must remain under validated `PLUGIN_DATA`.
 
 Repository writes are limited to source/tests/evidence/project-control files explicitly implemented by the developer.
 
-- [ ] **Step 7: Verify event/privacy constraints**
+- [x] **Step 7: Verify event/privacy constraints**
 
 Search code and test fixtures for:
 
@@ -2916,7 +2916,7 @@ Authorization/Bearer secrets
 
 Expected no production path persists them by default.
 
-- [ ] **Step 8: Verify restart/retry properties**
+- [x] **Step 8: Verify restart/retry properties**
 
 Evidence must cover:
 
@@ -2930,11 +2930,11 @@ repo drift
 degraded hooks
 ```
 
-- [ ] **Step 9: Update provenance only if needed**
+- [x] **Step 9: Update provenance only if needed**
 
 Record MCP SDK and current official source references at a high level; do not copy upstream implementation text.
 
-- [ ] **Step 10: Commit final verification-only edits if any**
+- [x] **Step 10: Commit final verification-only edits if any**
 
 ```powershell
 git add PROVENANCE.md evidence tests
@@ -2996,36 +2996,36 @@ Skip if there are no new changes.
 
 PH-02 is `PASS` only when all are true:
 
-- [ ] PH-01 is already PASS.
-- [ ] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
-- [ ] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
-- [ ] No arbitrary storage fallback exists.
-- [ ] Node floor is compatible with the chosen built-in SQLite API.
-- [ ] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
-- [ ] migrations are serialized and checksum-validated.
-- [ ] incompatible-migration backup behavior is tested.
-- [ ] every state mutation is idempotent by `commandId`.
-- [ ] same idempotency key with changed payload is rejected.
-- [ ] work-item optimistic version conflicts are detected.
-- [ ] entity mutation + event + command receipt are atomic.
-- [ ] PH-01 transition rules are enforced by persisted transitions.
-- [ ] `done` cannot bypass readiness/evidence/pending-decision checks.
-- [ ] native `idle`/stop is not treated as acceptance.
-- [ ] RunResourceJournal records intent/observed ownership truthfully.
-- [ ] observed resources cannot claim cleanup ownership.
-- [ ] artifact contents are outside SQLite and content-addressed.
-- [ ] state/artifacts are contained under plugin data.
-- [ ] secret-bearing text is redacted before persistence.
-- [ ] raw prompts/private source/chain-of-thought are not stored.
-- [ ] `workflow.summary` reports repo drift and liveness uncertainty honestly.
-- [ ] doctor detects integrity/schema/artifact/resource problems without mutating.
-- [ ] schema-first stdio MCP tools work in Desktop and CLI.
-- [ ] MCP annotations are truthful.
-- [ ] `workflow-status` and `recover-work` are active and read-only.
-- [ ] restart recovery does not depend on transcript replay.
-- [ ] hook failure does not break explicit state semantics.
-- [ ] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
-- [ ] no docs subsystem/agent_docs was introduced.
+- [x] PH-01 is already PASS.
+- [x] TP-02A proves the actual PH-01 local-plugin MCP process receives a writable persistent `PLUGIN_DATA`.
+- [x] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
+- [x] No arbitrary storage fallback exists.
+- [x] Node floor is compatible with the chosen built-in SQLite API.
+- [x] WAL/foreign-keys/FULL synchronous/busy-timeout/defensive mode are verified.
+- [x] migrations are serialized and checksum-validated.
+- [x] incompatible-migration backup behavior is tested.
+- [x] every state mutation is idempotent by `commandId`.
+- [x] same idempotency key with changed payload is rejected.
+- [x] work-item optimistic version conflicts are detected.
+- [x] entity mutation + event + command receipt are atomic.
+- [x] PH-01 transition rules are enforced by persisted transitions.
+- [x] `done` cannot bypass readiness/evidence/pending-decision checks.
+- [x] native `idle`/stop is not treated as acceptance.
+- [x] RunResourceJournal records intent/observed ownership truthfully.
+- [x] observed resources cannot claim cleanup ownership.
+- [x] artifact contents are outside SQLite and content-addressed.
+- [x] state/artifacts are contained under plugin data.
+- [x] secret-bearing text is redacted before persistence.
+- [x] raw prompts/private source/chain-of-thought are not stored.
+- [x] `workflow.summary` reports repo drift and liveness uncertainty honestly.
+- [x] doctor detects integrity/schema/artifact/resource problems without mutating.
+- [x] schema-first stdio MCP tools work in Desktop and CLI.
+- [x] MCP annotations are truthful.
+- [x] `workflow-status` and `recover-work` are active and read-only.
+- [x] restart recovery does not depend on transcript replay.
+- [x] hook failure does not break explicit state semantics.
+- [x] no Board/context-agent/orchestration/model-routing/durable-mode implementation leaked into PH-02.
+- [x] no docs subsystem/agent_docs was introduced.
 
 If all pass, next allowed phase is **PH-03 Conditional Context Companion**.
 
@@ -3116,25 +3116,25 @@ PH-06 may benchmark the substrate later if it becomes material to end-to-end cos
 
 Before GATE-02:
 
-- [ ] `PLUGIN_DATA` is host supplied and validated.
-- [ ] no path traversal from tool inputs reaches DB/artifact paths.
-- [ ] artifact paths are generated from hashes.
-- [ ] SQLite extensions are disabled.
-- [ ] defensive mode enabled.
-- [ ] trusted schema disabled.
-- [ ] SQL values are bound parameters.
-- [ ] no dynamic table/column names from model input.
-- [ ] repo inspection uses `execFile`, not shell interpolation.
-- [ ] Git remote credentials are stripped before storage.
-- [ ] secrets are redacted in evidence/error text.
-- [ ] no raw prompt storage.
-- [ ] no chain-of-thought storage.
-- [ ] no raw private session-file parser.
-- [ ] MCP errors omit stack traces.
-- [ ] destructive/idempotent/open-world/read-only annotations match actual tools.
-- [ ] hook input is treated as untrusted optional telemetry.
-- [ ] no hook can mark work done or resolve a decision.
-- [ ] no tool can delete history in PH-02.
+- [x] `PLUGIN_DATA` is host supplied and validated.
+- [x] no path traversal from tool inputs reaches DB/artifact paths.
+- [x] artifact paths are generated from hashes.
+- [x] SQLite extensions are disabled.
+- [x] defensive mode enabled.
+- [x] trusted schema disabled.
+- [x] SQL values are bound parameters.
+- [x] no dynamic table/column names from model input.
+- [x] repo inspection uses `execFile`, not shell interpolation.
+- [x] Git remote credentials are stripped before storage.
+- [x] secrets are redacted in evidence/error text.
+- [x] no raw prompt storage.
+- [x] no chain-of-thought storage.
+- [x] no raw private session-file parser.
+- [x] MCP errors omit stack traces.
+- [x] destructive/idempotent/open-world/read-only annotations match actual tools.
+- [x] hook input is treated as untrusted optional telemetry.
+- [x] no hook can mark work done or resolve a decision.
+- [x] no tool can delete history in PH-02.
 
 ---
 

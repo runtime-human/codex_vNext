@@ -561,13 +561,23 @@ export class StateRepositories {
     return this.getWorkItem(workItemId) as WorkItemRecord;
   }
 
-  listWorkItems(runId: string): WorkItemRecord[] {
+  listWorkItems(runId: string, limit = -1): WorkItemRecord[] {
     return (
       this.db
         .prepare(
-          'SELECT * FROM work_items WHERE run_id = ? ORDER BY created_at, work_item_id',
+          'SELECT * FROM work_items WHERE run_id = ? ORDER BY created_at, work_item_id LIMIT ?',
         )
-        .all(runId) as Row[]
+        .all(runId, limit) as Row[]
+    ).map(workItemFromRow);
+  }
+
+  listActiveWorkItems(runId: string, limit = -1): WorkItemRecord[] {
+    return (
+      this.db
+        .prepare(`SELECT * FROM work_items
+          WHERE run_id = ? AND state NOT IN ('done', 'cancelled')
+          ORDER BY created_at, work_item_id LIMIT ?`)
+        .all(runId, limit) as Row[]
     ).map(workItemFromRow);
   }
 
@@ -600,19 +610,23 @@ export class StateRepositories {
     return row ? decisionFromRow(row) : undefined;
   }
 
-  listPendingDecisions(runId: string, workItemId?: string): DecisionRecord[] {
+  listPendingDecisions(
+    runId: string,
+    workItemId?: string,
+    limit = -1,
+  ): DecisionRecord[] {
     const rows = workItemId
       ? this.db
           .prepare(`SELECT * FROM decisions
             WHERE run_id = ? AND status = 'pending'
               AND (work_item_id IS NULL OR work_item_id = ?)
-            ORDER BY created_at, decision_id`)
-          .all(runId, workItemId)
+            ORDER BY created_at, decision_id LIMIT ?`)
+          .all(runId, workItemId, limit)
       : this.db
           .prepare(`SELECT * FROM decisions
             WHERE run_id = ? AND status = 'pending'
-            ORDER BY created_at, decision_id`)
-          .all(runId);
+            ORDER BY created_at, decision_id LIMIT ?`)
+          .all(runId, limit);
     return (rows as Row[]).map(decisionFromRow);
   }
 
@@ -672,13 +686,27 @@ export class StateRepositories {
     return row ? evidenceFromRow(row) : undefined;
   }
 
-  listEvidence(runId: string): EvidenceRecord[] {
+  listEvidence(runId: string, limit = -1): EvidenceRecord[] {
     return (
       this.db
         .prepare(
-          'SELECT * FROM evidence WHERE run_id = ? ORDER BY created_at, evidence_id',
+          'SELECT * FROM evidence WHERE run_id = ? ORDER BY created_at, evidence_id LIMIT ?',
         )
-        .all(runId) as Row[]
+        .all(runId, limit) as Row[]
+    ).map(evidenceFromRow);
+  }
+
+  listEvidenceForWorkItem(
+    runId: string,
+    workItemId: string,
+    limit = -1,
+  ): EvidenceRecord[] {
+    return (
+      this.db
+        .prepare(`SELECT * FROM evidence
+          WHERE run_id = ? AND work_item_id = ?
+          ORDER BY created_at, evidence_id LIMIT ?`)
+        .all(runId, workItemId, limit) as Row[]
     ).map(evidenceFromRow);
   }
 
@@ -792,13 +820,13 @@ export class StateRepositories {
     return this.getResource(resourceId) as ResourceRecord;
   }
 
-  listCleanupRequiredResources(runId: string): ResourceRecord[] {
+  listCleanupRequiredResources(runId: string, limit = -1): ResourceRecord[] {
     return (
       this.db
         .prepare(`SELECT * FROM resources
           WHERE run_id = ? AND cleanup_required = 1
-          ORDER BY created_at, resource_id`)
-        .all(runId) as Row[]
+          ORDER BY created_at, resource_id LIMIT ?`)
+        .all(runId, limit) as Row[]
     ).map(resourceFromRow);
   }
 
