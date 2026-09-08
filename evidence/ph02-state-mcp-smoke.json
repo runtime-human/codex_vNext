@@ -1,20 +1,26 @@
 {
   "smokeVersion": 2,
-  "date": "2026-09-08",
+  "date": "2026-09-09",
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
   "packageVersion": "0.1.0-alpha.1",
+  "runtimeCommit": "399ae3a5bee037427e5c3320471f3fc7089d19a7",
+  "pluginManifestSha256": "7c0504a9ddfe569cb67daf4d072ff5701741cdaf474ec94d009ca284572e0590",
+  "mcpManifestSha256": "48c555eaaa26efd2c335251854e3aafd213daeba81b76c2501586b284137ad46",
+  "mcpEntrypointSha256": "dafd168077733fd1bf904079263f03b199774174bea0a6b09ba226efb94330dc",
+  "installedPackageTreeSha256": "e49b8b271d32f3cfe28f02aaba17acfdbcd08e039849518e1e843637c3e79184",
   "hosts": {
-    "desktop": "pass",
-    "cli": "pass"
+    "desktop": "pass-prior-host-contract",
+    "cli": "pass-current-runtime"
   },
+  "desktopEvidenceCommit": "4202443650a731b94dee8803d9cf47cfb0ba9d51",
   "cliProcesses": 2,
   "publicIds": {
-    "runId": "run_42228d82-e039-4a37-b75e-ce0fa97658f9",
-    "workItemId": "work_eb071b89-a4ee-4ab6-a426-433071e037d7",
-    "evidenceId": "evidence_3e871033-be44-42a8-86e7-146bc7d0e20a"
+    "runId": "run_737418f2-0a3b-4f97-b805-d7895c6a9743",
+    "workItemId": "work_06e99484-caa7-40a4-b225-4c455e71e0cf",
+    "evidenceId": "evidence_2322081e-e4a5-4abb-947d-7f9f5528ed8f"
   },
   "mcp": {
     "start": "pass",
@@ -29,6 +35,18 @@
   "skills": {
     "workflowStatus": "pass",
     "recoverWork": "pass"
+  },
+  "validationSources": {
+    "liveCurrentRuntime": [
+      "start",
+      "createWork",
+      "duplicateIdempotency",
+      "idempotencyConflict",
+      "optimisticConflict",
+      "restartPersistence"
+    ],
+    "automatedCurrentRuntime": ["completionGuard", "repoDrift"],
+    "desktopPriorHostContract": ["desktop", "workflowStatus", "recoverWork"]
   },
   "doctor": "pass",
   "hooks": "degraded"

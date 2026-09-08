@@ -246,12 +246,21 @@ Evidence shape:
 
 ```json
 {
-  "probeVersion": 1,
+  "probeVersion": 2,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
-  "pluginFormat": "legacy-codex-plugin",
+  "pluginFormat": "agent-plugins-v1",
+  "runtimeCommit": "reviewed-runtime-commit",
+  "probePackageVersion": "probe-version",
+  "productionPackageVersion": "production-version",
+  "probePluginManifestSha256": "sha256-of-probe-plugin-json",
+  "probeMcpManifestSha256": "sha256-of-probe-mcp-json",
+  "probeScriptSha256": "sha256-of-probe-script",
+  "installedProbeTreeSha256": "sha256-of-installed-probe-tree",
+  "cliProcesses": 2,
+  "cleanupProcesses": 1,
   "mcp": {
     "pluginDataPresent": true,
     "create": "pass",
@@ -260,15 +269,17 @@ Evidence shape:
     "read": "pass",
     "sqliteTransaction": "pass",
     "sqliteReopen": "pass",
-    "restartPersistence": "pass"
+    "restartPersistence": "pass",
+    "cleanup": "pass"
   },
   "hook": {
-    "configured": true,
-    "trusted": true,
+    "configured": false,
+    "trusted": false,
     "executed": false,
-    "pluginDataPresent": true,
+    "pluginDataPresent": false,
     "write": "fail",
-    "classification": "degraded"
+    "classification": "degraded",
+    "evidenceScope": "prior-host-contract"
   },
   "storageDecision": "plugin_data_sqlite"
 }
@@ -1764,10 +1775,15 @@ Unit tests include a test-only incompatible migration to prove backup-before-app
 **Rev 1.1 legacy compatibility result (2026-09-08): `FAIL`.** Two separate official
 Codex CLI 0.153.4 processes loaded the same installed legacy plugin package.
 The legacy compatibility calls returned `pluginDataPresent=false` and
-`PLUGIN_DATA is not set`. The authoritative Agent Plugins v1 probe then ran
-through two separate official Codex CLI processes against the same installed
-package: process A passed create/append/rename/read/SQLite transaction/reopen;
-process B passed restart persistence; cleanup passed in a third process. Per section
+`PLUGIN_DATA is not set`. The authoritative Agent Plugins v1 loader probe then
+ran through two separate official Codex CLI processes against the same installed
+`0.1.1-live` fixture built from the probe script at runtime commit `399ae3a`:
+process A passed create/append/rename/read plus DDL+nonce insert in one SQLite
+transaction and reopen; process B passed restart persistence; nonce-scoped
+cleanup passed in a third process. The exact `0.1.0-alpha.1` production package
+from that runtime commit separately passed the full MCP workflow and restart
+smoke. Hashes in the two evidence JSON files bind both installed artifacts to
+the reviewed source. Per section
 2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
 selects the supported Agent Plugins v1 production contract; its fresh TP-02A
 result controls GATE-02.
@@ -2757,7 +2773,12 @@ Shape:
   "pluginManifestSha256": "sha256-of-plugin-json",
   "mcpManifestSha256": "sha256-of-mcp-json",
   "mcpEntrypointSha256": "sha256-of-built-entrypoint",
-  "hosts": { "desktop": "pass", "cli": "pass" },
+  "installedPackageTreeSha256": "sha256-of-installed-package-tree",
+  "hosts": {
+    "desktop": "pass-prior-host-contract",
+    "cli": "pass-current-runtime"
+  },
+  "desktopEvidenceCommit": "desktop-smoke-commit",
   "cliProcesses": 2,
   "mcp": {
     "start": "pass",

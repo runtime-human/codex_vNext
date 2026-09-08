@@ -1,13 +1,19 @@
 {
-  "probeVersion": 1,
-  "date": "2026-09-08",
+  "probeVersion": 2,
+  "date": "2026-09-09",
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
-  "probePackageVersion": "0.1.0-live",
+  "runtimeCommit": "399ae3a5bee037427e5c3320471f3fc7089d19a7",
+  "probePackageVersion": "0.1.1-live",
   "productionPackageVersion": "0.1.0-alpha.1",
+  "probePluginManifestSha256": "f463b8fbc88e7bfbf07cb64f1b756d608380bc6d8fd8a3501114646712b8e135",
+  "probeMcpManifestSha256": "d79ea1566b0900c39ef8ae06f7dc1a7919d5bef3f3088ca7fc1c2bbf41675245",
+  "probeScriptSha256": "b8bb061e2a7c2bb5bf359deeb4174009278d9500c59a7ba2cda5382b2ac4d831",
+  "installedProbeTreeSha256": "de4223ed2b01e454ead8e924112ad31066c2e24fd81e5b7816d1b57e4d7d0e8f",
   "cliProcesses": 2,
+  "cleanupProcesses": 1,
   "mcp": {
     "pluginDataPresent": true,
     "create": "pass",
@@ -25,7 +31,8 @@
     "executed": false,
     "pluginDataPresent": false,
     "write": "fail",
-    "classification": "degraded"
+    "classification": "degraded",
+    "evidenceScope": "prior-host-contract"
   },
   "storageDecision": "plugin_data_sqlite"
 }
