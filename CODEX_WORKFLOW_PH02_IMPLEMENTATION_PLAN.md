@@ -2609,7 +2609,7 @@ git commit -m "feat: add workflow status and recovery skills"
 - Produces GATE-02 live evidence.
 - Does not use private session files.
 
-- [ ] **Step 1: Build and reload the plugin**
+- [x] **Step 1: Build and reload the plugin**
 
 ```powershell
 npm run build
@@ -2618,7 +2618,7 @@ npm run validate:plugin
 
 Reload through the same supported local marketplace flow proven by PH-00/PH-01.
 
-- [ ] **Step 2: Start a controlled workflow via MCP**
+- [x] **Step 2: Start a controlled workflow via MCP**
 
 In a fresh Desktop chat, explicitly request use of Workflow Next MCP to:
 
@@ -2631,7 +2631,7 @@ workflow.begin
 
 Record returned public IDs in the smoke evidence file.
 
-- [ ] **Step 3: Test duplicate command idempotency**
+- [x] **Step 3: Test duplicate command idempotency**
 
 Repeat one mutation with the same `commandId`.
 
@@ -2643,7 +2643,7 @@ no duplicate event
 no version increment
 ```
 
-- [ ] **Step 4: Test conflict**
+- [x] **Step 4: Test conflict**
 
 Repeat the same `commandId` with a changed payload.
 
@@ -2653,7 +2653,7 @@ Expected:
 IDEMPOTENCY_CONFLICT
 ```
 
-- [ ] **Step 5: Test optimistic conflict**
+- [x] **Step 5: Test optimistic conflict**
 
 Use an old `expectedVersion`.
 
@@ -2663,7 +2663,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [ ] **Step 6: Test evidence-bound completion**
+- [x] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2681,7 +2681,7 @@ Expected:
 done
 ```
 
-- [ ] **Step 7: Restart Desktop/MCP process**
+- [x] **Step 7: Restart Desktop/MCP process**
 
 Start a fresh chat after restart.
 
@@ -2704,7 +2704,7 @@ nextSafeAction=inspect_repo_drift
 
 No claim that old worker is alive.
 
-- [ ] **Step 9: Repeat minimal smoke in CLI**
+- [x] **Step 9: Repeat minimal smoke in CLI**
 
 Use a fresh CLI invocation and the same plugin.
 
