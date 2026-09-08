@@ -8,6 +8,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -42,11 +43,10 @@ export function artifactFileMatches(
   absolutePath: string,
 ): boolean {
   try {
+    const { size } = statSync(absolutePath);
+    if (size !== artifact.byteSize || size > MAX_ARTIFACT_BYTES) return false;
     const bytes = readFileSync(absolutePath);
-    return (
-      bytes.byteLength === artifact.byteSize &&
-      createHash('sha256').update(bytes).digest('hex') === artifact.sha256
-    );
+    return createHash('sha256').update(bytes).digest('hex') === artifact.sha256;
   } catch {
     return false;
   }

@@ -1,10 +1,18 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  truncate,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   ArtifactStore,
+  artifactFileMatches,
   migrateDatabase,
   openWorkflowDatabase,
   resolveStorageRoot,
@@ -74,6 +82,19 @@ describe('ArtifactStore', () => {
     expect(() =>
       store.putBytes({ bytes, mediaType: 'text/plain' }),
     ).toThrowError(expect.objectContaining({ code: 'INTEGRITY_FAILED' }));
+  });
+
+  it('rejects oversized CAS targets before hashing them', async () => {
+    const target = path.join(pluginData, 'oversized');
+    await writeFile(target, '');
+    await truncate(target, 10 * 1024 * 1024 + 1);
+
+    expect(
+      artifactFileMatches(
+        { sha256: 'a'.repeat(64), byteSize: 10 * 1024 * 1024 + 1 },
+        target,
+      ),
+    ).toBe(false);
   });
 
   it('detects an unreferenced CAS object without deleting it', async () => {
