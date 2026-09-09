@@ -72,11 +72,14 @@ export function resolveStorageRoot(
     const requestedRoot = path.resolve(pluginData);
     assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
     mkdirSync(requestedRoot, { recursive: true });
+    assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
     assertSafeStoragePath(requestedRoot, requestedRoot);
     if (!statSync(requestedRoot).isDirectory())
       throw new Error('PLUGIN_DATA is not a directory');
 
     const root = realpathSync(requestedRoot);
+    assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
+    assertSafeStoragePath(requestedRoot, root);
     assertSafeStoragePath(root, root);
     const makeDirectory = (...segments: string[]) => {
       const requested = path.join(root, ...segments);
@@ -84,7 +87,7 @@ export function resolveStorageRoot(
       mkdirSync(requested, { recursive: true });
       assertSafeStoragePath(root, requested);
       const resolved = realpathSync(requested);
-      assertInside(root, resolved);
+      assertSafeStoragePath(root, resolved);
       return resolved;
     };
 

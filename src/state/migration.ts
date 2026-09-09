@@ -5,7 +5,7 @@ import { backup, type DatabaseSync } from 'node:sqlite';
 import { type Clock, systemClock } from './clock.js';
 import { StateError } from './errors.js';
 import { INITIAL_MIGRATION_SQL } from './migrations/001-initial.js';
-import type { StorageRoot } from './storage-root.js';
+import { assertSafeStoragePath, type StorageRoot } from './storage-root.js';
 import { withImmediateTransaction } from './transaction.js';
 
 export interface Migration {
@@ -228,7 +228,9 @@ export async function migrateDatabase(
     if (state.applied.has(migration.version)) continue;
     if (migration.kind === 'incompatible') {
       // UUID makes concurrent migrators safe even when their clocks share a tick.
-      await backup(db, backupPath(storage, migration, clock));
+      const destination = backupPath(storage, migration, clock);
+      assertSafeStoragePath(storage.root, destination);
+      await backup(db, destination);
     }
 
     withImmediateTransaction(db, () => {

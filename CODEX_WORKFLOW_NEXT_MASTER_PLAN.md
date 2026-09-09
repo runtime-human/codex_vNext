@@ -2668,4 +2668,4 @@ CODEX DESKTOP / CLI
      subagents / worktrees / review / terminal / sandbox / memories
 ```
 
-The immediate next executable phase is **PH-01 Plugin Foundation + Domain Contracts**. No additional global H0 rerun is required.
+The immediate next executable phase is **PH-02 Durable State, Evidence + State MCP**. No additional global H0 rerun is required.

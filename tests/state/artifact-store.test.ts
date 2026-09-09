@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import {
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   rm,
   symlink,
@@ -191,5 +192,58 @@ describe('ArtifactStore', () => {
 
     expect(store.listOrphans()).toEqual([`artifacts/sha256/ff/${hash}`]);
     expect(store.listOrphans()).toHaveLength(1);
+  });
+
+  it('counts malformed regular files directly under the CAS root as orphans', async () => {
+    const stray = path.join(storage.artifactSha256Dir, 'stray');
+    await writeFile(stray, 'stray');
+
+    expect(store.listOrphans()).toEqual(['artifacts/sha256/stray']);
+  });
+
+  it('counts malformed regular files inside a malformed CAS prefix as orphans', async () => {
+    const stray = path.join(storage.artifactSha256Dir, 'stray', 'claimed');
+    await mkdir(path.dirname(stray), { recursive: true });
+    await writeFile(stray, 'stray');
+
+    expect(store.listOrphans()).toEqual(['artifacts/sha256/stray/claimed']);
+  });
+
+  it('rejects a reparse point used as the CAS root during enumeration', async () => {
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-cas-root-outside-'),
+    );
+    await rm(storage.artifactSha256Dir, { recursive: true });
+    const linked = await linkDirectory(outside, storage.artifactSha256Dir);
+    if (!linked) return;
+
+    try {
+      expect(() => store.listOrphans()).toThrowError(
+        expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }),
+      );
+    } finally {
+      await rm(outside, { recursive: true });
+    }
+  });
+
+  it('rechecks the temporary artifact path before opening it', async () => {
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-artifact-tmp-outside-'),
+    );
+    await rm(storage.tmpDir, { recursive: true });
+    const linked = await linkDirectory(outside, storage.tmpDir);
+    if (!linked) return;
+
+    try {
+      expect(() =>
+        store.putBytes({
+          bytes: new TextEncoder().encode('tmp junction'),
+          mediaType: 'text/plain',
+        }),
+      ).toThrowError(expect.objectContaining({ code: 'PATH_OUTSIDE_ROOT' }));
+      await expect(readdir(outside)).resolves.toEqual([]);
+    } finally {
+      await rm(outside, { recursive: true });
+    }
   });
 });

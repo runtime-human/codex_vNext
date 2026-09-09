@@ -304,4 +304,33 @@ describe('read-only doctor', () => {
       await rm(outside, { recursive: true });
     }
   });
+
+  it('fails CAS inspection when the CAS root is a reparse point', async () => {
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-doctor-cas-root-outside-'),
+    );
+    await rm(storage.artifactSha256Dir, { recursive: true });
+    const linked = await symlink(
+      outside,
+      storage.artifactSha256Dir,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    ).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EPERM') return false;
+        throw error;
+      },
+    );
+    if (!linked) return;
+
+    try {
+      const report = runDoctor({ storage, db, repositories });
+      expect(report.status).toBe('fail');
+      expect(report.checks).toContainEqual(
+        expect.objectContaining({ name: 'orphan_cas', status: 'fail' }),
+      );
+    } finally {
+      await rm(outside, { recursive: true });
+    }
+  });
 });

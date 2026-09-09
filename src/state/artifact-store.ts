@@ -82,6 +82,7 @@ export class ArtifactStore {
         this.dependencies.storage.tmpDir,
         `artifact-${randomUUID()}.tmp`,
       );
+      assertSafeStoragePath(this.dependencies.storage.root, temporary);
       const handle = openSync(temporary, 'wx');
       let written = false;
       try {
@@ -147,6 +148,10 @@ export class ArtifactStore {
         .map((item) => item.relativePath),
     );
     const found: string[] = [];
+    assertSafeStoragePath(
+      this.dependencies.storage.root,
+      this.dependencies.storage.artifactSha256Dir,
+    );
     for (const prefix of readdirSync(
       this.dependencies.storage.artifactSha256Dir,
       {
@@ -158,13 +163,21 @@ export class ArtifactStore {
         prefix.name,
       );
       assertSafeStoragePath(this.dependencies.storage.root, prefixPath);
-      if (!prefix.isDirectory()) continue;
+      if (!prefix.isDirectory()) {
+        if (prefix.isFile()) found.push(`artifacts/sha256/${prefix.name}`);
+        continue;
+      }
       for (const item of readdirSync(prefixPath, { withFileTypes: true })) {
         const itemPath = path.join(prefixPath, item.name);
         assertSafeStoragePath(this.dependencies.storage.root, itemPath);
         if (!item.isFile()) continue;
         const relative = `artifacts/sha256/${prefix.name}/${item.name}`;
-        if (!known.has(relative)) found.push(relative);
+        if (
+          !/^[0-9a-f]{2}$/.test(prefix.name) ||
+          !/^[0-9a-f]{64}$/.test(item.name) ||
+          !known.has(relative)
+        )
+          found.push(relative);
       }
     }
     return found.sort();

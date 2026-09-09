@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -236,6 +236,44 @@ describe('PH-02 migrations', () => {
     } finally {
       first.close();
       second.close();
+    }
+  });
+
+  it('rechecks the backup path before an incompatible migration backup', async () => {
+    const storage = resolveStorageRoot(await tempRoot());
+    const db = openWorkflowDatabase(storage);
+    const outside = await mkdtemp(
+      path.join(tmpdir(), 'workflow-next-backup-outside-'),
+    );
+    const incompatible: Migration = {
+      version: 2,
+      name: 'backup-junction-test-only',
+      kind: 'incompatible',
+      sql: 'CREATE TABLE backup_junction_probe (id INTEGER) STRICT;',
+    };
+    try {
+      await migrateDatabase(db, storage);
+      await rm(storage.backupsDir, { recursive: true });
+      const linked = await symlink(
+        outside,
+        storage.backupsDir,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      ).then(
+        () => true,
+        (error: NodeJS.ErrnoException) => {
+          if (error.code === 'EPERM') return false;
+          throw error;
+        },
+      );
+      if (!linked) return;
+
+      await expect(
+        migrateDatabase(db, storage, [INITIAL_MIGRATION, incompatible]),
+      ).rejects.toMatchObject({ code: 'PATH_OUTSIDE_ROOT' });
+      expect(await readdir(outside)).toEqual([]);
+    } finally {
+      db.close();
+      await rm(outside, { recursive: true });
     }
   });
 

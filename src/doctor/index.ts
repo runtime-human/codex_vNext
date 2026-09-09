@@ -25,9 +25,12 @@ export function runDoctorFromEnvironment(): DoctorReport {
   let storage: StorageRoot;
   try {
     const requestedRoot = path.resolve(pluginData);
-    assertSafeStoragePath(path.parse(requestedRoot).root, requestedRoot);
+    const filesystemRoot = path.parse(requestedRoot).root;
+    assertSafeStoragePath(filesystemRoot, requestedRoot);
     assertSafeStoragePath(requestedRoot, requestedRoot);
     const root = realpathSync(requestedRoot);
+    assertSafeStoragePath(filesystemRoot, requestedRoot);
+    assertSafeStoragePath(requestedRoot, root);
     if (!statSync(root).isDirectory())
       return failed('PLUGIN_DATA is not a directory');
     assertSafeStoragePath(root, root);
@@ -35,6 +38,7 @@ export function runDoctorFromEnvironment(): DoctorReport {
       const requested = path.join(root, ...segments);
       assertSafeStoragePath(root, requested);
       const resolved = realpathSync(requested);
+      assertSafeStoragePath(root, requested);
       assertSafeStoragePath(root, resolved);
       return resolved;
     };

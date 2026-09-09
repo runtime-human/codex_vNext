@@ -28,10 +28,11 @@ not loaded by the current loader, so hooks remain `DEGRADED`, Task 12 is skipped
 and explicit MCP state remains the only correctness path. This amendment
 overrides conflicting legacy packaging text below without expanding PH-02.
 
-Execution status: Tasks 0-11 and 13 are complete; Task 12 is intentionally
-skipped under `BR-PH02-02`. The acceptance and security checklists are the
-authoritative completion record; unchecked task steps below remain the original
-execution recipe rather than current status.
+Execution status: Tasks 0-10 and 13 are complete; Task 11 awaits the reopened
+live completion/recovery checks from final acceptance review. Task 12 is
+intentionally skipped under `BR-PH02-02`. The acceptance and security
+checklists are the authoritative completion record; unchecked task steps below
+remain the original execution recipe rather than current status.
 
 ## Global Constraints
 
@@ -2713,7 +2714,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [x] **Step 6: Test evidence-bound completion**
+- [ ] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2739,7 +2740,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [x] **Step 8: Test repo drift behavior**
+- [ ] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2768,7 +2769,7 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
