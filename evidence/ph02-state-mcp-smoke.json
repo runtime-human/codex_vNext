@@ -67,11 +67,7 @@
       "optimisticConflict",
       "restartPersistence"
     ],
-    "automatedCurrentRuntime": [
-      "completionGuard",
-      "repoDrift",
-      "recoverWork"
-    ]
+    "automatedCurrentRuntime": ["completionGuard", "repoDrift", "recoverWork"]
   },
   "doctor": "pass",
   "hooks": "degraded"
