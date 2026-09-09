@@ -47,19 +47,32 @@ async function runGit(
 const OBJECT_ID_PATTERN = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/i;
 function objectId(value: string): string | undefined {
   const candidate = value.trim();
-  return OBJECT_ID_PATTERN.test(candidate) ? candidate : undefined;
+  return OBJECT_ID_PATTERN.test(candidate)
+    ? candidate.toLowerCase()
+    : undefined;
 }
 
 function validRef(value: string): boolean {
+  const parts = value.split('/');
   return (
     value.startsWith('refs/') &&
-    value.split('/').every((part) => part && part !== '.' && part !== '..') &&
+    parts.every(
+      (part) =>
+        part &&
+        part !== '.' &&
+        part !== '..' &&
+        !part.startsWith('.') &&
+        !part.endsWith('.lock'),
+    ) &&
     !Array.from(value).some((character) => {
       const code = character.codePointAt(0) ?? 0;
       return character === '\\' || code <= 0x1f || code === 0x7f;
     }) &&
+    !/[ ~^:?*]/u.test(value) &&
+    !value.includes('[') &&
     !value.includes('..') &&
-    !value.includes('@{')
+    !value.includes('@{') &&
+    !value.endsWith('.')
   );
 }
 

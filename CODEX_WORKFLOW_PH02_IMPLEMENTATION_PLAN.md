@@ -2670,6 +2670,14 @@ npm run validate:plugin
 
 Reload through the same supported local marketplace flow proven by PH-00/PH-01.
 
+Final post-review coverage note: the exact `9a244d0` runtime executed all
+mutation, conflict, completion, restart and drift cases through official CLI
+processes. Two fresh Desktop tasks then loaded the same installed package and
+independently called read-only status/recovery against the persisted run. The
+earlier `4f6f129` Desktop mutation smoke remains host-wiring evidence; the
+`validationSources` map in the committed smoke record is authoritative for
+which cases were rerun on each final surface.
+
 - [x] **Step 2: Start a controlled workflow via MCP**
 
 In a fresh Desktop chat, explicitly request use of Workflow Next MCP to:
@@ -2776,7 +2784,7 @@ Shape:
 
 ```json
 {
-  "smokeVersion": 3,
+  "smokeVersion": 4,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
@@ -2788,13 +2796,23 @@ Shape:
   "mcpManifestSha256": "sha256-of-mcp-json",
   "mcpEntrypointSha256": "sha256-of-built-entrypoint",
   "installedPackageTreeSha256": "sha256-of-installed-package-tree",
+  "installedPackageTreeHashAlgorithm": "sha256 of sorted '<path> <file-sha256>\\n' entries",
   "hosts": {
     "desktop": "pass-current-runtime",
     "cli": "pass-current-runtime"
   },
   "desktopEvidenceCommit": "desktop-smoke-commit",
   "desktopProcesses": 2,
-  "cliProcesses": 2,
+  "cliProcesses": 4,
+  "threadIds": {
+    "desktop": ["desktop-thread-a", "desktop-thread-b"],
+    "cli": ["cli-thread-a", "cli-thread-b", "cli-thread-c", "cli-thread-d"]
+  },
+  "publicIds": {
+    "runId": "run-id",
+    "workItemId": "work-item-id",
+    "evidenceId": "evidence-id"
+  },
   "mcp": {
     "start": "pass",
     "createWork": "pass",
@@ -2808,6 +2826,37 @@ Shape:
   "skills": {
     "workflowStatus": "pass",
     "recoverWork": "pass"
+  },
+  "liveCases": [
+    "completionGuard",
+    "restartPersistence",
+    "recoverWork"
+  ],
+  "validationSources": {
+    "desktopCurrentRuntime": [
+      "restartPersistence",
+      "workflowStatus",
+      "recoverWork"
+    ],
+    "cliCurrentRuntime": [
+      "start",
+      "createWork",
+      "duplicateIdempotency",
+      "idempotencyConflict",
+      "optimisticConflict",
+      "restartPersistence",
+      "completionGuard",
+      "repoDrift",
+      "recoverWork"
+    ],
+    "automatedCurrentRuntime": [
+      "duplicateIdempotency",
+      "idempotencyConflict",
+      "optimisticConflict",
+      "completionGuard",
+      "repoDrift",
+      "recoverWork"
+    ]
   },
   "doctor": "pass",
   "hooks": "degraded"

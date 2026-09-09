@@ -111,6 +111,45 @@ describe('project inspector', () => {
     });
   });
 
+  it('canonicalizes uppercase object IDs from Git metadata', async () => {
+    const root = await tempRoot('workflow-next-uppercase-head-');
+    const head = 'ABCDEF1234'.repeat(4);
+    await mkdir(path.join(root, '.git'), { recursive: true });
+    await writeFile(path.join(root, '.git', 'HEAD'), `${head}\n`);
+
+    await expect(
+      inspectProject(root, async () => undefined),
+    ).resolves.toMatchObject({ head: head.toLowerCase() });
+  });
+
+  it('rejects invalid Git ref names in metadata fallback', async () => {
+    const root = await tempRoot('workflow-next-invalid-ref-');
+    const head = '2'.repeat(40);
+    const invalidRefs = [
+      'refs/heads/main^',
+      'refs/heads/main~',
+      'refs/heads/main:',
+      'refs/heads/main?',
+      'refs/heads/main*',
+      'refs/heads/main[',
+      'refs/.hidden/main',
+      'refs/heads/main.lock',
+      'refs/heads/main.',
+    ];
+    await mkdir(path.join(root, '.git'), { recursive: true });
+
+    for (const ref of invalidRefs) {
+      await writeFile(path.join(root, '.git', 'HEAD'), `ref: ${ref}\n`);
+      await writeFile(
+        path.join(root, '.git', 'packed-refs'),
+        `${head} ${ref}\n`,
+      );
+
+      const inspected = await inspectProject(root, async () => undefined);
+      expect(inspected, ref).not.toHaveProperty('head');
+    }
+  });
+
   it('resolves packed refs through a worktree gitdir pointer', async () => {
     const worktreeRoot = await tempRoot('workflow-next-worktree-');
     const commonGitRoot = await tempRoot('workflow-next-common-git-');
