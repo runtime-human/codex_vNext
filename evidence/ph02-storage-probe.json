@@ -5,7 +5,7 @@
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
-  "runtimeCommit": "399ae3a5bee037427e5c3320471f3fc7089d19a7",
+  "probeCommit": "399ae3a5bee037427e5c3320471f3fc7089d19a7",
   "probePackageVersion": "0.1.1-live",
   "productionPackageVersion": "0.1.0-alpha.1",
   "probePluginManifestSha256": "f463b8fbc88e7bfbf07cb64f1b756d608380bc6d8fd8a3501114646712b8e135",

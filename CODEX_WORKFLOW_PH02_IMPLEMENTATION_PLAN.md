@@ -257,7 +257,7 @@ Evidence shape:
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
   "pluginFormat": "agent-plugins-v1",
-  "runtimeCommit": "reviewed-runtime-commit",
+  "probeCommit": "reviewed-probe-commit",
   "probePackageVersion": "probe-version",
   "productionPackageVersion": "production-version",
   "probePluginManifestSha256": "sha256-of-probe-plugin-json",
@@ -1792,9 +1792,10 @@ ran through two separate official Codex CLI processes against the same installed
 process A passed create/append/rename/read plus DDL+nonce insert in one SQLite
 transaction and reopen; process B passed restart persistence; nonce-scoped
 cleanup passed in a third process. The exact `0.1.0-alpha.1` production package
-from that runtime commit separately passed the full MCP workflow and restart
-smoke. Hashes in the two evidence JSON files bind both installed artifacts to
-the reviewed source. Per section
+from final reviewed runtime commit `61c912d` separately passed full MCP workflow
+and restart smoke in two official CLI processes and two fresh Desktop tasks.
+Hashes in the two evidence JSON files bind both installed artifacts to the
+reviewed source. Per section
 2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
 selects the supported Agent Plugins v1 production contract; its fresh TP-02A
 result controls GATE-02.
@@ -2658,7 +2659,7 @@ git commit -m "feat: add workflow status and recovery skills"
 - Produces GATE-02 live evidence.
 - Does not use private session files.
 
-- [ ] **Step 1: Build and reload the plugin**
+- [x] **Step 1: Build and reload the plugin**
 
 ```powershell
 npm run build
@@ -2667,7 +2668,7 @@ npm run validate:plugin
 
 Reload through the same supported local marketplace flow proven by PH-00/PH-01.
 
-- [ ] **Step 2: Start a controlled workflow via MCP**
+- [x] **Step 2: Start a controlled workflow via MCP**
 
 In a fresh Desktop chat, explicitly request use of Workflow Next MCP to:
 
@@ -2680,7 +2681,7 @@ workflow.begin
 
 Record returned public IDs in the smoke evidence file.
 
-- [ ] **Step 3: Test duplicate command idempotency**
+- [x] **Step 3: Test duplicate command idempotency**
 
 Repeat one mutation with the same `commandId`.
 
@@ -2692,7 +2693,7 @@ no duplicate event
 no version increment
 ```
 
-- [ ] **Step 4: Test conflict**
+- [x] **Step 4: Test conflict**
 
 Repeat the same `commandId` with a changed payload.
 
@@ -2702,7 +2703,7 @@ Expected:
 IDEMPOTENCY_CONFLICT
 ```
 
-- [ ] **Step 5: Test optimistic conflict**
+- [x] **Step 5: Test optimistic conflict**
 
 Use an old `expectedVersion`.
 
@@ -2712,7 +2713,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [ ] **Step 6: Test evidence-bound completion**
+- [x] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2730,7 +2731,7 @@ Expected:
 done
 ```
 
-- [ ] **Step 7: Restart Desktop/MCP process**
+- [x] **Step 7: Restart Desktop/MCP process**
 
 Start a fresh chat after restart.
 
@@ -2738,7 +2739,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [ ] **Step 8: Test repo drift behavior**
+- [x] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2753,13 +2754,13 @@ nextSafeAction=inspect_repo_drift
 
 No claim that old worker is alive.
 
-- [ ] **Step 9: Repeat minimal smoke in CLI**
+- [x] **Step 9: Repeat minimal smoke in CLI**
 
 Use a fresh CLI invocation and the same plugin.
 
 Verify read-only status and one idempotent mutation.
 
-- [ ] **Step 10: Run doctor**
+- [x] **Step 10: Run doctor**
 
 ```powershell
 npm run doctor -- --json
@@ -2767,13 +2768,13 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
 ```json
 {
-  "smokeVersion": 2,
+  "smokeVersion": 3,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
@@ -2786,10 +2787,11 @@ Shape:
   "mcpEntrypointSha256": "sha256-of-built-entrypoint",
   "installedPackageTreeSha256": "sha256-of-installed-package-tree",
   "hosts": {
-    "desktop": "pass-prior-host-contract",
+    "desktop": "pass-current-runtime",
     "cli": "pass-current-runtime"
   },
   "desktopEvidenceCommit": "desktop-smoke-commit",
+  "desktopProcesses": 2,
   "cliProcesses": 2,
   "mcp": {
     "start": "pass",
@@ -2812,7 +2814,7 @@ Shape:
 
 Do not store absolute paths or raw transcripts.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```powershell
 git add evidence/ph02-state-mcp-smoke.json
