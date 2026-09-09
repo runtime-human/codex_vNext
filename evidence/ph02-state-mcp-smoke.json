@@ -6,37 +6,37 @@
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
   "packageVersion": "0.1.0-alpha.1",
-  "runtimeCommit": "61c912d95b4d3f702f9349ce9662ac6134984357",
+  "runtimeCommit": "4f6f1290e9922798bbe3c705e11b04db76473279",
   "pluginManifestSha256": "7c0504a9ddfe569cb67daf4d072ff5701741cdaf474ec94d009ca284572e0590",
   "mcpManifestSha256": "48c555eaaa26efd2c335251854e3aafd213daeba81b76c2501586b284137ad46",
   "mcpEntrypointSha256": "dafd168077733fd1bf904079263f03b199774174bea0a6b09ba226efb94330dc",
-  "installedPackageTreeSha256": "5fd50ff047addc9651771550e8496b1b1f0e6b67a8a7c651fc30b3aef0f4834e",
+  "installedPackageTreeSha256": "eda9979d8a384c7b1f4edce940d19f8f17d86d595717bd145e01aa0b16198a26",
   "hosts": {
     "desktop": "pass-current-runtime",
     "cli": "pass-current-runtime"
   },
-  "desktopEvidenceCommit": "61c912d95b4d3f702f9349ce9662ac6134984357",
+  "desktopEvidenceCommit": "4f6f1290e9922798bbe3c705e11b04db76473279",
   "desktopProcesses": 2,
   "cliProcesses": 2,
   "threadIds": {
     "desktop": [
-      "01a083f9-4167-7352-a6f6-50c90449802a",
-      "01a083fb-6383-7540-b1bf-f7ae01610b47"
+      "01a08440-0d82-79a2-a570-3c166403aaaf",
+      "01a08441-f6ba-7173-807e-242381e41156"
     ],
     "cli": [
-      "01a082e7-ee3b-7f52-8897-5c1d1bf52ddb",
-      "01a082ea-fa91-70a0-928e-a3093c048821"
+      "01a0843c-11f4-72b3-885c-287e2cc8e69a",
+      "01a0843e-3a85-7872-8161-a39de1005259"
     ]
   },
   "publicIds": {
-    "runId": "run_470ae97d-8a5e-4895-83ea-5f5360660ee5",
-    "workItemId": "work_abf82582-42f1-4d7d-a445-3c36ae9acb4a",
-    "evidenceId": "evidence_8ee761b1-9473-4d70-b34b-1710df01a50b"
+    "runId": "run_46e3184c-bc35-46c4-a28c-55e96184438a",
+    "workItemId": "work_dffe8597-bf98-4e4f-8388-efdc8a7ef4cf",
+    "evidenceId": "evidence_9b1a7974-1423-462f-8663-971819e08dd8"
   },
   "cliPublicIds": {
-    "runId": "run_b59361e2-d138-4a14-b8b8-26c0139a31a7",
-    "workItemId": "work_7dcb3dc0-a4de-4347-8813-7792aa32071e",
-    "evidenceId": "evidence_71e4fa15-4497-4993-8bd8-396c3e3af6b5"
+    "runId": "run_fbd3018a-fd7a-4aee-aff8-34dd5ec4a808",
+    "workItemId": "work_896c3a61-cb88-41cf-8e54-6d9bff6b483c",
+    "evidenceId": "evidence_e0c6c1fc-7ff6-4e9b-9a39-e5425636b9a1"
   },
   "mcp": {
     "start": "pass",
@@ -52,22 +52,53 @@
     "workflowStatus": "pass",
     "recoverWork": "pass"
   },
+  "liveCases": [
+    {
+      "surface": "cli",
+      "case": "completionGuard",
+      "threadId": "01a0843c-11f4-72b3-885c-287e2cc8e69a",
+      "runId": "run_fbd3018a-fd7a-4aee-aff8-34dd5ec4a808",
+      "workItemId": "work_896c3a61-cb88-41cf-8e54-6d9bff6b483c",
+      "evidenceId": "evidence_e0c6c1fc-7ff6-4e9b-9a39-e5425636b9a1",
+      "blockedCode": "COMPLETION_BLOCKED",
+      "finalState": "done"
+    },
+    {
+      "surface": "cli",
+      "case": "recoverWork",
+      "threadId": "01a0843e-3a85-7872-8161-a39de1005259",
+      "runId": "run_9afee835-5a7c-47a3-9d09-c2a3dbcb81a0",
+      "workItemId": "work_0cc4ce81-46fb-4451-81c0-1539073c7ddf",
+      "repoDrift": "head_changed",
+      "nextSafeAction": "inspect_repo_drift",
+      "liveness": "unknown",
+      "readOnly": true
+    }
+  ],
   "validationSources": {
     "desktopCurrentRuntime": [
       "start",
       "createWork",
       "restartPersistence",
-      "workflowStatus"
+      "workflowStatus",
+      "completionGuard"
     ],
     "cliCurrentRuntime": [
       "start",
       "createWork",
+      "restartPersistence",
+      "completionGuard",
+      "repoDrift",
+      "recoverWork"
+    ],
+    "automatedCurrentRuntime": [
       "duplicateIdempotency",
       "idempotencyConflict",
       "optimisticConflict",
-      "restartPersistence"
-    ],
-    "automatedCurrentRuntime": ["completionGuard", "repoDrift", "recoverWork"]
+      "completionGuard",
+      "repoDrift",
+      "recoverWork"
+    ]
   },
   "doctor": "pass",
   "hooks": "degraded"

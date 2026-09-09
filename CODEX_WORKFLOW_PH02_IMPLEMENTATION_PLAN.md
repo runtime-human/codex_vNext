@@ -28,11 +28,10 @@ not loaded by the current loader, so hooks remain `DEGRADED`, Task 12 is skipped
 and explicit MCP state remains the only correctness path. This amendment
 overrides conflicting legacy packaging text below without expanding PH-02.
 
-Execution status: Tasks 0-10 and 13 are complete; Task 11 awaits the reopened
-live completion/recovery checks from final acceptance review. Task 12 is
-intentionally skipped under `BR-PH02-02`. The acceptance and security
-checklists are the authoritative completion record; unchecked task steps below
-remain the original execution recipe rather than current status.
+Execution status: Tasks 0-11 and 13 are complete; Task 12 is intentionally
+skipped under `BR-PH02-02`. The acceptance and security checklists are the
+authoritative completion record; unchecked task steps below remain the original
+execution recipe rather than current status.
 
 ## Global Constraints
 
@@ -1793,8 +1792,9 @@ ran through two separate official Codex CLI processes against the same installed
 process A passed create/append/rename/read plus DDL+nonce insert in one SQLite
 transaction and reopen; process B passed restart persistence; nonce-scoped
 cleanup passed in a third process. The exact `0.1.0-alpha.1` production package
-from final reviewed runtime commit `61c912d` separately passed full MCP workflow
-and restart smoke in two official CLI processes and two fresh Desktop tasks.
+from final reviewed runtime commit `4f6f129` separately passed full MCP workflow,
+evidence-bound completion, and restart smoke in two official CLI processes and
+two fresh Desktop tasks; the CLI pair also passed controlled HEAD-drift recovery.
 Hashes in the two evidence JSON files bind both installed artifacts to the
 reviewed source. Per section
 2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
@@ -2714,7 +2714,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [ ] **Step 6: Test evidence-bound completion**
+- [x] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2740,7 +2740,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [ ] **Step 8: Test repo drift behavior**
+- [x] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2769,7 +2769,7 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
