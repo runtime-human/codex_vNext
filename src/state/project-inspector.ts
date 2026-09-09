@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstat, readFile, realpath } from 'node:fs/promises';
+import { lstat, open, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -8,6 +8,7 @@ import { canonicalJson } from './canonical-json.js';
 import { sanitizePersistedUri } from './redaction.js';
 
 const execFileAsync = promisify(execFile);
+const MAX_GIT_METADATA_BYTES = 1024 * 1024;
 
 export type GitRunner = (
   args: string[],
@@ -62,18 +63,58 @@ function validRef(value: string): boolean {
   );
 }
 
+function isWorktreeLocalRef(ref: string): boolean {
+  return /^refs\/(?:bisect|rewritten|worktree)\//u.test(ref);
+}
+
+async function readGitMetadata(
+  filePath: string,
+  root: string,
+): Promise<string> {
+  const entry = await lstat(filePath);
+  if (!entry.isFile()) throw new Error('Git metadata is not a regular file');
+  const canonicalPath = await realpath(filePath);
+  const relative = path.relative(root, canonicalPath);
+  if (relative.startsWith('..') || path.isAbsolute(relative))
+    throw new Error('Git metadata resolves outside its root');
+
+  const handle = await open(canonicalPath, 'r');
+  try {
+    const opened = await handle.stat();
+    if (!opened.isFile() || opened.size > MAX_GIT_METADATA_BYTES)
+      throw new Error('Git metadata exceeds the size limit');
+    const bytes = Buffer.allocUnsafe(MAX_GIT_METADATA_BYTES + 1);
+    let offset = 0;
+    while (offset < bytes.length) {
+      const result = await handle.read(
+        bytes,
+        offset,
+        bytes.length - offset,
+        offset,
+      );
+      if (result.bytesRead === 0) break;
+      offset += result.bytesRead;
+    }
+    if (offset > MAX_GIT_METADATA_BYTES)
+      throw new Error('Git metadata exceeds the size limit');
+    return bytes.subarray(0, offset).toString('utf8');
+  } finally {
+    await handle.close();
+  }
+}
+
 async function refValue(
   root: string,
   ref: string,
 ): Promise<string | undefined> {
   const loosePath = path.join(root, ...ref.split('/'));
   try {
-    return objectId(await readFile(loosePath, 'utf8'));
+    return objectId(await readGitMetadata(loosePath, root));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') return undefined;
   }
   try {
-    const content = await readFile(path.join(root, 'packed-refs'), 'utf8');
+    const content = await readGitMetadata(path.join(root, 'packed-refs'), root);
     for (const line of content.split(/\r?\n/u)) {
       const match = /^(\S+)\s+(\S+)$/u.exec(line.trim());
       if (match?.[2] === ref && match[1]) return objectId(match[1]);
@@ -93,7 +134,7 @@ async function readGitMetadataHead(
     let gitDir: string | undefined;
     if (dotGitStats.isDirectory()) gitDir = await realpath(dotGit);
     if (dotGitStats.isFile()) {
-      const pointerLine = (await readFile(dotGit, 'utf8')).trim();
+      const pointerLine = (await readGitMetadata(dotGit, projectRoot)).trim();
       if (pointerLine.includes('\n') || pointerLine.includes('\r'))
         return undefined;
       const pointer = /^gitdir:\s*(.+)$/u.exec(pointerLine)?.[1];
@@ -105,7 +146,7 @@ async function readGitMetadataHead(
     let commonDir = gitDir;
     try {
       const relative = (
-        await readFile(path.join(gitDir, 'commondir'), 'utf8')
+        await readGitMetadata(path.join(gitDir, 'commondir'), gitDir)
       ).trim();
       if (!relative) return undefined;
       commonDir = await realpath(path.resolve(gitDir, relative));
@@ -114,15 +155,17 @@ async function readGitMetadataHead(
     }
     if (!(await lstat(commonDir)).isDirectory()) return undefined;
 
-    const head = (await readFile(path.join(gitDir, 'HEAD'), 'utf8')).trim();
+    const head = (
+      await readGitMetadata(path.join(gitDir, 'HEAD'), gitDir)
+    ).trim();
     if (head.includes('\n') || head.includes('\r')) return undefined;
     const detached = objectId(head);
     if (detached) return detached;
     const ref = /^ref:\s*(refs\/[^\s]+)$/u.exec(head)?.[1];
     if (!ref || !validRef(ref)) return undefined;
-    return (
-      (await refValue(gitDir, ref)) ??
-      (commonDir !== gitDir ? await refValue(commonDir, ref) : undefined)
+    return await refValue(
+      commonDir !== gitDir && isWorktreeLocalRef(ref) ? gitDir : commonDir,
+      ref,
     );
   } catch {
     return undefined;

@@ -170,8 +170,11 @@ export class ArtifactStore {
       for (const item of readdirSync(prefixPath, { withFileTypes: true })) {
         const itemPath = path.join(prefixPath, item.name);
         assertSafeStoragePath(this.dependencies.storage.root, itemPath);
-        if (!item.isFile()) continue;
         const relative = `artifacts/sha256/${prefix.name}/${item.name}`;
+        if (!item.isFile()) {
+          found.push(relative);
+          continue;
+        }
         if (
           !/^[0-9a-f]{2}$/.test(prefix.name) ||
           !/^[0-9a-f]{64}$/.test(item.name) ||

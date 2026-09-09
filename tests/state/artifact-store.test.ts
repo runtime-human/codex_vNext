@@ -209,6 +209,19 @@ describe('ArtifactStore', () => {
     expect(store.listOrphans()).toEqual(['artifacts/sha256/stray/claimed']);
   });
 
+  it('counts nested directories inside a CAS prefix as malformed orphans', async () => {
+    const nested = path.join(
+      storage.artifactSha256Dir,
+      'aa',
+      'nested',
+      'orphan',
+    );
+    await mkdir(path.dirname(nested), { recursive: true });
+    await writeFile(nested, 'orphan');
+
+    expect(store.listOrphans()).toEqual(['artifacts/sha256/aa/nested']);
+  });
+
   it('rejects a reparse point used as the CAS root during enumeration', async () => {
     const outside = await mkdtemp(
       path.join(tmpdir(), 'workflow-next-cas-root-outside-'),

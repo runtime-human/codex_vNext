@@ -141,6 +141,83 @@ describe('project inspector', () => {
     });
   });
 
+  it('prefers common branch refs over shadow refs in a worktree gitdir', async () => {
+    const worktreeRoot = await tempRoot('workflow-next-worktree-shadow-');
+    const commonGitRoot = await tempRoot('workflow-next-common-shadow-');
+    const worktreeGitDir = path.join(commonGitRoot, 'worktrees', 'feature');
+    const expectedHead = 'd'.repeat(40);
+
+    await mkdir(path.join(worktreeGitDir, 'refs', 'heads'), {
+      recursive: true,
+    });
+    await mkdir(path.join(commonGitRoot, 'refs', 'heads'), { recursive: true });
+    await writeFile(
+      path.join(worktreeRoot, '.git'),
+      `gitdir: ${worktreeGitDir}${path.sep}\n`,
+    );
+    await writeFile(
+      path.join(worktreeGitDir, 'HEAD'),
+      'ref: refs/heads/main\n',
+    );
+    await writeFile(path.join(worktreeGitDir, 'commondir'), '../..\n');
+    await writeFile(
+      path.join(worktreeGitDir, 'refs', 'heads', 'main'),
+      `${'e'.repeat(40)}\n`,
+    );
+    await writeFile(
+      path.join(commonGitRoot, 'refs', 'heads', 'main'),
+      `${expectedHead}\n`,
+    );
+
+    await expect(
+      inspectProject(worktreeRoot, async () => undefined),
+    ).resolves.toMatchObject({ head: expectedHead });
+  });
+
+  it('resolves worktree-local refs from the worktree gitdir', async () => {
+    const worktreeRoot = await tempRoot('workflow-next-worktree-local-');
+    const commonGitRoot = await tempRoot('workflow-next-common-local-');
+    const worktreeGitDir = path.join(commonGitRoot, 'worktrees', 'feature');
+    const expectedHead = '1'.repeat(40);
+
+    await mkdir(path.join(worktreeGitDir, 'refs', 'worktree'), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(worktreeRoot, '.git'),
+      `gitdir: ${worktreeGitDir}${path.sep}\n`,
+    );
+    await writeFile(
+      path.join(worktreeGitDir, 'HEAD'),
+      'ref: refs/worktree/topic\n',
+    );
+    await writeFile(path.join(worktreeGitDir, 'commondir'), '../..\n');
+    await writeFile(
+      path.join(worktreeGitDir, 'refs', 'worktree', 'topic'),
+      `${expectedHead}\n`,
+    );
+
+    await expect(
+      inspectProject(worktreeRoot, async () => undefined),
+    ).resolves.toMatchObject({ head: expectedHead });
+  });
+
+  it('rejects oversized Git metadata instead of parsing it', async () => {
+    const root = await tempRoot('workflow-next-oversized-git-metadata-');
+    const head = 'f'.repeat(40);
+    await mkdir(path.join(root, '.git'), { recursive: true });
+    await writeFile(path.join(root, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+    await writeFile(
+      path.join(root, '.git', 'packed-refs'),
+      `${head} refs/heads/main\n#${'x'.repeat(2 * 1024 * 1024)}`,
+    );
+
+    const inspected = await inspectProject(root, async () => undefined);
+
+    expect(inspected.gitAvailable).toBe(false);
+    expect(inspected).not.toHaveProperty('head');
+  });
+
   it('fails closed for a gitdir pointer that is not a directory', async () => {
     const root = await tempRoot('workflow-next-unsafe-gitdir-');
     const outsideGitDir = await tempRoot('workflow-next-outside-gitdir-');
