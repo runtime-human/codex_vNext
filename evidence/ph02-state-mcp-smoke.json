@@ -1,42 +1,45 @@
 {
-  "smokeVersion": 3,
+  "smokeVersion": 4,
   "date": "2026-09-09",
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
   "packageVersion": "0.1.0-alpha.1",
-  "runtimeCommit": "4f6f1290e9922798bbe3c705e11b04db76473279",
+  "runtimeCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
   "pluginManifestSha256": "7c0504a9ddfe569cb67daf4d072ff5701741cdaf474ec94d009ca284572e0590",
   "mcpManifestSha256": "48c555eaaa26efd2c335251854e3aafd213daeba81b76c2501586b284137ad46",
   "mcpEntrypointSha256": "dafd168077733fd1bf904079263f03b199774174bea0a6b09ba226efb94330dc",
-  "installedPackageTreeSha256": "eda9979d8a384c7b1f4edce940d19f8f17d86d595717bd145e01aa0b16198a26",
+  "installedPackageTreeSha256": "9d04ae172f4dac98f0489d68e139e07867d35d3bad7d98849874b46c29097353",
+  "installedPackageTreeHashAlgorithm": "sha256 of sorted '<path> <file-sha256>\\n' entries",
   "hosts": {
     "desktop": "pass-current-runtime",
     "cli": "pass-current-runtime"
   },
-  "desktopEvidenceCommit": "4f6f1290e9922798bbe3c705e11b04db76473279",
+  "desktopEvidenceCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
   "desktopProcesses": 2,
-  "cliProcesses": 2,
+  "cliProcesses": 4,
   "threadIds": {
     "desktop": [
-      "01a08440-0d82-79a2-a570-3c166403aaaf",
-      "01a08441-f6ba-7173-807e-242381e41156"
+      "01a0877f-a6b7-75f3-832c-1c62609f744e",
+      "01a0877f-c9ec-7202-b7e8-26ad8bbfc73a"
     ],
     "cli": [
-      "01a0843c-11f4-72b3-885c-287e2cc8e69a",
-      "01a0843e-3a85-7872-8161-a39de1005259"
+      "01a0877b-226b-7913-bf0d-04d1f00a7c7b",
+      "01a0877d-c0ad-72a1-af84-e0da11dd1675",
+      "01a08782-d108-72c1-a347-cf35ce90b186",
+      "01a08783-ddff-7b83-a82e-f9f5134cc940"
     ]
   },
   "publicIds": {
-    "runId": "run_46e3184c-bc35-46c4-a28c-55e96184438a",
-    "workItemId": "work_dffe8597-bf98-4e4f-8388-efdc8a7ef4cf",
-    "evidenceId": "evidence_9b1a7974-1423-462f-8663-971819e08dd8"
+    "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
+    "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
+    "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2"
   },
   "cliPublicIds": {
-    "runId": "run_fbd3018a-fd7a-4aee-aff8-34dd5ec4a808",
-    "workItemId": "work_896c3a61-cb88-41cf-8e54-6d9bff6b483c",
-    "evidenceId": "evidence_e0c6c1fc-7ff6-4e9b-9a39-e5425636b9a1"
+    "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
+    "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
+    "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2"
   },
   "mcp": {
     "start": "pass",
@@ -56,19 +59,29 @@
     {
       "surface": "cli",
       "case": "completionGuard",
-      "threadId": "01a0843c-11f4-72b3-885c-287e2cc8e69a",
-      "runId": "run_fbd3018a-fd7a-4aee-aff8-34dd5ec4a808",
-      "workItemId": "work_896c3a61-cb88-41cf-8e54-6d9bff6b483c",
-      "evidenceId": "evidence_e0c6c1fc-7ff6-4e9b-9a39-e5425636b9a1",
+      "threadId": "01a0877b-226b-7913-bf0d-04d1f00a7c7b",
+      "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
+      "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
+      "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2",
       "blockedCode": "COMPLETION_BLOCKED",
       "finalState": "done"
     },
     {
       "surface": "cli",
+      "case": "restartPersistence",
+      "threadId": "01a0877d-c0ad-72a1-af84-e0da11dd1675",
+      "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
+      "repoDrift": "none",
+      "nextSafeAction": "none",
+      "liveness": "unknown",
+      "readOnly": true
+    },
+    {
+      "surface": "cli",
       "case": "recoverWork",
-      "threadId": "01a0843e-3a85-7872-8161-a39de1005259",
-      "runId": "run_9afee835-5a7c-47a3-9d09-c2a3dbcb81a0",
-      "workItemId": "work_0cc4ce81-46fb-4451-81c0-1539073c7ddf",
+      "baselineThreadId": "01a08782-d108-72c1-a347-cf35ce90b186",
+      "threadId": "01a08783-ddff-7b83-a82e-f9f5134cc940",
+      "runId": "run_82712bf0-b7ae-4af9-b179-9f5ae0e3eea2",
       "repoDrift": "head_changed",
       "nextSafeAction": "inspect_repo_drift",
       "liveness": "unknown",
@@ -77,15 +90,16 @@
   ],
   "validationSources": {
     "desktopCurrentRuntime": [
-      "start",
-      "createWork",
       "restartPersistence",
       "workflowStatus",
-      "completionGuard"
+      "recoverWork"
     ],
     "cliCurrentRuntime": [
       "start",
       "createWork",
+      "duplicateIdempotency",
+      "idempotencyConflict",
+      "optimisticConflict",
       "restartPersistence",
       "completionGuard",
       "repoDrift",

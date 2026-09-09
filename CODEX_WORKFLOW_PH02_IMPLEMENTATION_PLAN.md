@@ -1792,9 +1792,10 @@ ran through two separate official Codex CLI processes against the same installed
 process A passed create/append/rename/read plus DDL+nonce insert in one SQLite
 transaction and reopen; process B passed restart persistence; nonce-scoped
 cleanup passed in a third process. The exact `0.1.0-alpha.1` production package
-from final reviewed runtime commit `4f6f129` separately passed full MCP workflow,
-evidence-bound completion, and restart smoke in two official CLI processes and
-two fresh Desktop tasks; the CLI pair also passed controlled HEAD-drift recovery.
+from final reviewed runtime commit `9a244d0` separately passed full MCP workflow,
+evidence-bound completion, restart smoke, and controlled HEAD-drift recovery in
+four official CLI processes, plus read-only restart/status smoke in two fresh
+Desktop tasks.
 Hashes in the two evidence JSON files bind both installed artifacts to the
 reviewed source. Per section
 2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
