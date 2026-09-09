@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
@@ -82,6 +82,81 @@ function seedRun(repositories: StateRepositories): void {
 }
 
 describe('project inspector', () => {
+  it('reads loose symbolic and detached HEAD metadata when Git CLI is unavailable', async () => {
+    const root = await tempRoot('workflow-next-git-metadata-');
+    const head = 'a'.repeat(40);
+    await mkdir(path.join(root, '.git', 'refs', 'heads'), {
+      recursive: true,
+    });
+    await writeFile(path.join(root, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+    await writeFile(
+      path.join(root, '.git', 'refs', 'heads', 'main'),
+      `${head}\n`,
+    );
+
+    const unavailableGit = async () => undefined;
+    const symbolic = await inspectProject(root, unavailableGit);
+
+    expect(symbolic).toMatchObject({
+      repoRoot: await realpath(root),
+      gitAvailable: true,
+      head,
+    });
+
+    const detached = 'b'.repeat(40);
+    await writeFile(path.join(root, '.git', 'HEAD'), `${detached}\n`);
+    expect(await inspectProject(root, unavailableGit)).toMatchObject({
+      gitAvailable: true,
+      head: detached,
+    });
+  });
+
+  it('resolves packed refs through a worktree gitdir pointer', async () => {
+    const worktreeRoot = await tempRoot('workflow-next-worktree-');
+    const commonGitRoot = await tempRoot('workflow-next-common-git-');
+    const worktreeGitDir = path.join(commonGitRoot, 'worktrees', 'feature');
+    const head = 'c'.repeat(40);
+
+    await mkdir(worktreeGitDir, { recursive: true });
+    await writeFile(
+      path.join(worktreeRoot, '.git'),
+      `gitdir: ${worktreeGitDir}${path.sep}\n`,
+    );
+    await writeFile(
+      path.join(worktreeGitDir, 'HEAD'),
+      'ref: refs/heads/main\n',
+    );
+    await writeFile(path.join(worktreeGitDir, 'commondir'), '../..\n');
+    await writeFile(
+      path.join(commonGitRoot, 'packed-refs'),
+      `# pack-refs with: peeled fully-peeled\n${head} refs/heads/main\n`,
+    );
+
+    await expect(
+      inspectProject(worktreeRoot, async () => undefined),
+    ).resolves.toMatchObject({
+      repoRoot: await realpath(worktreeRoot),
+      gitAvailable: true,
+      head,
+    });
+  });
+
+  it('fails closed for a gitdir pointer that is not a directory', async () => {
+    const root = await tempRoot('workflow-next-unsafe-gitdir-');
+    const outsideGitDir = await tempRoot('workflow-next-outside-gitdir-');
+    const outsideGitFile = path.join(outsideGitDir, 'not-a-git-directory');
+    await writeFile(outsideGitFile, 'not a directory');
+    await writeFile(
+      path.join(root, '.git'),
+      `gitdir: ${outsideGitFile}${path.sep}\n`,
+    );
+
+    const inspected = await inspectProject(root, async () => undefined);
+
+    expect(inspected.gitAvailable).toBe(false);
+    expect(inspected).not.toHaveProperty('head');
+  });
+
   it('canonicalizes a Git root, sanitizes remote credentials and excludes HEAD from identity', async () => {
     const root = await tempRoot('workflow-next-git-');
     await git(root, 'init');
