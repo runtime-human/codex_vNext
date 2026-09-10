@@ -15,6 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "biome check .",
     "format": "biome format --write .",
+    "benchmark:ph03": "npm run build && node ./benchmarks/ph03-query-strategies.mjs",
     "prevalidate:plugin": "npm run build",
     "validate:plugin": "node ./scripts/validate-plugin.mjs",
     "check": "npm run typecheck && npm test && npm run lint && npm run validate:plugin"
