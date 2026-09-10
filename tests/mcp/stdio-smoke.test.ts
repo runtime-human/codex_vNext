@@ -39,8 +39,17 @@ it('serves the production entry point over stdio with PLUGIN_DATA', async () => 
   try {
     await client.connect(transport);
     const tools = await client.listTools();
-    expect(tools.tools).toHaveLength(9);
-    expect(tools.tools.map((tool) => tool.name)).toContain('workflow.summary');
+    const names = tools.tools.map((tool) => tool.name);
+    expect(tools.tools).toHaveLength(13);
+    expect(names).toContain('workflow.summary');
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'context.get',
+        'context.query',
+        'context.hydrate',
+        'context.ingest_delta',
+      ]),
+    );
   } finally {
     await client.close();
   }
