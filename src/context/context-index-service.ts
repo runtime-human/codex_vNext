@@ -1,4 +1,6 @@
 import {
+  type CompanionHydrationCapsule,
+  CompanionHydrationCapsuleSchema,
   type ContextFreshness,
   type ContextItem,
   type ContextKind,
@@ -11,9 +13,13 @@ import type {
   ContextRecord,
   ContextRepository,
 } from '../state/context-repository.js';
+import { StateError } from '../state/errors.js';
+import type { StateRepositories } from '../state/repositories.js';
 import type { ContextSourceSnapshot } from './source-resolver.js';
 
 const MAX_CONTEXT_CANDIDATES = 200;
+const MAX_HYDRATION_CONTEXT_ITEMS = 10;
+const MAX_HYDRATION_TOTAL_CHARS = 14_000;
 
 export interface ContextSourceResolverLike {
   resolve(input: {
@@ -24,6 +30,7 @@ export interface ContextSourceResolverLike {
 
 export interface ContextIndexServiceDependencies {
   contexts: ContextRepository;
+  repositories: StateRepositories;
   sourceResolver: ContextSourceResolverLike;
 }
 
@@ -32,6 +39,18 @@ export interface ContextGetInput {
   contextId: string;
   includeStale?: boolean;
   includeUnverifiable?: boolean;
+}
+
+export interface ContextHydrateInput {
+  taskId: string;
+  projectId: string;
+  runId: string;
+  scopes?: string[];
+  kinds?: ContextKind[];
+  terms?: string[];
+  decisionIds?: string[];
+  evidenceIds?: string[];
+  unresolvedQuestions?: string[];
 }
 
 interface RankingQuery {
@@ -125,6 +144,22 @@ function compareHits(left: ContextQueryHit, right: ContextQueryHit): number {
   return left.item.contextId < right.item.contextId ? -1 : 1;
 }
 
+function boundHydrationItems(items: ContextItem[]): ContextItem[] {
+  const bounded: ContextItem[] = [];
+  let remaining = MAX_HYDRATION_TOTAL_CHARS;
+  for (const item of items.slice(0, MAX_HYDRATION_CONTEXT_ITEMS)) {
+    if (remaining <= 0) break;
+    if (item.summary.length <= remaining) {
+      bounded.push(item);
+      remaining -= item.summary.length;
+      continue;
+    }
+    bounded.push({ ...item, summary: item.summary.slice(0, remaining) });
+    remaining = 0;
+  }
+  return bounded;
+}
+
 export class ContextIndexService {
   constructor(private readonly dependencies: ContextIndexServiceDependencies) {}
 
@@ -198,6 +233,54 @@ export class ContextIndexService {
         this.dependencies.contexts.listCandidates(query.projectId, 201)
           .length >= MAX_CONTEXT_CANDIDATES,
     };
+  }
+
+  async hydrate(input: ContextHydrateInput): Promise<CompanionHydrationCapsule> {
+    const run = this.dependencies.repositories.getRun(input.runId);
+    if (!run || run.projectId !== input.projectId) {
+      throw new StateError('NOT_FOUND', 'run not found for project');
+    }
+
+    const decisionIds = input.decisionIds ?? [];
+    for (const decisionId of decisionIds) {
+      const decision = this.dependencies.repositories.getDecision(decisionId);
+      if (!decision || decision.runId !== run.runId) {
+        throw new StateError('NOT_FOUND', 'decision not found for run');
+      }
+    }
+
+    const evidenceIds = input.evidenceIds ?? [];
+    for (const evidenceId of evidenceIds) {
+      const evidence = this.dependencies.repositories.getEvidence(evidenceId);
+      if (!evidence || evidence.runId !== run.runId) {
+        throw new StateError('NOT_FOUND', 'evidence not found for run');
+      }
+    }
+
+    const query = await this.query({
+      projectId: input.projectId,
+      ...(input.scopes ? { scopes: input.scopes } : {}),
+      ...(input.kinds ? { kinds: input.kinds } : {}),
+      ...(input.terms ? { terms: input.terms } : {}),
+      includeStale: false,
+      includeUnverifiable: false,
+      limit: MAX_HYDRATION_CONTEXT_ITEMS,
+    });
+
+    return CompanionHydrationCapsuleSchema.parse({
+      capsuleVersion: 1,
+      taskId: input.taskId,
+      projectId: input.projectId,
+      runId: run.runId,
+      objective: run.objective,
+      ...(run.lastObservedRepoHead || run.repoHeadAtStart
+        ? { repoHead: run.lastObservedRepoHead ?? run.repoHeadAtStart }
+        : {}),
+      contextItems: boundHydrationItems(query.hits.map((hit) => hit.item)),
+      relevantDecisionIds: decisionIds,
+      evidenceIds,
+      unresolvedQuestions: input.unresolvedQuestions ?? [],
+    });
   }
 
   private async resolveFreshness(
