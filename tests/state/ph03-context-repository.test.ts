@@ -59,7 +59,9 @@ type ContextRepositoryConstructor = new (
 const tempRoots: string[] = [];
 
 async function tempRoot(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'workflow-next-ph03-context-'));
+  const root = await mkdtemp(
+    path.join(tmpdir(), 'workflow-next-ph03-context-'),
+  );
   tempRoots.push(root);
   return root;
 }
@@ -86,9 +88,9 @@ async function runtime() {
     ContextRepository?: ContextRepositoryConstructor;
   };
   expect(stateModule.ContextRepository).toBeDefined();
-  const contexts = new (stateModule.ContextRepository as ContextRepositoryConstructor)(
-    db,
-  );
+  const contexts = new (
+    stateModule.ContextRepository as ContextRepositoryConstructor
+  )(db);
   return { db, contexts };
 }
 
@@ -145,11 +147,21 @@ describe('PH-03 ContextRepository', () => {
       contexts.put(record('context-a', 'project-a'));
       contexts.put(record('context-b', 'project-b'));
 
-      expect(contexts.listByLogicalKey('project-a', 'logical-source-a')).toEqual([
-        expect.objectContaining({ contextId: 'context-a', projectId: 'project-a' }),
+      expect(
+        contexts.listByLogicalKey('project-a', 'logical-source-a'),
+      ).toEqual([
+        expect.objectContaining({
+          contextId: 'context-a',
+          projectId: 'project-a',
+        }),
       ]);
-      expect(contexts.listByLogicalKey('project-b', 'logical-source-a')).toEqual([
-        expect.objectContaining({ contextId: 'context-b', projectId: 'project-b' }),
+      expect(
+        contexts.listByLogicalKey('project-b', 'logical-source-a'),
+      ).toEqual([
+        expect.objectContaining({
+          contextId: 'context-b',
+          projectId: 'project-b',
+        }),
       ]);
     } finally {
       db.close();
@@ -170,7 +182,9 @@ describe('PH-03 ContextRepository', () => {
 
       const candidates = contexts.listCandidates('project-a', 500);
       expect(candidates).toHaveLength(200);
-      expect(candidates.every((item) => item.projectId === 'project-a')).toBe(true);
+      expect(candidates.every((item) => item.projectId === 'project-a')).toBe(
+        true,
+      );
     } finally {
       db.close();
     }
@@ -203,7 +217,9 @@ describe('PH-03 ContextRepository', () => {
       expect(contexts.get('project-a', 'context-new-a')).toMatchObject({
         stale: false,
       });
-      expect(contexts.get('project-b', 'context-b')).toMatchObject({ stale: false });
+      expect(contexts.get('project-b', 'context-b')).toMatchObject({
+        stale: false,
+      });
     } finally {
       db.close();
     }
