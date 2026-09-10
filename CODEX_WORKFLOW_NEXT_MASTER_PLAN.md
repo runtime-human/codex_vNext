@@ -1,20 +1,22 @@
 # Codex Workflow Next — Consolidated Master Architecture & Implementation Plan
 
-**Статус:** post-H0 architecture baseline; normative replacement for earlier Master Plan revisions/amendments  
-**Ревизия:** **4.3 — Upstream v1.1.15 context-routing and ownership alignment**  
-**Дата среза:** 2026-09-08  
+**Статус:** post-PH-02 architecture baseline; normative replacement for earlier Master Plan revisions/amendments
+**Ревизия:** **4.4 — PH-03/PH-04 hardening and post-PH-02 phase alignment**
+**Дата среза:** 2026-09-10
 **Продукт:** **Codex Workflow Next / Codex Director**  
 **Primary host:** ChatGPT Desktop / Codex  
 **Compatible host:** Codex CLI  
 **Current upstream references:** `viettran-edgeAI/codex_workflow` `main` **v1.1.15**, SHA `a596daaee01bffaff9c04c31e85d378b139cd6c7`; `letya999/workflow-herdr` `dev`, SHA `b1eab041cf2f97da4605c036900d07ff5426cc40` (operational-safety reference only)  
 **Executed platform baseline:** Windows 11 build 26200, Desktop `26.901.1978.0`, CLI `0.153.4`  
 **PH-00 outcome:** **PASS_WITH_AMENDMENTS**
+**Completed phases:** **PH-01, TP-02A prerequisite, PH-02**
+**Current executable phase:** **PH-03 Context Index + Conditional Companion**
 
-**Packaging decision 2026-09-08:** Workflow Next production uses Agent Plugins
-v1 root `plugin.json` + `mcp.json`. The legacy Codex plugin MCP parser was proven
-not to inject `PLUGIN_DATA`; it remains compatibility evidence only. Persistent
-state is allowed solely under the host-managed Agent Plugin `PLUGIN_DATA` root,
-with no fallback. Hooks remain optional/degraded.
+**Packaging decision:** PH-01's legacy Skills-only package remains historical
+evidence. PH-02 production and later phases use Agent Plugins v1 root
+`plugin.json` + `mcp.json`, because two official CLI probes proved the legacy
+MCP parser does not inject `PLUGIN_DATA`. Persistent state has no fallback;
+hooks remain optional/degraded.
 
 > This revision consolidates the original Desktop-first design, trace-based eval architecture, the `v1.1.13..v1.1.15` upstream review, the actual PH-00 capability evidence, configurable native-agent profiles, and the latest decision to adopt upstream context-routing/ownership ideas without inheriting its route/doc/runtime architecture. Earlier amendment files are historical only; this document is the new architectural source of truth.
 >
@@ -39,7 +41,7 @@ This file defines:
 - milestone contracts and acceptance gates;
 - provenance and source map.
 
-Implementation order is controlled by `CODEX_WORKFLOW_NEXT_ROADMAP.md`. The currently executable phase plan is `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`.
+Implementation order is controlled by `CODEX_WORKFLOW_NEXT_ROADMAP.md`. The currently executable phase plan is `CODEX_WORKFLOW_PH03_IMPLEMENTATION_PLAN.md`. PH-01 and PH-02 implementation plans are completed-phase records and are not reopened for non-defect hardening; new requirements must land in the earliest still-open phase that owns the behavior.
 
 ### Stable ID families
 
@@ -75,17 +77,17 @@ Implementation order is controlled by `CODEX_WORKFLOW_NEXT_ROADMAP.md`. The curr
 |---|---|
 | Product | `GOAL-01..08`, `NOGO-01..15` |
 | Evidence baseline | `CAP-01..14` |
-| Principles | `PRN-01..22` |
+| Principles | `PRN-01..23` |
 | Native boundary | `ARC-01..08` |
 | Domain | `DOM-01..16` |
 | Skills | `SKL-01..07` |
 | Agents | `AGT-01..06` |
-| Context | `CTX-01..12` |
-| Policy | `POL-01..15` |
+| Context | `CTX-01..15` |
+| Policy | `POL-01..17` |
 | State/MCP/Hooks | `ARC-09..19`, `HK-01..08`, `API-01..05` |
 | Board | `UX-01..18` |
 | Security | `SEC-01..12` |
-| Evals | `OBS-01..18` |
+| Evals | `OBS-01..20` |
 | Milestones | `MILE-00..10` |
 | Risks | `RISK-01..20` |
 | ADRs | `ADR-00..27` |
@@ -603,6 +605,11 @@ Do not expose policy/configuration keys that are documentation-only. Every accep
 
 Master Plan, Roadmap, current phase plan, provenance, accepted decisions, compatibility/eval evidence and release/migration artifacts are durable project-control artifacts. They do not imply a `docs/` hierarchy, docs worker, full-doc bootstrap or mandatory post-task documentation ceremony.
 
+<a id="prn-23"></a>
+## [PRN-23] Completed phases are stable baselines
+
+Once a phase has passed and its successor has begun, do not reopen that phase merely to absorb later hardening ideas. A proven correctness defect may require a targeted repair/migration; otherwise new requirements belong to the earliest still-open phase that owns the behavior and must build on the completed substrate.
+
 ---
 
 # 5. Native Codex Boundary
@@ -664,7 +671,7 @@ SDK/App Server may later support eval/headless/integration, not product correctn
 <a id="arc-04"></a>
 ## [ARC-04] Plugin package format
 
-Native package baseline:
+Production package baseline:
 
 ```text
 plugin.json
@@ -1065,7 +1072,7 @@ interface ResolvedAgentRuntime {
 }
 ```
 
-`orchestrate-work` chooses `DelegationIntent`. Configuration resolution happens afterward. This separation prevents routing logic from hard-coding Sol/Luna/Terra or reasoning-effort labels.
+`orchestrate-work` chooses `DelegationIntent`. Configuration resolution happens afterward. This separation prevents routing logic from hard-coding specific provider/model families or reasoning-effort labels.
 
 ---
 
@@ -1222,7 +1229,7 @@ Return only relevant/new/changed/stale/decision-needed facts with source pointer
 <a id="ctx-07"></a>
 ## [CTX-07] Provenance/freshness
 
-Source hash/Git SHA invalidates stale cached summaries.
+Source identity/evidence determines freshness. For resolvable sources, the current source hash must match the persisted source hash before a cached summary is eligible for hydration. Git SHA is provenance, not content identity. `verifiedAt`, retrieval frequency, repeated use, worker citation or success of a task that consumed an item do not make that item correct or fresh.
 
 <a id="ctx-08"></a>
 ## [CTX-08] Context Store is cache/index, not truth
@@ -1258,6 +1265,11 @@ Investigator may inspect a bounded local project surface, Internet sources, or b
 ## [CTX-12] Context isolation claim boundaries
 
 We may claim tested `fork_turns=none` behavior for the proven subset. We may not generalize omitted/default/all behavior from source or old versions.
+
+<a id="ctx-15"></a>
+## [CTX-15] Context Index is project-scoped
+
+Context retrieval, hydration and delta ingestion are always scoped by the active `projectId`. A ContextItem, source pointer, Decision/Evidence reference or delta owned by another project must not be returned, hydrated or accepted merely because its logical key, source URI, basename or repository name matches. PH-03 proves this isolation on top of the completed PH-02 identity/state substrate; it does not redesign PH-02 repository identity absent a demonstrated correctness defect.
 
 ---
 
@@ -1358,6 +1370,11 @@ Safe defaults keep all child profiles on Luna, with Luna effort never below `xhi
 ## [POL-16] Delegated package ownership forbids routine duplication
 
 Once Main delegates a bounded package to an Executor/Senior Executor/Verifier, Main does not simultaneously repeat that package's routine implementation, test execution, operational diagnosis or repair. Main may inspect decision-critical evidence and remains responsible for scope, architecture, integration and acceptance. Takeover/reassignment requires a concrete reason such as worker failure, boundary conflict, invalidated assumptions, security/migration risk or explicit cancellation.
+
+<a id="pol-17"></a>
+## [POL-17] Host re-entry is not an orchestration event
+
+A host-triggered Main/model re-entry, wake-up or progress turn does not by itself advance Workflow Next orchestration state. Without new actionable evidence it must not cause duplicate spawn, ownership transfer, replanning, routine worker-status polling, repeated implementation, or synthetic completion. Native host behavior may still produce a user-visible turn; Workflow Next treats that as an external runtime condition rather than building a scheduler or polling layer to compensate for it.
 
 # 11. State, MCP and Hooks
 
@@ -1967,6 +1984,16 @@ Comparison includes equivalent completion boundary for all arms. Do not mix upst
 
 If C does not materially outperform/benefit target workload over B, narrow/remove core before Durable expansion.
 
+<a id="obs-19"></a>
+## [OBS-19] Context Index value must be isolated
+
+For suitable read/context-heavy corpus items, run a controlled Workflow Next ablation with Context Index disabled vs enabled while holding task, repository SHA, Main model, worker policy and Companion mode constant where practical. Report time to first relevant evidence, bounded context injected, Context Index queries/hits, stale hits, source revalidations, broad repository searches and repeated unchanged source reads when the observer can measure them reliably. Missing/unobservable fields remain unknown.
+
+<a id="obs-20"></a>
+## [OBS-20] Coordination overhead is a vector, not a score
+
+Report coordination cost as separate dimensions rather than a scalar tax/score: root orchestration tokens, cached/uncached root input, dispatch latency, coordination tool calls, retries/reassignments, reconciliation operations, duplicate-work incidents and root/host re-entries when observable. If actionable vs non-actionable re-entry cannot be distinguished from public evidence, record the metric as unavailable rather than inferring zero.
+
 ---
 
 # 15. Milestones and Work Packages
@@ -2076,7 +2103,7 @@ Clean install/fresh-chat Skill smoke; no MCP/hook runtime required for productio
 - domain tests green;
 - invalid transitions rejected;
 - TaskEnvelope/RolePayload/TaskDelta schemas validated;
-- safe default agent-profile set validates and contains no Sol/Terra child profile;
+- safe default agent-profile set validates and contains no non-Luna child profile;
 - `AuthorityEnvelope` contains no model/runtime selector;
 - three foundational Skills have non-overlapping triggers and explicit role-selection semantics;
 - AGENTS remains compact;
@@ -2118,7 +2145,7 @@ Fresh read-only Companion, `fork_turns=none`, Context Index/fingerprint/hydratio
 <a id="ac-13"></a>
 ### [AC-13] MILE-03 acceptance
 
-Correctness/provenance capability only.
+Correctness/provenance capability only, including project-scoped isolation and freshness determined by source/evidence rather than cache usage metadata.
 
 ---
 
@@ -2134,7 +2161,10 @@ Correctness/provenance capability only.
 - Investigator may use bounded project-local evidence, external sources, or both;
 - delegated-package non-duplication enforcement/instrumentation;
 - bounded recovery;
-- temporary DecisionBatch candidate.
+- temporary DecisionBatch candidate;
+- host re-entry semantics: a host wake without new actionable evidence does not mutate orchestration state or trigger routine polling/duplicate work.
+
+TP-04A additionally records the exact host surface/platform and observed wait/re-entry behavior needed to interpret PH-04 live evidence.
 
 Before parallel writers: native managed-worktree write isolation smoke plus semantic conflict-zone check for migrations, lockfiles, generated schemas, registries and shared runtime resources.
 
@@ -2160,7 +2190,7 @@ Core Alpha correctness gate.
 <a id="mile-06"></a>
 ## [MILE-06] Trace-based A/B/C Core Gate
 
-A/B/C campaign + targeted ablations + decision report.
+A/B/C campaign + targeted ablations + decision report. The campaign includes a Context Index off/on ablation on suitable read/context-heavy tasks and reports orientation/coordination overhead as separate observable dimensions, including cached/uncached input and host/root re-entry data when the trace surface exposes them reliably.
 
 <a id="ac-16"></a>
 ### [AC-16] MILE-06 acceptance
@@ -2578,7 +2608,8 @@ OpenAI Codex issue tracker: hook execution/coverage/latency issues are engineeri
 <a id="src-20"></a>
 ## [SRC-20] Agent Plugins 1.0
 https://agent-plugins.org/specification
-Portable format remains useful compatibility reference; native Codex plugin package is primary target.
+Agent Plugins v1 is the production package contract selected by the PH-02 live
+`PLUGIN_DATA` gate.
 
 <a id="src-21"></a>
 ## [SRC-21] Cursor/agent swarm economics
@@ -2668,4 +2699,4 @@ CODEX DESKTOP / CLI
      subagents / worktrees / review / terminal / sandbox / memories
 ```
 
-The immediate next executable phase is **PH-02 Durable State, Evidence + State MCP**. No additional global H0 rerun is required.
+The immediate executable phase is **PH-03 Context Index + Conditional Companion**. PH-01 and PH-02 are completed baselines; do not reopen them for non-defect hardening. No additional global H0 rerun is required.

@@ -1,16 +1,16 @@
 # Codex Workflow Next — Product & Engineering Roadmap
 
-**Status:** normative post-H0 roadmap  
-**Revision:** **2.3**  
-**Date:** 2026-09-08  
-
-**Packaging gate amendment:** PH-02 production and later phases use Agent
-Plugins v1 root manifests. Legacy MCP packaging is a negative compatibility
-probe only because it does not receive `PLUGIN_DATA`; no storage fallback is
-permitted and hooks remain non-blocking telemetry.
+**Status:** normative post-PH-02 roadmap
+**Revision:** **2.4**
+**Date:** 2026-09-10
 **Master:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md`  
-**Current executable plan:** `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`
+**Current executable plan:** `CODEX_WORKFLOW_PH03_IMPLEMENTATION_PLAN.md`
 **PH-00:** completed as **PASS_WITH_AMENDMENTS**
+**PH-01 / PH-02:** completed; their implementation plans are historical baselines
+
+**Packaging gate:** production uses Agent Plugins v1 root manifests. The legacy
+MCP packaging is retained only as a negative compatibility result because it
+does not receive `PLUGIN_DATA`; no storage fallback is permitted.
 
 > Roadmap controls sequencing and gates. Master defines architecture. Per-phase detailed plans define exact implementation work.
 
@@ -168,11 +168,11 @@ PH-00 COMPLETE: PASS_WITH_AMENDMENTS
           ↓
 PH-01 Plugin + Domain Foundation          COMPLETE
           ↓
-TP-02A MCP PLUGIN_DATA / Windows hook re-probe   PASS
+TP-02A MCP PLUGIN_DATA / Windows hook re-probe  COMPLETE/RESOLVED
           ↓
-PH-02 Explicit State + MCP                ← CURRENT
+PH-02 Explicit State + MCP                COMPLETE
           ↓
-PH-03 Context Companion
+PH-03 Context Companion                   ← NOW
           ↓
 TP-04A write-worker + managed-worktree smoke
           ↓
@@ -240,7 +240,7 @@ No global H0 rerun.
 ---
 
 <a id="ph-01"></a>
-# [PH-01] Plugin Foundation + Domain Contracts — COMPLETED
+# [PH-01] Plugin Foundation + Domain Contracts — COMPLETE
 
 **Goal:** build production foundation without persistence/orchestration complexity.
 
@@ -252,8 +252,8 @@ Node 24, strict ESM, test/lint/build/package scripts.
 
 <a id="deliv-01-02"></a>
 ### [DELIV-01.02] Minimal native plugin
-Skills-only local install; the forward package layout is superseded by the
-Agent Plugins v1 packaging gate amendment above.
+Skills-only local install; PH-02 later superseded the legacy manifest with the
+Agent Plugins v1 production package.
 
 <a id="deliv-01-03"></a>
 ### [DELIV-01.03] Domain V1 contracts
@@ -301,17 +301,17 @@ PASS when:
 - TaskEnvelope/RolePayload/TaskDelta are schema-valid and round-trip;
 - foundational Skills have distinct triggers and explicit role-selection semantics;
 - default profile contract maps Companion/Investigator/Verifier to Luna `xhigh` and Executor/Senior Executor to Luna `max`;
-- no Sol/Terra subagent is enabled by default;
+- no non-Luna subagent is enabled by default;
 - direct task path needs no DB/MCP/hooks;
 - no private Codex dependency;
 - no PH-02 code slipped in.
 
-**Next:** TP-02A then PH-02 detailed plan.
+**Historical next:** TP-02A then PH-02. Both are now completed/resolved; do not reopen PH-01 for later hardening unless a correctness defect is proven.
 
 ---
 
 <a id="tp-02a"></a>
-# [TP-02A] Targeted MCP Storage / Hook Re-probe
+# [TP-02A] Targeted MCP Storage / Hook Re-probe — COMPLETED/RESOLVED
 
 **Not a new phase; mandatory precondition for PH-02 storage design.**
 
@@ -337,7 +337,7 @@ Also run one minimal Windows hook command to determine whether previous exit/EPE
 ---
 
 <a id="ph-02"></a>
-# [PH-02] Deterministic State + MCP Substrate
+# [PH-02] Deterministic State + MCP Substrate — COMPLETE
 
 **Goal:** operational state whose correctness does not depend on hooks.
 
@@ -358,10 +358,12 @@ Resource journal rule: record intent before plugin-coordinated creation when pos
 ## Gate
 Restart/retry/duplicate command/degraded hook behavior must preserve correct state.
 
+**Status:** COMPLETE. PH-03+ consume this substrate. Later hardening must not redesign PH-02 identity/state without a demonstrated correctness defect.
+
 ---
 
 <a id="ph-03"></a>
-# [PH-03] Context Index + Conditional Companion
+# [PH-03] Context Index + Conditional Companion — CURRENT
 
 **Goal:** provenance-aware hot context isolation and the substrate for later tri-lane context routing.
 
@@ -373,6 +375,8 @@ Restart/retry/duplicate command/degraded hook behavior must preserve correct sta
 - lazy hydration;
 - Context Delta;
 - Context Index with source hash/staleness;
+- project-scoped retrieval/hydration/delta ingestion with cross-project negative contracts;
+- freshness derived from current source/evidence identity, never from `verifiedAt`, retrieval frequency or repeated use;
 - no `agent_docs`/mandatory read-all bootstrap;
 - Companion activation remains `adaptive` by default (`off|adaptive|always` is the future config/eval surface).
 
@@ -385,6 +389,8 @@ No economic claim yet.
 
 Before enabling parallel write workers:
 
+- record exact host surface, platform and Codex version used by the probe;
+- observe native wait behavior and whether unsolicited/host-forced Main re-entry occurs during a bounded wait;
 - explicit fresh bounded Executor and Senior Executor;
 - custom-agent role description/model/effort override behavior;
 - safe fallback for unnamed/native child creation (Luna `xhigh`);
@@ -420,7 +426,8 @@ Failure narrows PH-04 to sequential writes.
 - named custom-agent profiles and explicit `fork_turns=none`;
 - evidence-guided retry/escalation back to Main;
 - delegated-package non-duplication policy + instrumentation;
-- **DecisionBatch candidate** for independent work.
+- **DecisionBatch candidate** for independent work;
+- host re-entry handling: a Main wake/re-entry without new actionable evidence does not itself cause orchestration-state mutation, duplicate spawn, routine status polling, replanning or duplicated delegated work.
 
 Senior is selected for difficult **bounded implementation reasoning**, not merely task size. Architecture/public-contract/scope-expansion decisions remain Main-owned. Once a bounded package is delegated, Main evaluates decision-critical evidence but does not duplicate the worker's routine implementation/test/diagnostic loop unless takeover/reassignment is evidence-based.
 
@@ -454,6 +461,7 @@ Hook `PreToolUse` remains optional defense-in-depth only.
 Before A/B/C:
 
 - capture current `codex exec --json` schema;
+- determine whether Context Index orientation events and root/host re-entry can be attributed reliably from the available public trace;
 - verify root token fields;
 - fingerprint engineering-only ancestry parser;
 - classify descendant attribution completeness;
@@ -499,8 +507,26 @@ selective replication
 - human interventions;
 - policy explanation.
 
+## Orientation / coordination diagnostics
+
+For suitable read/context-heavy tasks, measure separately when observable:
+
+- time to first relevant evidence;
+- Context Index queries/hits and bounded context injected;
+- stale Context Index hits and source revalidations;
+- broad repository searches;
+- repeated reads of unchanged sources;
+- root orchestration tokens;
+- dispatch latency and coordination tool calls;
+- retries/reassignments/reconciliation operations;
+- duplicate routine-work incidents;
+- root/host re-entry count and actionable/non-actionable split only when the observer can distinguish it reliably.
+
+Missing/unobservable diagnostics remain unknown; they are never coerced to zero or collapsed into a scalar score.
+
 ## Targeted ablations
 
+- Context Index `off` vs `on` on suitable read/context-heavy tasks while holding the rest of Workflow Next policy constant;
 - Companion `off` vs `adaptive` vs `always`;
 - tri-lane `Direct/Companion/Investigator` routing vs simpler routing;
 - Verifier on/off;
@@ -766,7 +792,7 @@ Each phase plan must contain:
 10. security/provenance;
 11. phase gate checklist.
 
-Current plan: `CODEX_WORKFLOW_PH02_IMPLEMENTATION_PLAN.md`.
+Current plan: `CODEX_WORKFLOW_PH03_IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -777,11 +803,11 @@ PH-00  COMPLETE / PASS_WITH_AMENDMENTS
           ↓
 PH-01  FOUNDATION                         COMPLETE
           ↓
-TP-02A  MCP STORAGE RE-PROBE              PASS
+TP-02A  MCP STORAGE RE-PROBE               COMPLETE/RESOLVED
           ↓
-PH-02  STATE + MCP
+PH-02  STATE + MCP                         COMPLETE
           ↓
-PH-03  CONTEXT COMPANION
+PH-03  CONTEXT COMPANION                   NOW
           ↓
 TP-04A  WRITE/WORKTREE SMOKE
           ↓

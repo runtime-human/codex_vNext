@@ -10,28 +10,24 @@
 
 **Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.3, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.3 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.3.
 
-## Implementation Amendment 2026-09-08 — PLUGIN_DATA resolution
+## Completion Amendment 2026-09-10 — authoritative PH-02 outcome
 
-The legacy `.codex-plugin/plugin.json` plus `.mcp.json` parser was exercised by
-two separate official Codex CLI 0.153.4 processes and both proved that it does
-not inject `PLUGIN_DATA`. This is retained as a negative compatibility result,
-not the production storage contract. Per `ADR-PH02-001` and the explicit owner
-decision to resolve the blocker, production uses the supported Agent Plugins v1
-format: root `plugin.json` plus root `mcp.json`. The host-managed Agent Plugin
-loader creates and injects `PLUGIN_ROOT` and `PLUGIN_DATA`; the server still
-fails closed when `PLUGIN_DATA` is absent and has no fallback.
+Two official Codex CLI 0.153.4 processes proved the legacy
+`.codex-plugin/plugin.json` + `.mcp.json` MCP path does not inject
+`PLUGIN_DATA`. Production therefore uses the supported Agent Plugins v1 root
+`plugin.json` + `mcp.json` contract. Its loader supplies isolated writable
+`PLUGIN_DATA`; the server still fails closed when the variable is absent and
+has no fallback. Agent Plugin hooks are not loaded by the current host, so
+hooks remain `DEGRADED` and Task 12 is intentionally skipped.
 
-Within PH-02, all production references to `.codex-plugin/plugin.json` and
-`.mcp.json` are replaced by root Agent Plugins v1 `plugin.json` and `mcp.json`.
-TP-02A must be repeated on that format before GATE-02. Agent Plugin hooks are
-not loaded by the current loader, so hooks remain `DEGRADED`, Task 12 is skipped,
-and explicit MCP state remains the only correctness path. This amendment
-overrides conflicting legacy packaging text below without expanding PH-02.
-
-Execution status: Tasks 0-11 and 13 are complete; Task 12 is intentionally
-skipped under `BR-PH02-02`. The acceptance and security checklists are the
-authoritative completion record; unchecked task steps below remain the original
-execution recipe rather than current status.
+Tasks 0-11 and 13 are complete. The exact `5e69a09` runtime passed the full MCP
+mutation/conflict/completion flow and restart recovery in two independent
+official CLI processes; parent runtime `9a244d0` retains Desktop host-wiring and
+controlled-drift evidence. `evidence/ph02-storage-probe.json` v2 and
+`evidence/ph02-state-mcp-smoke.json` v4 are the authoritative gate records and
+supersede legacy manifest paths, old evidence examples, and unchecked recipe
+steps below. The production `work.transition` contract intentionally has no
+free-form `note`; bounded evidence, decisions, or work updates carry reasons.
 
 ## Global Constraints
 
@@ -147,10 +143,7 @@ Create:
 
 ```text
 tests/probes/
-├── tp02a-agent-plugin/
-│   ├── plugin.json
-│   ├── mcp.json
-│   └── tp02a-mcp-storage-probe.mjs
+├── tp02a-mcp-storage-probe.mjs
 └── tp02a-hook-probe.mjs
 ```
 
@@ -198,7 +191,7 @@ For the live probe only, create a temporary root `.mcp.json`:
     "workflow-next-tp02a": {
       "type": "stdio",
       "command": "node",
-      "args": ["./tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs"],
+      "args": ["./tests/probes/tp02a-mcp-storage-probe.mjs"],
       "cwd": ".",
       "startup_timeout_sec": 30
     }
@@ -241,31 +234,20 @@ Commit only:
 
 ```text
 evidence/ph02-storage-probe.json
-tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs
+tests/probes/tp02a-mcp-storage-probe.mjs
 tests/probes/tp02a-hook-probe.mjs
-tests/probes/tp02a-agent-plugin/plugin.json
-tests/probes/tp02a-agent-plugin/mcp.json
 ```
 
 Evidence shape:
 
 ```json
 {
-  "probeVersion": 2,
+  "probeVersion": 1,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
-  "pluginFormat": "agent-plugins-v1",
-  "probeCommit": "reviewed-probe-commit",
-  "probePackageVersion": "probe-version",
-  "productionPackageVersion": "production-version",
-  "probePluginManifestSha256": "sha256-of-probe-plugin-json",
-  "probeMcpManifestSha256": "sha256-of-probe-mcp-json",
-  "probeScriptSha256": "sha256-of-probe-script",
-  "installedProbeTreeSha256": "sha256-of-installed-probe-tree",
-  "cliProcesses": 2,
-  "cleanupProcesses": 1,
+  "pluginFormat": "legacy-codex-plugin",
   "mcp": {
     "pluginDataPresent": true,
     "create": "pass",
@@ -274,17 +256,15 @@ Evidence shape:
     "read": "pass",
     "sqliteTransaction": "pass",
     "sqliteReopen": "pass",
-    "restartPersistence": "pass",
-    "cleanup": "pass"
+    "restartPersistence": "pass"
   },
   "hook": {
-    "configured": false,
-    "trusted": false,
+    "configured": true,
+    "trusted": true,
     "executed": false,
-    "pluginDataPresent": false,
+    "pluginDataPresent": true,
     "write": "fail",
-    "classification": "degraded",
-    "evidenceScope": "prior-host-contract"
+    "classification": "degraded"
   },
   "storageDecision": "plugin_data_sqlite"
 }
@@ -382,10 +362,7 @@ The target tree after PH-02 is:
 │   │   ├── tools.test.ts
 │   │   └── stdio-smoke.test.ts
 │   └── probes/
-│       ├── tp02a-agent-plugin/
-│       │   ├── plugin.json
-│       │   ├── mcp.json
-│       │   └── tp02a-mcp-storage-probe.mjs
+│       ├── tp02a-mcp-storage-probe.mjs
 │       └── tp02a-hook-probe.mjs
 ├── evidence/
 │   ├── ph01-skill-smoke.json           # existing
@@ -1421,9 +1398,9 @@ z.discriminatedUnion('to', [
 ]);
 ```
 
-`work.transition` intentionally has no free-form `note`: transition reasons must
-be recorded through bounded evidence, decision resolution, or an explicit work
-item update so idempotency and durable audit content cannot diverge.
+Transition reasons are recorded through bounded evidence, decision resolution,
+or an explicit work-item update so the durable event and idempotency contract
+cannot diverge.
 
 For `to='done'`:
 
@@ -1783,27 +1760,8 @@ Unit tests include a test-only incompatible migration to prove backup-before-app
 
 ## Task 0: Execute TP-02A and freeze storage branch
 
-**Rev 1.1 legacy compatibility result (2026-09-08): `FAIL`.** Two separate official
-Codex CLI 0.153.4 processes loaded the same installed legacy plugin package.
-The legacy compatibility calls returned `pluginDataPresent=false` and
-`PLUGIN_DATA is not set`. The authoritative Agent Plugins v1 loader probe then
-ran through two separate official Codex CLI processes against the same installed
-`0.1.1-live` fixture built from the probe script at runtime commit `399ae3a`:
-process A passed create/append/rename/read plus DDL+nonce insert in one SQLite
-transaction and reopen; process B passed restart persistence; nonce-scoped
-cleanup passed in a third process. The exact `0.1.0-alpha.1` production package
-from final reviewed runtime commit `9a244d0` separately passed full MCP workflow,
-evidence-bound completion, restart smoke, and controlled HEAD-drift recovery in
-four official CLI processes, plus read-only restart/status smoke in two fresh
-Desktop tasks.
-Hashes in the two evidence JSON files bind both installed artifacts to the
-reviewed source. Per section
-2.6 and BR-PH02-01, no alternate storage root is allowed. The amendment above
-selects the supported Agent Plugins v1 production contract; its fresh TP-02A
-result controls GATE-02.
-
 **Files:**
-- Create: `tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs`
+- Create: `tests/probes/tp02a-mcp-storage-probe.mjs`
 - Create: `tests/probes/tp02a-hook-probe.mjs`
 - Create: `evidence/ph02-storage-probe.json`
 - Temporary only: `.mcp.json`
@@ -1813,7 +1771,7 @@ result controls GATE-02.
 - Produces the only evidence allowed to select SQLite-under-PLUGIN_DATA.
 - No production state code starts before this task passes.
 
-- [x] **Step 1: Write the MCP storage probe**
+- [ ] **Step 1: Write the MCP storage probe**
 
 Implement the three `write|verify|cleanup` modes exactly as section 2.
 
@@ -1827,11 +1785,11 @@ import { DatabaseSync } from 'node:sqlite';
 
 The probe must fail with a structured result if `PLUGIN_DATA` is absent.
 
-- [x] **Step 2: Create temporary `.mcp.json` and reload the plugin**
+- [ ] **Step 2: Create temporary `.mcp.json` and reload the plugin**
 
 Use the exact temporary configuration from section 2.3.
 
-- [x] **Step 3: Invoke `write` with a random nonce**
+- [ ] **Step 3: Invoke `write` with a random nonce**
 
 Expected:
 
@@ -1845,7 +1803,7 @@ SQLite transaction PASS
 SQLite reopen PASS
 ```
 
-- [x] **Step 4: Restart the actual MCP host/session**
+- [ ] **Step 4: Restart the actual MCP host/session**
 
 Close/restart enough of Desktop/CLI that a new stdio MCP process starts.
 
@@ -1873,11 +1831,11 @@ PASS | DEGRADED
 
 Do not classify PH-02 storage from the hook result.
 
-- [x] **Step 7: Write `evidence/ph02-storage-probe.json`**
+- [ ] **Step 7: Write `evidence/ph02-storage-probe.json`**
 
 Do not include absolute user paths, raw hook payloads or secrets.
 
-- [x] **Step 8: Apply the branch**
+- [ ] **Step 8: Apply the branch**
 
 If MCP restart persistence failed:
 
@@ -1889,11 +1847,11 @@ Stop the implementation.
 
 If passed, continue.
 
-- [x] **Step 9: Remove temporary hook/MCP configuration**
+- [ ] **Step 9: Remove temporary hook/MCP configuration**
 
 The production `.mcp.json` comes later.
 
-- [x] **Step 10: Commit probe evidence**
+- [ ] **Step 10: Commit probe evidence**
 
 ```powershell
 git add tests/probes evidence/ph02-storage-probe.json
@@ -2661,7 +2619,7 @@ git commit -m "feat: add workflow status and recovery skills"
 - Produces GATE-02 live evidence.
 - Does not use private session files.
 
-- [x] **Step 1: Build and reload the plugin**
+- [ ] **Step 1: Build and reload the plugin**
 
 ```powershell
 npm run build
@@ -2670,15 +2628,7 @@ npm run validate:plugin
 
 Reload through the same supported local marketplace flow proven by PH-00/PH-01.
 
-Final post-review coverage note: the exact `9a244d0` runtime executed all
-mutation, conflict, completion, restart and drift cases through official CLI
-processes. Two fresh Desktop tasks then loaded the same installed package and
-independently called read-only status/recovery against the persisted run. The
-earlier `4f6f129` Desktop mutation smoke remains host-wiring evidence; the
-`validationSources` map in the committed smoke record is authoritative for
-which cases were rerun on each final surface.
-
-- [x] **Step 2: Start a controlled workflow via MCP**
+- [ ] **Step 2: Start a controlled workflow via MCP**
 
 In a fresh Desktop chat, explicitly request use of Workflow Next MCP to:
 
@@ -2691,7 +2641,7 @@ workflow.begin
 
 Record returned public IDs in the smoke evidence file.
 
-- [x] **Step 3: Test duplicate command idempotency**
+- [ ] **Step 3: Test duplicate command idempotency**
 
 Repeat one mutation with the same `commandId`.
 
@@ -2703,7 +2653,7 @@ no duplicate event
 no version increment
 ```
 
-- [x] **Step 4: Test conflict**
+- [ ] **Step 4: Test conflict**
 
 Repeat the same `commandId` with a changed payload.
 
@@ -2713,7 +2663,7 @@ Expected:
 IDEMPOTENCY_CONFLICT
 ```
 
-- [x] **Step 5: Test optimistic conflict**
+- [ ] **Step 5: Test optimistic conflict**
 
 Use an old `expectedVersion`.
 
@@ -2723,7 +2673,7 @@ Expected:
 VERSION_CONFLICT
 ```
 
-- [x] **Step 6: Test evidence-bound completion**
+- [ ] **Step 6: Test evidence-bound completion**
 
 Attempt `done` before required evidence.
 
@@ -2741,7 +2691,7 @@ Expected:
 done
 ```
 
-- [x] **Step 7: Restart Desktop/MCP process**
+- [ ] **Step 7: Restart Desktop/MCP process**
 
 Start a fresh chat after restart.
 
@@ -2749,7 +2699,7 @@ Invoke `workflow-status`.
 
 Expected persisted run/work/evidence.
 
-- [x] **Step 8: Test repo drift behavior**
+- [ ] **Step 8: Test repo drift behavior**
 
 Make a harmless test commit/change in a disposable fixture repository or switch HEAD in a controlled test repo.
 
@@ -2764,13 +2714,13 @@ nextSafeAction=inspect_repo_drift
 
 No claim that old worker is alive.
 
-- [x] **Step 9: Repeat minimal smoke in CLI**
+- [ ] **Step 9: Repeat minimal smoke in CLI**
 
 Use a fresh CLI invocation and the same plugin.
 
 Verify read-only status and one idempotent mutation.
 
-- [x] **Step 10: Run doctor**
+- [ ] **Step 10: Run doctor**
 
 ```powershell
 npm run doctor -- --json
@@ -2778,7 +2728,7 @@ npm run doctor -- --json
 
 Expected `pass` or only explicitly understood warnings from the controlled resource fixture.
 
-- [x] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
+- [ ] **Step 11: Write `evidence/ph02-state-mcp-smoke.json`**
 
 Shape:
 
@@ -2790,23 +2740,20 @@ Shape:
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
   "pluginFormat": "agent-plugins-v1",
-  "packageVersion": "0.1.0-alpha.1",
+  "packageVersion": "production-version",
   "runtimeCommit": "reviewed-runtime-commit",
-  "pluginManifestSha256": "sha256-of-plugin-json",
-  "mcpManifestSha256": "sha256-of-mcp-json",
-  "mcpEntrypointSha256": "sha256-of-built-entrypoint",
-  "installedPackageTreeSha256": "sha256-of-installed-package-tree",
-  "installedPackageTreeHashAlgorithm": "sha256 of sorted '<path> <file-sha256>\\n' entries",
+  "installedPackageTreeSha256": "installed-package-tree-digest",
+  "installedPackageTreeHashAlgorithm": "recorded deterministic algorithm",
   "hosts": {
-    "desktop": "pass-current-runtime",
+    "desktop": "pass-parent-runtime-host-wiring",
     "cli": "pass-current-runtime"
   },
-  "desktopEvidenceCommit": "desktop-smoke-commit",
+  "desktopEvidenceCommit": "parent-runtime-desktop-smoke-commit",
   "desktopProcesses": 2,
   "cliProcesses": 4,
   "threadIds": {
     "desktop": ["desktop-thread-a", "desktop-thread-b"],
-    "cli": ["cli-thread-a", "cli-thread-b", "cli-thread-c", "cli-thread-d"]
+    "cli": ["current-full", "current-restart", "parent-drift", "parent-recovery"]
   },
   "publicIds": {
     "runId": "run-id",
@@ -2833,30 +2780,10 @@ Shape:
     "recoverWork"
   ],
   "validationSources": {
-    "desktopCurrentRuntime": [
-      "restartPersistence",
-      "workflowStatus",
-      "recoverWork"
-    ],
-    "cliCurrentRuntime": [
-      "start",
-      "createWork",
-      "duplicateIdempotency",
-      "idempotencyConflict",
-      "optimisticConflict",
-      "restartPersistence",
-      "completionGuard",
-      "repoDrift",
-      "recoverWork"
-    ],
-    "automatedCurrentRuntime": [
-      "duplicateIdempotency",
-      "idempotencyConflict",
-      "optimisticConflict",
-      "completionGuard",
-      "repoDrift",
-      "recoverWork"
-    ]
+    "desktopParentRuntime": ["workflowStatus", "recoverWork"],
+    "cliCurrentRuntime": ["completionGuard", "restartPersistence", "recoverWork"],
+    "cliParentRuntime": ["repoDrift"],
+    "automatedCurrentRuntime": ["repoDrift"]
   },
   "doctor": "pass",
   "hooks": "degraded"
@@ -2865,7 +2792,7 @@ Shape:
 
 Do not store absolute paths or raw transcripts.
 
-- [x] **Step 12: Commit**
+- [ ] **Step 12: Commit**
 
 ```powershell
 git add evidence/ph02-state-mcp-smoke.json
@@ -3112,7 +3039,7 @@ Skip if there are no new changes.
 PH-02 is `PASS` only when all are true:
 
 - [x] PH-01 is already PASS.
-- [x] TP-02A proves the production Agent Plugins v1 loader supplies writable persistent `PLUGIN_DATA`.
+- [x] TP-02A proves the production Agent Plugins v1 MCP process receives writable persistent `PLUGIN_DATA`.
 - [x] SQLite survives real process/Desktop restart under `PLUGIN_DATA`.
 - [x] No arbitrary storage fallback exists.
 - [x] Node floor is compatible with the chosen built-in SQLite API.
@@ -3239,7 +3166,7 @@ Before GATE-02:
 - [x] trusted schema disabled.
 - [x] SQL values are bound parameters.
 - [x] no dynamic table/column names from model input.
-- [x] repo inspection uses `execFile`, not shell interpolation.
+- [x] repo inspection uses bounded non-shell Git metadata reads with strict ref validation.
 - [x] Git remote credentials are stripped before storage.
 - [x] secrets are redacted in evidence/error text.
 - [x] no raw prompt storage.

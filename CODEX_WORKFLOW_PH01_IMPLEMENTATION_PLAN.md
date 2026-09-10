@@ -4,12 +4,11 @@
 
 **Goal:** Create the production-grade minimal Codex Workflow Next plugin foundation, typed domain contracts and foundational Skills without persistence, hooks, Board or orchestration runtime.
 
-**Architecture:** Single-package Node.js/TypeScript plugin. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; semantic agent roles are separated from configurable model/runtime mappings; state transitions/completion rules are pure deterministic functions.
+**Architecture:** Single-package Node.js/TypeScript plugin. `.codex-plugin/plugin.json` exposes only Skills in PH-01. Domain schemas are pure TypeScript/Zod and persistence-free. `TaskEnvelope + RolePayload + TaskDelta` is frozen as the V1 worker-transfer contract; semantic agent roles are separated from configurable model/runtime mappings; state transitions/completion rules are pure deterministic functions.
 
-**Packaging amendment 2026-09-08:** PH-01's legacy Skills-only package was a
-valid phase result, but PH-02 proved its MCP parser does not inject `PLUGIN_DATA`.
-The forward production baseline is therefore Agent Plugins v1 root
-`plugin.json` plus root `mcp.json`; no legacy compatibility overlay is retained.
+**Packaging outcome:** the PH-01 legacy Skills-only package was valid for this
+phase. PH-02 live evidence superseded it with Agent Plugins v1 root
+`plugin.json` + `mcp.json` for production MCP and `PLUGIN_DATA` injection.
 
 **Tech Stack:** Node.js 24 LTS, TypeScript strict ESM, npm lockfile, Zod, Vitest, Biome (formatter/linter), native Codex plugin/Skills.
 
@@ -1437,7 +1436,7 @@ Skip the commit if there are no new changes after the prior task commits.
 
 PH-01 is `PASS` only when all are true:
 
-- [x] The PH-01 Skills-only package installed on the proven local marketplace path; PH-02 later superseded its legacy manifest with Agent Plugins v1.
+- [x] `.codex-plugin/plugin.json` installed as the PH-01 Skills-only package; PH-02 superseded its production manifest.
 - [x] `npm ci`/equivalent clean install succeeds.
 - [x] `npm run check` succeeds.
 - [x] `npm run build` succeeds.

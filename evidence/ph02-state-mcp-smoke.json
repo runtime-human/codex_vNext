@@ -1,19 +1,19 @@
 {
   "smokeVersion": 4,
-  "date": "2026-09-09",
+  "date": "2026-09-10",
   "desktopBuild": "8e5b6932251c2c1c",
   "cliVersion": "0.153.4",
   "nodeVersion": "v24.19.0",
   "pluginFormat": "agent-plugins-v1",
   "packageVersion": "0.1.0-alpha.1",
-  "runtimeCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
+  "runtimeCommit": "5e69a09333f42260a9fc2fd53297f8931f88b420",
   "pluginManifestSha256": "7c0504a9ddfe569cb67daf4d072ff5701741cdaf474ec94d009ca284572e0590",
   "mcpManifestSha256": "48c555eaaa26efd2c335251854e3aafd213daeba81b76c2501586b284137ad46",
   "mcpEntrypointSha256": "dafd168077733fd1bf904079263f03b199774174bea0a6b09ba226efb94330dc",
-  "installedPackageTreeSha256": "9d04ae172f4dac98f0489d68e139e07867d35d3bad7d98849874b46c29097353",
+  "installedPackageTreeSha256": "4b833bc7b3da4dd903026efea2a18b727b11d9dfd98a7066221f0a0f896315ce",
   "installedPackageTreeHashAlgorithm": "sha256 of sorted '<path> <file-sha256>\\n' entries",
   "hosts": {
-    "desktop": "pass-current-runtime",
+    "desktop": "pass-parent-runtime-host-wiring",
     "cli": "pass-current-runtime"
   },
   "desktopEvidenceCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
@@ -25,21 +25,21 @@
       "01a0877f-c9ec-7202-b7e8-26ad8bbfc73a"
     ],
     "cli": [
-      "01a0877b-226b-7913-bf0d-04d1f00a7c7b",
-      "01a0877d-c0ad-72a1-af84-e0da11dd1675",
+      "01a08797-a73a-7d13-9e05-862af185b220",
+      "01a0879b-2f7d-7c33-928b-093581825e08",
       "01a08782-d108-72c1-a347-cf35ce90b186",
       "01a08783-ddff-7b83-a82e-f9f5134cc940"
     ]
   },
   "publicIds": {
-    "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
-    "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
-    "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2"
+    "runId": "run_caf1b209-c9d9-417a-9331-76dfa6c07f27",
+    "workItemId": "work_7c1e6036-18fa-4280-851d-fcc20760b053",
+    "evidenceId": "evidence_5f274d2b-580a-4e26-96c4-553a9dc4258b"
   },
   "cliPublicIds": {
-    "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
-    "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
-    "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2"
+    "runId": "run_caf1b209-c9d9-417a-9331-76dfa6c07f27",
+    "workItemId": "work_7c1e6036-18fa-4280-851d-fcc20760b053",
+    "evidenceId": "evidence_5f274d2b-580a-4e26-96c4-553a9dc4258b"
   },
   "mcp": {
     "start": "pass",
@@ -59,18 +59,20 @@
     {
       "surface": "cli",
       "case": "completionGuard",
-      "threadId": "01a0877b-226b-7913-bf0d-04d1f00a7c7b",
-      "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
-      "workItemId": "work_7029d6b4-e5ef-4b1b-861c-b4d6dbaf3496",
-      "evidenceId": "evidence_b2aaf465-e39b-4adf-9395-09f63e904dd2",
+      "runtimeCommit": "5e69a09333f42260a9fc2fd53297f8931f88b420",
+      "threadId": "01a08797-a73a-7d13-9e05-862af185b220",
+      "runId": "run_caf1b209-c9d9-417a-9331-76dfa6c07f27",
+      "workItemId": "work_7c1e6036-18fa-4280-851d-fcc20760b053",
+      "evidenceId": "evidence_5f274d2b-580a-4e26-96c4-553a9dc4258b",
       "blockedCode": "COMPLETION_BLOCKED",
       "finalState": "done"
     },
     {
       "surface": "cli",
       "case": "restartPersistence",
-      "threadId": "01a0877d-c0ad-72a1-af84-e0da11dd1675",
-      "runId": "run_a6cd5b95-9cbd-409f-9ae6-d1661c99f26c",
+      "runtimeCommit": "5e69a09333f42260a9fc2fd53297f8931f88b420",
+      "threadId": "01a0879b-2f7d-7c33-928b-093581825e08",
+      "runId": "run_caf1b209-c9d9-417a-9331-76dfa6c07f27",
       "repoDrift": "none",
       "nextSafeAction": "none",
       "liveness": "unknown",
@@ -79,6 +81,7 @@
     {
       "surface": "cli",
       "case": "recoverWork",
+      "runtimeCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
       "baselineThreadId": "01a08782-d108-72c1-a347-cf35ce90b186",
       "threadId": "01a08783-ddff-7b83-a82e-f9f5134cc940",
       "runId": "run_82712bf0-b7ae-4af9-b179-9f5ae0e3eea2",
@@ -89,7 +92,7 @@
     }
   ],
   "validationSources": {
-    "desktopCurrentRuntime": [
+    "desktopParentRuntime": [
       "restartPersistence",
       "workflowStatus",
       "recoverWork"
@@ -102,9 +105,9 @@
       "optimisticConflict",
       "restartPersistence",
       "completionGuard",
-      "repoDrift",
       "recoverWork"
     ],
+    "cliParentRuntime": ["repoDrift"],
     "automatedCurrentRuntime": [
       "duplicateIdempotency",
       "idempotencyConflict",
