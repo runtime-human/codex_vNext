@@ -123,14 +123,14 @@ function baseCandidates(count, fileBytes) {
     kind: index % 5 === 0 ? 'module_summary' : 'source_pointer',
     scope: index % 2 === 0 ? 'src/context' : 'src/context/sub',
     summary:
-      index % 7 === 0
-        ? `needle summary ${index}`
-        : `ordinary summary ${index}`,
+      index % 7 === 0 ? `needle summary ${index}` : `ordinary summary ${index}`,
     sourceUri:
       index % 3 === 0
         ? `repo:src/needle-${index}.ts`
         : `repo:src/file-${index}.ts`,
-    verifiedAt: new Date(Date.UTC(2026, 8, 10, 18, 0, index % 60)).toISOString(),
+    verifiedAt: new Date(
+      Date.UTC(2026, 8, 10, 18, 0, index % 60),
+    ).toISOString(),
     stale: index % 23 === 0,
     runtimeFreshness: 'fresh',
     fileBytes,
@@ -286,7 +286,10 @@ async function realIoCampaign() {
       for (let index = 0; index < candidates.length; index += 1) {
         const candidate = candidates[index];
         const filePath = path.join(scenarioRoot, `${index}.bin`);
-        await writeFile(filePath, Buffer.alloc(definition.fileBytes, index % 251));
+        await writeFile(
+          filePath,
+          Buffer.alloc(definition.fileBytes, index % 251),
+        );
         candidate.filePath = filePath;
       }
 
@@ -326,7 +329,10 @@ async function realIoCampaign() {
             throw new Error(`real I/O correctness mismatch in ${name}`);
           }
           timings[name].push(run.metrics.durationMs);
-          work[name].push({ calls: run.metrics.calls, bytes: run.metrics.bytes });
+          work[name].push({
+            calls: run.metrics.calls,
+            bytes: run.metrics.bytes,
+          });
         }
       }
 
@@ -376,12 +382,11 @@ function aggregateSynthetic(records) {
 }
 
 function recommendation(synthetic, realIo) {
-  const bCallRatio =
-    synthetic.resolverCalls.B / synthetic.resolverCalls.A;
-  const cCallRatio =
-    synthetic.resolverCalls.C / synthetic.resolverCalls.A;
+  const bCallRatio = synthetic.resolverCalls.B / synthetic.resolverCalls.A;
+  const cCallRatio = synthetic.resolverCalls.C / synthetic.resolverCalls.A;
   const cFasterCount = realIo.filter(
-    (scenario) => scenario.timingMs.C.median < scenario.timingMs.B.median * 0.75,
+    (scenario) =>
+      scenario.timingMs.C.median < scenario.timingMs.B.median * 0.75,
   ).length;
   const cWorkBounded = realIo.every(
     (scenario) =>
