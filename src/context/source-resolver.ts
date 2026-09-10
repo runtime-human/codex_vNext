@@ -43,7 +43,9 @@ function entityId(sourceUri: string): string {
 }
 
 export class ContextSourceResolver {
-  constructor(private readonly dependencies: ContextSourceResolverDependencies) {}
+  constructor(
+    private readonly dependencies: ContextSourceResolverDependencies,
+  ) {}
 
   async resolve(input: {
     projectId: string;
