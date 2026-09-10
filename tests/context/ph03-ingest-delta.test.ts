@@ -4,10 +4,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ContextDelta, ContextDeltaItem } from '../../src/domain/context.js';
+import type {
+  ContextDelta,
+  ContextDeltaItem,
+} from '../../src/domain/context.js';
 import {
-  canonicalJson,
   ContextRepository,
+  canonicalJson,
   migrateDatabase,
   openWorkflowDatabase,
   resolveStorageRoot,
@@ -222,7 +225,10 @@ describe('PH-03 ContextDelta ingestion', () => {
         unresolvedQuestions: [],
       });
       expect(first.insertedContextIds).toHaveLength(1);
-      const stored = contexts.get('project-a', first.insertedContextIds[0] as string);
+      const stored = contexts.get(
+        'project-a',
+        first.insertedContextIds[0] as string,
+      );
       expect(stored).toMatchObject({
         projectId: 'project-a',
         kind: 'source_pointer',
