@@ -7,13 +7,13 @@ import type {
   ContextIngestDeltaInput,
 } from '../context/context-index-service.js';
 import { StateError } from '../state/index.js';
-import { asToolResult } from './result.js';
 import {
   ContextGetInputSchema,
   ContextHydrateInputSchema,
   ContextIngestDeltaInputSchema,
   ContextQueryInputSchema,
 } from './context-schemas.js';
+import { asToolResult } from './result.js';
 import { MCP_OUTPUT_SCHEMAS } from './schemas.js';
 
 export interface ContextToolAnnotations {
@@ -39,7 +39,8 @@ export function registerContextTools(
   server.registerTool(
     'context.get',
     {
-      description: 'Read one project-scoped context item after freshness validation.',
+      description:
+        'Read one project-scoped context item after freshness validation.',
       inputSchema: ContextGetInputSchema,
       outputSchema: MCP_OUTPUT_SCHEMAS['context.get'],
       annotations: annotations.read,
@@ -58,7 +59,8 @@ export function registerContextTools(
   server.registerTool(
     'context.query',
     {
-      description: 'Query bounded project-scoped context with deterministic ranking.',
+      description:
+        'Query bounded project-scoped context with deterministic ranking.',
       inputSchema: ContextQueryInputSchema,
       outputSchema: MCP_OUTPUT_SCHEMAS['context.query'],
       annotations: annotations.read,
