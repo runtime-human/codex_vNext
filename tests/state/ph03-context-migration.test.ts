@@ -13,14 +13,18 @@ import {
 const tempRoots: string[] = [];
 
 async function tempRoot(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'workflow-next-ph03-migration-'));
+  const root = await mkdtemp(
+    path.join(tmpdir(), 'workflow-next-ph03-migration-'),
+  );
   tempRoots.push(root);
   return root;
 }
 
 afterEach(async () => {
   await Promise.all(
-    tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+    tempRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -33,7 +37,11 @@ describe('PH-03 context migration', () => {
 
       expect(currentSchemaVersion(db)).toBe(2);
       expect(
-        db.prepare('SELECT version, name FROM schema_migrations ORDER BY version').all(),
+        db
+          .prepare(
+            'SELECT version, name FROM schema_migrations ORDER BY version',
+          )
+          .all(),
       ).toEqual([
         { version: 1, name: 'initial' },
         { version: 2, name: 'context-index' },
@@ -49,9 +57,9 @@ describe('PH-03 context migration', () => {
     try {
       await migrateDatabase(db, storage);
 
-      const table = db
-        .prepare("PRAGMA table_list('context_items')")
-        .get() as { name: string; strict: number } | undefined;
+      const table = db.prepare("PRAGMA table_list('context_items')").get() as
+        | { name: string; strict: number }
+        | undefined;
       expect(table).toMatchObject({ name: 'context_items', strict: 1 });
 
       const columns = db
@@ -101,16 +109,15 @@ describe('PH-03 context migration', () => {
       db.prepare(`INSERT INTO projects (
         project_id, repo_root, repo_key, repo_fingerprint,
         created_at, updated_at, version
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-        .run(
-          'project-a',
-          '/repo/a',
-          'repo-a',
-          'fingerprint-a',
-          '2026-09-10T00:00:00.000Z',
-          '2026-09-10T00:00:00.000Z',
-          1,
-        );
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+        'project-a',
+        '/repo/a',
+        'repo-a',
+        'fingerprint-a',
+        '2026-09-10T00:00:00.000Z',
+        '2026-09-10T00:00:00.000Z',
+        1,
+      );
 
       const insert = db.prepare(`INSERT INTO context_items (
         context_id, project_id, logical_key, kind, scope, summary,
