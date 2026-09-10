@@ -417,6 +417,8 @@ export const WorkflowSummaryOutputSchema = z
       'start_run',
       'resolve_decision',
       'inspect_repo_drift',
+      'project_identity_changed',
+      'git_unavailable',
       'reconcile_active_work',
       'inspect_cleanup',
       'resume_work',
@@ -461,7 +463,9 @@ export const MCP_OUTPUT_SCHEMAS = {
   'resource.record': toolOutput(ResourceOutputSchema),
   'context.get': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.get']),
   'context.query': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.query']),
-  'context.hydrate': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.hydrate']),
+  'context.hydrate': toolOutput(
+    CONTEXT_OUTPUT_VALUE_SCHEMAS['context.hydrate'],
+  ),
   'context.ingest_delta': toolOutput(
     CONTEXT_OUTPUT_VALUE_SCHEMAS['context.ingest_delta'],
   ),
