@@ -266,40 +266,50 @@ export class ContextIndexService {
     limit?: number;
   }): Promise<ContextQueryResult> {
     const query = ContextQuerySchema.parse(input);
-    const candidates = this.dependencies.contexts
-      .listCandidates(query.projectId, MAX_CONTEXT_CANDIDATES)
+    const rawCandidates = this.dependencies.contexts.listCandidates(
+      query.projectId,
+      MAX_CONTEXT_CANDIDATES,
+    );
+    const candidateLimitReached =
+      rawCandidates.length >= MAX_CONTEXT_CANDIDATES;
+    const ranked = rawCandidates
       .filter(
         (candidate) =>
           query.kinds.length === 0 || query.kinds.includes(candidate.kind),
-      );
+      )
+      .map((candidate) => ({
+        candidate,
+        hit: {
+          item: toContextItem(candidate),
+          freshness: 'fresh' as const,
+          staleReason: 'none' as const,
+          score: scoreContextCandidate(candidate, query),
+        },
+      }))
+      .sort((left, right) => compareHits(left.hit, right.hit));
 
     const hits: ContextQueryHit[] = [];
-    for (const candidate of candidates) {
-      const freshness = await this.resolveFreshness(candidate);
+    for (const rankedCandidate of ranked) {
+      const freshness = await this.resolveFreshness(rankedCandidate.candidate);
       if (
-        !shouldInclude(
+        shouldInclude(
           freshness.freshness,
           query.includeStale,
           query.includeUnverifiable,
         )
       ) {
-        continue;
+        hits.push({ ...rankedCandidate.hit, ...freshness });
       }
-      hits.push({
-        item: toContextItem(candidate),
-        ...freshness,
-        score: scoreContextCandidate(candidate, query),
-      });
+      const enoughEvidence = candidateLimitReached
+        ? hits.length >= query.limit
+        : hits.length > query.limit;
+      if (enoughEvidence) break;
     }
-    hits.sort(compareHits);
 
     return {
       projectId: query.projectId,
       hits: hits.slice(0, query.limit),
-      truncated:
-        hits.length > query.limit ||
-        this.dependencies.contexts.listCandidates(query.projectId, 201)
-          .length >= MAX_CONTEXT_CANDIDATES,
+      truncated: candidateLimitReached || hits.length > query.limit,
     };
   }
 
