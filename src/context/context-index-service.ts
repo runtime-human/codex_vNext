@@ -361,7 +361,10 @@ export class ContextIndexService {
     }
 
     const parsedDelta = ContextDeltaSchema.parse(input.delta);
-    const normalizedInput = normalizedIngestInput({ ...input, delta: parsedDelta });
+    const normalizedInput = normalizedIngestInput({
+      ...input,
+      delta: parsedDelta,
+    });
     const replay = this.readExistingReceipt<ContextIngestDeltaResult>(
       input.commandId,
       normalizedInput,
@@ -403,12 +406,7 @@ export class ContextIndexService {
         sourceUri: item.sourceUri,
       });
       prepared.push(
-        this.prepareDeltaMutation(
-          input.projectId,
-          item,
-          snapshot,
-          verifiedAt,
-        ),
+        this.prepareDeltaMutation(input.projectId, item, snapshot, verifiedAt),
       );
     }
 
@@ -588,10 +586,7 @@ export class ContextIndexService {
 
     const sameVersion = this.dependencies.contexts
       .listByLogicalKey(projectId, logicalKey)
-      .find(
-        (candidate) =>
-          (candidate.sourceHash ?? '') === (sourceHash ?? ''),
-      );
+      .find((candidate) => (candidate.sourceHash ?? '') === (sourceHash ?? ''));
     if (sameVersion) {
       throw new StateError(
         'INVALID_ARGUMENT',
