@@ -147,4 +147,25 @@ export class ContextRepository {
           .run(updatedAt, projectId, logicalKey);
     return Number(result.changes);
   }
+
+  markContextStale(
+    projectId: string,
+    contextId: string,
+    expectedSourceHash: string | undefined,
+    updatedAt: string,
+  ): boolean {
+    const result = expectedSourceHash
+      ? this.db
+          .prepare(`UPDATE context_items
+            SET stale = 1, updated_at = ?
+            WHERE project_id = ? AND context_id = ?
+              AND source_hash = ? AND stale = 0`)
+          .run(updatedAt, projectId, contextId, expectedSourceHash)
+      : this.db
+          .prepare(`UPDATE context_items
+            SET stale = 1, updated_at = ?
+            WHERE project_id = ? AND context_id = ? AND stale = 0`)
+          .run(updatedAt, projectId, contextId);
+    return Number(result.changes) === 1;
+  }
 }
