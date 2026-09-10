@@ -168,7 +168,8 @@ async function runtime(
     db,
     contexts,
     service,
-    scoreContextCandidate: module.scoreContextCandidate as ScoreContextCandidate,
+    scoreContextCandidate:
+      module.scoreContextCandidate as ScoreContextCandidate,
     calls,
   };
 }
@@ -273,12 +274,8 @@ describe('PH-03 ContextIndexService query', () => {
     });
     try {
       contexts.put(record('fresh'));
-      contexts.put(
-        record('changed', { sourceUri: 'repo:src/changed.ts' }),
-      );
-      contexts.put(
-        record('missing', { sourceUri: 'repo:src/missing.ts' }),
-      );
+      contexts.put(record('changed', { sourceUri: 'repo:src/changed.ts' }));
+      contexts.put(record('missing', { sourceUri: 'repo:src/missing.ts' }));
       contexts.put(
         record('unresolvable', { sourceUri: 'repo:src/unresolvable.ts' }),
       );
@@ -362,9 +359,9 @@ describe('PH-03 ContextIndexService query', () => {
       expect(result.hits).toHaveLength(12);
       expect(calls.length).toBeLessThanOrEqual(200);
       expect(result.truncated).toBe(true);
-      expect(result.hits.every((hit) => hit.item.projectId === 'project-a')).toBe(
-        true,
-      );
+      expect(
+        result.hits.every((hit) => hit.item.projectId === 'project-a'),
+      ).toBe(true);
     } finally {
       db.close();
     }
