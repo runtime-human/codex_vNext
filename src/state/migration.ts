@@ -5,6 +5,7 @@ import { backup, type DatabaseSync } from 'node:sqlite';
 import { type Clock, systemClock } from './clock.js';
 import { StateError } from './errors.js';
 import { INITIAL_MIGRATION_SQL } from './migrations/001-initial.js';
+import { CONTEXT_INDEX_MIGRATION_SQL } from './migrations/002-context-index.js';
 import { assertSafeStoragePath, type StorageRoot } from './storage-root.js';
 import { withImmediateTransaction } from './transaction.js';
 
@@ -22,6 +23,18 @@ export const INITIAL_MIGRATION: Migration = {
   sql: INITIAL_MIGRATION_SQL,
 };
 
+export const CONTEXT_INDEX_MIGRATION: Migration = {
+  version: 2,
+  name: 'context-index',
+  kind: 'compatible',
+  sql: CONTEXT_INDEX_MIGRATION_SQL,
+};
+
+export const ALL_MIGRATIONS: readonly Migration[] = [
+  INITIAL_MIGRATION,
+  CONTEXT_INDEX_MIGRATION,
+];
+
 const migrationTableSql = `
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version INTEGER PRIMARY KEY,
@@ -31,7 +44,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 ) STRICT;
 `;
 
-function checksum(sql: string): string {
+export function migrationChecksum(sql: string): string {
   return createHash('sha256').update(sql).digest('hex');
 }
 
@@ -168,7 +181,7 @@ function readMigrationState(
     if (
       row.version > currentVersion ||
       row.name !== migration.name ||
-      row.checksum !== checksum(migration.sql)
+      row.checksum !== migrationChecksum(migration.sql)
     ) {
       throw migrationConflict('migration state does not match its definition', {
         version: row.version,
@@ -216,7 +229,7 @@ function backupPath(
 export async function migrateDatabase(
   db: DatabaseSync,
   storage: StorageRoot,
-  migrations: readonly Migration[] = [INITIAL_MIGRATION],
+  migrations: readonly Migration[] = ALL_MIGRATIONS,
   clock: Clock = systemClock,
 ): Promise<void> {
   const orderedMigrations = normalizeMigrations(migrations);
@@ -227,7 +240,6 @@ export async function migrateDatabase(
     const state = readMigrationState(db, orderedMigrations);
     if (state.applied.has(migration.version)) continue;
     if (migration.kind === 'incompatible') {
-      // UUID makes concurrent migrators safe even when their clocks share a tick.
       const destination = backupPath(storage, migration, clock);
       assertSafeStoragePath(storage.root, destination);
       await backup(db, destination);
@@ -236,11 +248,9 @@ export async function migrateDatabase(
     withImmediateTransaction(db, () => {
       db.exec(migrationTableSql);
       const lockedState = readMigrationState(db, orderedMigrations);
-      if (lockedState.applied.has(migration.version)) {
-        return;
-      }
+      if (lockedState.applied.has(migration.version)) return;
 
-      const expectedChecksum = checksum(migration.sql);
+      const expectedChecksum = migrationChecksum(migration.sql);
       db.exec(migration.sql);
       db.prepare(
         'INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)',
