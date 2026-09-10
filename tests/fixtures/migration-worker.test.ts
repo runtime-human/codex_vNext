@@ -14,7 +14,7 @@ describe.runIf(Boolean(process.env.MIGRATION_WORKER_ROOT))(
       const db = openWorkflowDatabase(storage);
       try {
         await migrateDatabase(db, storage);
-        expect(currentSchemaVersion(db)).toBe(1);
+        expect(currentSchemaVersion(db)).toBe(2);
       } finally {
         db.close();
       }

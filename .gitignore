@@ -4,3 +4,4 @@ dist/
 .env.*
 *.log
 spikes/ph00/runtime/
+.work/
