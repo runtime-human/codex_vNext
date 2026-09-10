@@ -1,13 +1,13 @@
-import { createHash } from 'node:crypto';
 import { accessSync, constants, existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 
 import {
+  ALL_MIGRATIONS,
   ArtifactStore,
   artifactFileMatches,
   assertSafeStoragePath,
-  INITIAL_MIGRATION,
+  migrationChecksum,
   StateRepositories,
   type StorageRoot,
 } from '../state/index.js';
@@ -125,9 +125,6 @@ export function runDoctor(input: {
     'quick_check failed',
   );
 
-  const expectedChecksum = createHash('sha256')
-    .update(INITIAL_MIGRATION.sql)
-    .digest('hex');
   let migrationHealthy = false;
   try {
     const rows = db
@@ -140,10 +137,16 @@ export function runDoctor(input: {
       checksum: string;
     }>;
     migrationHealthy =
-      rows.length === 1 &&
-      rows[0]?.version === INITIAL_MIGRATION.version &&
-      rows[0].name === INITIAL_MIGRATION.name &&
-      rows[0].checksum === expectedChecksum;
+      rows.length === ALL_MIGRATIONS.length &&
+      rows.every((row, index) => {
+        const expected = ALL_MIGRATIONS[index];
+        return (
+          expected !== undefined &&
+          row.version === expected.version &&
+          row.name === expected.name &&
+          row.checksum === migrationChecksum(expected.sql)
+        );
+      });
   } catch {
     migrationHealthy = false;
   }
@@ -152,13 +155,14 @@ export function runDoctor(input: {
     'migration_checksum',
     migrationHealthy,
     'fail',
-    'migration checksum matches',
-    'migration checksum mismatch',
+    'migration chain checksums match',
+    'migration chain checksum mismatch',
   );
+  const latestMigrationVersion = ALL_MIGRATIONS.at(-1)?.version ?? 0;
   addCheck(
     checks,
     'schema_version',
-    pragma('user_version', 'user_version') === 1,
+    pragma('user_version', 'user_version') === latestMigrationVersion,
     'fail',
     'schema version is current',
     'schema version mismatch',
