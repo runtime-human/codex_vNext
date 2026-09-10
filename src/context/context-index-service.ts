@@ -1,10 +1,10 @@
 import {
-  ContextQuerySchema,
   type ContextFreshness,
   type ContextItem,
   type ContextKind,
   type ContextQueryHit,
   type ContextQueryResult,
+  ContextQuerySchema,
   type ContextStaleReason,
 } from '../domain/context.js';
 import type {
@@ -79,9 +79,7 @@ export function scoreContextCandidate(
   const scopes = query.scopes ?? [];
   if (scopes.some((scope) => item.scope === scope)) {
     score += 100;
-  } else if (
-    scopes.some((scope) => item.scope.startsWith(`${scope}/`))
-  ) {
+  } else if (scopes.some((scope) => item.scope.startsWith(`${scope}/`))) {
     score += 60;
   }
 
@@ -197,8 +195,8 @@ export class ContextIndexService {
       hits: hits.slice(0, query.limit),
       truncated:
         hits.length > query.limit ||
-        this.dependencies.contexts.listCandidates(query.projectId, 201).length >=
-          MAX_CONTEXT_CANDIDATES,
+        this.dependencies.contexts.listCandidates(query.projectId, 201)
+          .length >= MAX_CONTEXT_CANDIDATES,
     };
   }
 
