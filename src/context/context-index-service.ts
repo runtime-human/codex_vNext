@@ -235,7 +235,9 @@ export class ContextIndexService {
     };
   }
 
-  async hydrate(input: ContextHydrateInput): Promise<CompanionHydrationCapsule> {
+  async hydrate(
+    input: ContextHydrateInput,
+  ): Promise<CompanionHydrationCapsule> {
     const run = this.dependencies.repositories.getRun(input.runId);
     if (!run || run.projectId !== input.projectId) {
       throw new StateError('NOT_FOUND', 'run not found for project');
