@@ -71,6 +71,8 @@ describe('secret redaction', () => {
     ['Authorization: Bearer "quoted-auth-secret"', 'quoted-auth-secret'],
     ["Authorization: Basic 'quoted-basic-secret'", 'quoted-basic-secret'],
     ['Bearer bearer-secret', 'bearer-secret'],
+    ['Bearer "quoted-bearer-secret"', 'quoted-bearer-secret'],
+    ["Bearer 'quoted-standalone-secret'", 'quoted-standalone-secret'],
     ['--token flag-secret', 'flag-secret'],
     ['--access-token access-flag-secret', 'access-flag-secret'],
     ['{"token":"json-secret"}', 'json-secret'],

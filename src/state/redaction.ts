@@ -17,7 +17,10 @@ export function redactSensitiveText(value: string): string {
       (_match, prefix: string, scheme: string, whitespace: string) =>
         `${prefix}${scheme}${whitespace}${REDACTED}`,
     )
-    .replace(/\bBearer\s+\S+/gi, `Bearer ${REDACTED}`)
+    .replace(
+      /\bBearer\s+(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^\s,;]+)/gi,
+      `Bearer ${REDACTED}`,
+    )
     .replace(
       new RegExp(
         `(?<![\\w-])(?<key>${SENSITIVE_KEY})(?<keyQuote>["']?)(?<separator>\\s*(?:=|:)\\s*)(?<secret>"(?:\\\\.|[^"\\\\\\r\\n])*"|'(?:\\\\.|[^'\\\\\\r\\n])*'|[^\\s&,;}\\]"']+)`,
