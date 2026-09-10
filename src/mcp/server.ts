@@ -1,11 +1,15 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { McpServer } from '@modelcontextprotocol/server';
 
+import { ContextIndexService } from '../context/context-index-service.js';
+import { ContextSourceResolver } from '../context/source-resolver.js';
 import {
+  ContextRepository,
   migrateDatabase,
   openWorkflowDatabase,
   RunResourceJournal,
   resolveStorageRoot,
+  StateRepositories,
   StateService,
 } from '../state/index.js';
 import { type RuntimeDependencies, registerWorkflowTools } from './tools.js';
@@ -22,10 +26,17 @@ export async function buildRuntimeFromEnvironment(): Promise<WorkflowRuntime> {
   const db = openWorkflowDatabase(storage);
   try {
     await migrateDatabase(db, storage);
+    const repositories = new StateRepositories(db);
+    const context = new ContextIndexService({
+      contexts: new ContextRepository(db),
+      repositories,
+      sourceResolver: new ContextSourceResolver({ repositories }),
+    });
     return {
       db,
-      service: new StateService({ db }),
-      resources: new RunResourceJournal({ db }),
+      service: new StateService({ db, repositories }),
+      resources: new RunResourceJournal({ db, repositories }),
+      context,
       close: () => db.close(),
     };
   } catch (error) {
