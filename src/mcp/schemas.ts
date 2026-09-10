@@ -417,8 +417,6 @@ export const WorkflowSummaryOutputSchema = z
       'start_run',
       'resolve_decision',
       'inspect_repo_drift',
-      'project_identity_changed',
-      'git_unavailable',
       'reconcile_active_work',
       'inspect_cleanup',
       'resume_work',
