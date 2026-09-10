@@ -111,8 +111,12 @@ describe('PH-03 context domain contracts', () => {
       includeUnverifiable: false,
       limit: 8,
     });
-    expect(() => schema?.parse({ projectId: 'project-1', limit: 13 })).toThrow();
-    expect(() => schema?.parse({ projectId: 'project-1', extra: true })).toThrow();
+    expect(() =>
+      schema?.parse({ projectId: 'project-1', limit: 13 }),
+    ).toThrow();
+    expect(() =>
+      schema?.parse({ projectId: 'project-1', extra: true }),
+    ).toThrow();
   });
 
   it('bounds hydration and ContextDelta payloads', async () => {
