@@ -31,10 +31,7 @@ type ContextIndexServiceConstructor = new (input: {
   contexts: ContextRepository;
   repositories: StateRepositories;
   sourceResolver: {
-    resolve(input: {
-      projectId: string;
-      sourceUri: string;
-    }): Promise<{
+    resolve(input: { projectId: string; sourceUri: string }): Promise<{
       sourceUri: string;
       status: 'resolved' | 'missing' | 'unresolvable' | 'unverifiable';
       sourceHash?: string;
@@ -47,7 +44,9 @@ const now = '2026-09-10T18:00:00.000Z';
 const hashA = 'a'.repeat(64);
 
 async function tempRoot(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'workflow-next-ph03-hydrate-'));
+  const root = await mkdtemp(
+    path.join(tmpdir(), 'workflow-next-ph03-hydrate-'),
+  );
   roots.push(root);
   return root;
 }
