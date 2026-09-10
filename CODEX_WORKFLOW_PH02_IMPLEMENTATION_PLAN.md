@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 24 LTS with a PH-02 minimum of `>=24.12 <25`, TypeScript strict ESM, Zod v4, Vitest, Biome, built-in `node:sqlite`, MCP TypeScript SDK v2 (`@modelcontextprotocol/server`; test client via `@modelcontextprotocol/client`), native Codex local plugin + stdio MCP.
 
-**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.3, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.3 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.3.
+**Spec:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.4, especially `ARC-09..19`, `API-01..05`, `SEC-05..10`, `MILE-02`; `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.4 `TP-02A` and `PH-02`; PH-01 contracts from `CODEX_WORKFLOW_PH01_IMPLEMENTATION_PLAN.md` Rev 1.3.
 
 ## Completion Amendment 2026-09-10 — authoritative PH-02 outcome
 
@@ -130,12 +130,11 @@ Durable Mode
 
 PH-00 proved that plugin hooks receive `PLUGIN_DATA` but the tested Windows hook process could not reliably write to it. That result says nothing conclusive about the stdio MCP process.
 
-Current Codex source also has two plugin MCP paths:
-
-- the proven legacy local-plugin path using `.codex-plugin/plugin.json` plus `.mcp.json`;
-- the newer Agent Plugin path with explicit `PLUGIN_DATA` handling.
-
-PH-01 is based on the legacy local-plugin path. PH-02 therefore must test the **actual PH-01 packaging path** rather than infer writeability from hook documentation or another manifest format.
+PH-01's legacy `.codex-plugin/plugin.json` + `.mcp.json` path is historical:
+two official CLI processes proved that its MCP parser does not inject
+`PLUGIN_DATA`. PH-02 therefore tests the production Agent Plugins v1 root
+manifest path, whose loader explicitly supplies isolated `PLUGIN_DATA`, rather
+than inferring writeability from hook behavior.
 
 ## 2.2 Probe fixture
 
@@ -143,7 +142,10 @@ Create:
 
 ```text
 tests/probes/
-├── tp02a-mcp-storage-probe.mjs
+├── tp02a-agent-plugin/
+│   ├── plugin.json
+│   ├── mcp.json
+│   └── tp02a-mcp-storage-probe.mjs
 └── tp02a-hook-probe.mjs
 ```
 
@@ -181,9 +183,10 @@ The `cleanup` mode removes only the probe-owned files under `${PLUGIN_DATA}/tp02
 
 No probe path is allowed to escape the resolved `PLUGIN_DATA` root.
 
-## 2.3 Temporary probe MCP configuration
+## 2.3 Disposable Agent Plugin probe configuration
 
-For the live probe only, create a temporary root `.mcp.json`:
+For the live probe, package section 2.2 with Agent Plugins v1 root `plugin.json`
+and this root `mcp.json`:
 
 ```json
 {
@@ -199,7 +202,8 @@ For the live probe only, create a temporary root `.mcp.json`:
 }
 ```
 
-Do not commit this temporary probe configuration. The production `.mcp.json` is created only after the probe passes.
+Commit the probe fixture and evidence; remove only its temporary installation
+after the probe. The production root `mcp.json` is created after the gate passes.
 
 ## 2.4 Hook re-probe
 
@@ -234,7 +238,9 @@ Commit only:
 
 ```text
 evidence/ph02-storage-probe.json
-tests/probes/tp02a-mcp-storage-probe.mjs
+tests/probes/tp02a-agent-plugin/plugin.json
+tests/probes/tp02a-agent-plugin/mcp.json
+tests/probes/tp02a-agent-plugin/tp02a-mcp-storage-probe.mjs
 tests/probes/tp02a-hook-probe.mjs
 ```
 
@@ -242,12 +248,21 @@ Evidence shape:
 
 ```json
 {
-  "probeVersion": 1,
+  "probeVersion": 2,
   "date": "YYYY-MM-DD",
   "desktopBuild": "observed-build",
   "cliVersion": "observed-version",
   "nodeVersion": "v24.x.y",
-  "pluginFormat": "legacy-codex-plugin",
+  "pluginFormat": "agent-plugins-v1",
+  "probeCommit": "reviewed-probe-commit",
+  "probePackageVersion": "probe-version",
+  "productionPackageVersion": "production-version",
+  "probePluginManifestSha256": "probe-plugin-manifest-digest",
+  "probeMcpManifestSha256": "probe-mcp-manifest-digest",
+  "probeScriptSha256": "probe-script-digest",
+  "installedProbeTreeSha256": "installed-probe-tree-digest",
+  "cliProcesses": 2,
+  "cleanupProcesses": 1,
   "mcp": {
     "pluginDataPresent": true,
     "create": "pass",
@@ -256,15 +271,17 @@ Evidence shape:
     "read": "pass",
     "sqliteTransaction": "pass",
     "sqliteReopen": "pass",
-    "restartPersistence": "pass"
+    "restartPersistence": "pass",
+    "cleanup": "pass"
   },
   "hook": {
-    "configured": true,
-    "trusted": true,
+    "configured": false,
+    "trusted": false,
     "executed": false,
-    "pluginDataPresent": true,
+    "pluginDataPresent": false,
     "write": "fail",
-    "classification": "degraded"
+    "classification": "degraded",
+    "evidenceScope": "prior-host-contract"
   },
   "storageDecision": "plugin_data_sqlite"
 }
@@ -303,9 +320,8 @@ The target tree after PH-02 is:
 
 ```text
 .
-├── .codex-plugin/
-│   └── plugin.json                     # existing PH-01 manifest
-├── .mcp.json                           # PH-02 production stdio MCP
+├── plugin.json                         # Agent Plugins v1 root manifest
+├── mcp.json                            # PH-02 production stdio MCP
 ├── skills/
 │   ├── orchestrate-work/SKILL.md       # existing PH-01
 │   ├── task-envelope/SKILL.md          # existing PH-01
@@ -1585,17 +1601,17 @@ await serveStdio(() => {
 
 Use `serveStdio()` rather than direct `new StdioServerTransport()` so the current MCP SDK can negotiate the current 2026 protocol revision while retaining its documented legacy behavior.
 
-Production `.mcp.json`:
+Production root `mcp.json`:
 
 ```json
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
     "workflow-next": {
       "type": "stdio",
       "command": "node",
       "args": ["./dist/mcp/index.js"],
-      "cwd": ".",
-      "startup_timeout_sec": 30
+      "cwd": "./"
     }
   }
 }
@@ -1764,7 +1780,8 @@ Unit tests include a test-only incompatible migration to prove backup-before-app
 - Create: `tests/probes/tp02a-mcp-storage-probe.mjs`
 - Create: `tests/probes/tp02a-hook-probe.mjs`
 - Create: `evidence/ph02-storage-probe.json`
-- Temporary only: `.mcp.json`
+- Create: `tests/probes/tp02a-agent-plugin/plugin.json`
+- Create: `tests/probes/tp02a-agent-plugin/mcp.json`
 - Temporary only: `hooks/hooks.json`
 
 **Interfaces:**
@@ -1785,7 +1802,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 The probe must fail with a structured result if `PLUGIN_DATA` is absent.
 
-- [ ] **Step 2: Create temporary `.mcp.json` and reload the plugin**
+- [ ] **Step 2: Build and install the disposable Agent Plugin fixture**
 
 Use the exact temporary configuration from section 2.3.
 
@@ -1847,9 +1864,9 @@ Stop the implementation.
 
 If passed, continue.
 
-- [ ] **Step 9: Remove temporary hook/MCP configuration**
+- [ ] **Step 9: Remove the temporary probe installation and hook configuration**
 
-The production `.mcp.json` comes later.
+Keep the committed probe fixture/evidence. The production root `mcp.json` comes later.
 
 - [ ] **Step 10: Commit probe evidence**
 
@@ -2456,7 +2473,7 @@ git commit -m "feat: add recovery reconciliation and doctor"
 - Create: `src/mcp/tools.ts`
 - Create: `src/mcp/server.ts`
 - Create: `src/mcp/index.ts`
-- Create: `.mcp.json`
+- Create: `mcp.json`
 - Test: `tests/contract/ph02-mcp-schemas.test.ts`
 - Test: `tests/mcp/tools.test.ts`
 - Test: `tests/mcp/stdio-smoke.test.ts`
@@ -2535,7 +2552,7 @@ Error:
 
 No HTTP listener.
 
-- [ ] **Step 8: Create production `.mcp.json`**
+- [ ] **Step 8: Create production root `mcp.json`**
 
 Use the exact configuration from section 14.
 
@@ -2550,7 +2567,7 @@ npm run build
 - [ ] **Step 10: Commit**
 
 ```powershell
-git add src/mcp .mcp.json tests/contract/ph02-mcp-schemas.test.ts tests/mcp
+git add src/mcp mcp.json tests/contract/ph02-mcp-schemas.test.ts tests/mcp
 git commit -m "feat: expose deterministic workflow state over MCP"
 ```
 
@@ -2782,7 +2799,7 @@ Shape:
   "validationSources": {
     "desktopParentRuntime": ["workflowStatus", "recoverWork"],
     "cliCurrentRuntime": ["completionGuard", "restartPersistence", "recoverWork"],
-    "cliParentRuntime": ["repoDrift"],
+    "cliParentRuntime": ["repoDrift", "recoverWork"],
     "automatedCurrentRuntime": ["repoDrift"]
   },
   "doctor": "pass",

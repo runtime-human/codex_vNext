@@ -250,7 +250,7 @@ export class StateService {
     if (!workItem) throw new StateError('NOT_FOUND', 'work item not found');
     return {
       ...workItem,
-      evidenceRefs: this.repositories.listEvidenceForWorkItem(
+      evidenceRefs: this.repositories.listPassingEvidenceForWorkItem(
         workItem.runId,
         workItemId,
         100,

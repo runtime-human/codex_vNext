@@ -696,7 +696,7 @@ export class StateRepositories {
     ).map(evidenceFromRow);
   }
 
-  listEvidenceForWorkItem(
+  listPassingEvidenceForWorkItem(
     runId: string,
     workItemId: string,
     limit = -1,
@@ -704,7 +704,7 @@ export class StateRepositories {
     return (
       this.db
         .prepare(`SELECT * FROM evidence
-          WHERE run_id = ? AND work_item_id = ?
+          WHERE run_id = ? AND work_item_id = ? AND status = 'pass'
           ORDER BY created_at, evidence_id LIMIT ?`)
         .all(runId, workItemId, limit) as Row[]
     ).map(evidenceFromRow);

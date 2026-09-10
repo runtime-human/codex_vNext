@@ -13,15 +13,9 @@ function redactValue(value: string): string {
 export function redactSensitiveText(value: string): string {
   return value
     .replace(
-      /(\bAuthorization\s*:\s*["']?)(Basic|Bearer)(\s+)([^\s"']+)(["']?)/gi,
-      (
-        _match,
-        prefix: string,
-        scheme: string,
-        whitespace: string,
-        _secret: string,
-        suffix: string,
-      ) => `${prefix}${scheme}${whitespace}${REDACTED}${suffix}`,
+      /(\bAuthorization\s*:\s*)(Basic|Bearer)(\s+)(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^\s,;]+)/gi,
+      (_match, prefix: string, scheme: string, whitespace: string) =>
+        `${prefix}${scheme}${whitespace}${REDACTED}`,
     )
     .replace(/\bBearer\s+\S+/gi, `Bearer ${REDACTED}`)
     .replace(

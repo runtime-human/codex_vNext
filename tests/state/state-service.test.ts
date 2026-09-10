@@ -723,6 +723,44 @@ describe('semantic state service', () => {
     }
   });
 
+  it('exposes only passing evidence from work.get', async () => {
+    const { service, repositories } = await stateRuntime();
+    seedRun(repositories);
+    repositories.putWorkItem({
+      workItemId: 'work-1',
+      runId: 'run-1',
+      title: 'work',
+      objective: 'work',
+      state: 'ready',
+      risk: 'low',
+      acceptance: {
+        requiredLevel: 'implemented',
+        criteria: ['complete'],
+        requiredEvidenceKinds: ['test'],
+      },
+      readinessLevel: 'implemented',
+      readinessEvidenceIds: [],
+      version: 1,
+      createdAt: at,
+      updatedAt: at,
+    });
+    for (const status of ['fail', 'pass'] as const) {
+      repositories.putEvidence({
+        evidenceId: `evidence-${status}`,
+        runId: 'run-1',
+        workItemId: 'work-1',
+        kind: 'test',
+        summary: status,
+        status,
+        createdAt: at,
+      });
+    }
+
+    expect(service.getWorkItem('work-1').evidenceRefs).toMatchObject([
+      { evidenceId: 'evidence-pass', status: 'pass' },
+    ]);
+  });
+
   it.each([
     ['readiness', 'validated_target', []],
     ['missing-kind', 'implemented', []],

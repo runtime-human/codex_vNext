@@ -68,6 +68,8 @@ describe('secret redaction', () => {
   it.each([
     ['Authorization: Bearer auth-secret', 'auth-secret'],
     ['Authorization: Basic basic-secret', 'basic-secret'],
+    ['Authorization: Bearer "quoted-auth-secret"', 'quoted-auth-secret'],
+    ["Authorization: Basic 'quoted-basic-secret'", 'quoted-basic-secret'],
     ['Bearer bearer-secret', 'bearer-secret'],
     ['--token flag-secret', 'flag-secret'],
     ['--access-token access-flag-secret', 'access-flag-secret'],

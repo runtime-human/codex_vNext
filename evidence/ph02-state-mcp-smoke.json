@@ -81,6 +81,17 @@
     {
       "surface": "cli",
       "case": "recoverWork",
+      "runtimeCommit": "5e69a09333f42260a9fc2fd53297f8931f88b420",
+      "threadId": "01a0879b-2f7d-7c33-928b-093581825e08",
+      "runId": "run_caf1b209-c9d9-417a-9331-76dfa6c07f27",
+      "repoDrift": "none",
+      "nextSafeAction": "none",
+      "liveness": "unknown",
+      "readOnly": true
+    },
+    {
+      "surface": "cli",
+      "case": "repoDriftRecovery",
       "runtimeCommit": "9a244d0b4ad4bd90c4b4fc8d94b90e7e3f968d6b",
       "baselineThreadId": "01a08782-d108-72c1-a347-cf35ce90b186",
       "threadId": "01a08783-ddff-7b83-a82e-f9f5134cc940",
@@ -107,7 +118,7 @@
       "completionGuard",
       "recoverWork"
     ],
-    "cliParentRuntime": ["repoDrift"],
+    "cliParentRuntime": ["repoDrift", "recoverWork"],
     "automatedCurrentRuntime": [
       "duplicateIdempotency",
       "idempotencyConflict",
