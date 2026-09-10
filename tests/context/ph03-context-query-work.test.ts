@@ -80,7 +80,9 @@ describe('PH-03 lazy freshness work contract', () => {
   });
 
   it('resolves through stale leaders plus one extra valid hit to prove truncation below 200 candidates', async () => {
-    const staleIndexes = new Set(Array.from({ length: 20 }, (_, index) => index));
+    const staleIndexes = new Set(
+      Array.from({ length: 20 }, (_, index) => index),
+    );
     const { service, calls } = serviceFor(
       Array.from({ length: 40 }, (_, index) => candidate(index)),
       staleIndexes,
