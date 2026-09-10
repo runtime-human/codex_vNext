@@ -7,6 +7,10 @@ import {
   ReadinessLevelSchema,
   WorkItemStateSchema,
 } from '../domain/index.js';
+import {
+  CONTEXT_INPUT_SCHEMAS,
+  CONTEXT_OUTPUT_VALUE_SCHEMAS,
+} from './context-schemas.js';
 
 const MAX_TEXT_LENGTH = 8_192;
 const MAX_IDENTIFIER_LENGTH = 160;
@@ -455,6 +459,12 @@ export const MCP_OUTPUT_SCHEMAS = {
   'decision.resolve': toolOutput(DecisionOutputSchema),
   'evidence.record': toolOutput(EvidenceOutputSchema),
   'resource.record': toolOutput(ResourceOutputSchema),
+  'context.get': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.get']),
+  'context.query': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.query']),
+  'context.hydrate': toolOutput(CONTEXT_OUTPUT_VALUE_SCHEMAS['context.hydrate']),
+  'context.ingest_delta': toolOutput(
+    CONTEXT_OUTPUT_VALUE_SCHEMAS['context.ingest_delta'],
+  ),
 } as const;
 
 export const MCP_INPUT_SCHEMAS = {
@@ -467,4 +477,5 @@ export const MCP_INPUT_SCHEMAS = {
   'decision.resolve': DecisionResolveInputSchema,
   'evidence.record': EvidenceRecordInputSchema,
   'resource.record': ResourceRecordInputSchema,
+  ...CONTEXT_INPUT_SCHEMAS,
 } as const;
