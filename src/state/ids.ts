@@ -7,3 +7,4 @@ export const newEvidenceId = () => `evidence_${randomUUID()}`;
 export const newResourceId = () => `resource_${randomUUID()}`;
 export const newEventId = () => `event_${randomUUID()}`;
 export const newArtifactId = () => `artifact_${randomUUID()}`;
+export const newContextId = () => `context_${randomUUID()}`;
