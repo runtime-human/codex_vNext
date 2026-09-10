@@ -1,6 +1,7 @@
 export * from './artifact-store.js';
 export * from './canonical-json.js';
 export * from './clock.js';
+export * from './context-repository.js';
 export * from './errors.js';
 export * from './idempotency.js';
 export * from './ids.js';
