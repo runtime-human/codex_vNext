@@ -70,7 +70,9 @@ export const WORKFLOW_TOOL_ANNOTATIONS = {
   'context.ingest_delta': annotations.mutate,
 } as const;
 
-function resolveContext(dependencies: RuntimeDependencies): ContextIndexService {
+function resolveContext(
+  dependencies: RuntimeDependencies,
+): ContextIndexService {
   if (dependencies.context) return dependencies.context;
   const repositories = dependencies.service.repositories;
   return new ContextIndexService({
