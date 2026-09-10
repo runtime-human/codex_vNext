@@ -1,6 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import type { ContextIndexService } from '../context/context-index-service.js';
+import { ContextIndexService } from '../context/context-index-service.js';
+import { ContextSourceResolver } from '../context/source-resolver.js';
+import { ContextRepository } from '../state/context-repository.js';
 import type {
   BeginWorkflowInput,
   RecordEvidenceInput,
@@ -28,7 +30,7 @@ import {
 export interface RuntimeDependencies {
   service: StateService;
   resources: RunResourceJournal;
-  context: ContextIndexService;
+  context?: ContextIndexService;
 }
 
 const annotations = {
@@ -68,11 +70,22 @@ export const WORKFLOW_TOOL_ANNOTATIONS = {
   'context.ingest_delta': annotations.mutate,
 } as const;
 
+function resolveContext(dependencies: RuntimeDependencies): ContextIndexService {
+  if (dependencies.context) return dependencies.context;
+  const repositories = dependencies.service.repositories;
+  return new ContextIndexService({
+    contexts: new ContextRepository(repositories.db),
+    repositories,
+    sourceResolver: new ContextSourceResolver({ repositories }),
+  });
+}
+
 export function registerWorkflowTools(
   server: McpServer,
   dependencies: RuntimeDependencies,
 ): void {
-  const { service, resources, context } = dependencies;
+  const { service, resources } = dependencies;
+  const context = resolveContext(dependencies);
 
   server.registerTool(
     'workflow.summary',
