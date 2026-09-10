@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -34,7 +33,9 @@ type SourceResolverConstructor = new (input: {
 
 const tempRoots: string[] = [];
 
-async function tempRoot(prefix = 'workflow-next-ph03-source-'): Promise<string> {
+async function tempRoot(
+  prefix = 'workflow-next-ph03-source-',
+): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), prefix));
   tempRoots.push(root);
   return root;
@@ -90,9 +91,9 @@ async function runtime(repoRoot: string) {
     ContextSourceResolver?: SourceResolverConstructor;
   };
   expect(module.ContextSourceResolver).toBeDefined();
-  const resolver = new (module.ContextSourceResolver as SourceResolverConstructor)(
-    { repositories },
-  );
+  const resolver = new (
+    module.ContextSourceResolver as SourceResolverConstructor
+  )({ repositories });
   return { db, repositories, resolver };
 }
 
@@ -152,7 +153,10 @@ describe('PH-03 ContextSourceResolver', () => {
     const { db, resolver } = await runtime(repoRoot);
     try {
       await expect(
-        resolver.resolve({ projectId: 'project-a', sourceUri: 'repo:../secret' }),
+        resolver.resolve({
+          projectId: 'project-a',
+          sourceUri: 'repo:../secret',
+        }),
       ).resolves.toMatchObject({ status: 'unresolvable' });
       if (linked) {
         await expect(
