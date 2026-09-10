@@ -189,7 +189,10 @@ export const ContextDeltaItemSchema = z
     scope: z.string().min(1).max(256),
     summary: z.string().min(1).max(1600),
     sourceUri: ContextSourceUriSchema,
-    sourceHash: z.string().regex(/^[a-f0-9]{64}$/u).optional(),
+    sourceHash: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/u)
+      .optional(),
     gitSha: z.string().min(7).max(64).optional(),
     replacesContextId: ContextIdSchema.optional(),
   })
