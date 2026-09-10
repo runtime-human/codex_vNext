@@ -1,16 +1,28 @@
 import { describe, expect, it } from 'vitest';
 
+type ParseSchema = { parse(value: unknown): unknown };
+
 async function contextContracts() {
-  return (await import('../../src/domain/context.js')) as Record<
+  return (await import('../../src/domain/context.js')) as unknown as Record<
     string,
-    { parse(value: unknown): unknown } | undefined
+    unknown
   >;
+}
+
+function parseSchema(
+  contracts: Record<string, unknown>,
+  name: string,
+): ParseSchema | undefined {
+  const value = contracts[name];
+  return value && typeof value === 'object' && 'parse' in value
+    ? (value as ParseSchema)
+    : undefined;
 }
 
 describe('PH-03 context domain contracts', () => {
   it('exports the stable context kind contract without changing PH-01 values', async () => {
     const contracts = await contextContracts();
-    const schema = contracts.ContextKindSchema;
+    const schema = parseSchema(contracts, 'ContextKindSchema');
     expect(schema).toBeDefined();
 
     const values = [
@@ -28,7 +40,7 @@ describe('PH-03 context domain contracts', () => {
 
   it('accepts only canonical source URI forms', async () => {
     const contracts = await contextContracts();
-    const schema = contracts.ContextSourceUriSchema;
+    const schema = parseSchema(contracts, 'ContextSourceUriSchema');
     expect(schema).toBeDefined();
 
     for (const value of [
@@ -58,20 +70,24 @@ describe('PH-03 context domain contracts', () => {
 
   it('separates persisted stale state from derived freshness', async () => {
     const contracts = await contextContracts();
-    const freshness = contracts.ContextFreshnessSchema;
-    const reason = contracts.ContextStaleReasonSchema;
+    const freshness = parseSchema(contracts, 'ContextFreshnessSchema');
+    const reason = parseSchema(contracts, 'ContextStaleReasonSchema');
     expect(freshness).toBeDefined();
     expect(reason).toBeDefined();
 
-    expect(['fresh', 'stale', 'unverifiable'].map((value) => freshness?.parse(value))).toEqual([
-      'fresh',
-      'stale',
-      'unverifiable',
-    ]);
     expect(
-      ['persisted_stale', 'source_missing', 'source_hash_changed', 'source_unresolvable', 'none'].map(
-        (value) => reason?.parse(value),
+      ['fresh', 'stale', 'unverifiable'].map((value) =>
+        freshness?.parse(value),
       ),
+    ).toEqual(['fresh', 'stale', 'unverifiable']);
+    expect(
+      [
+        'persisted_stale',
+        'source_missing',
+        'source_hash_changed',
+        'source_unresolvable',
+        'none',
+      ].map((value) => reason?.parse(value)),
     ).toEqual([
       'persisted_stale',
       'source_missing',
@@ -83,7 +99,7 @@ describe('PH-03 context domain contracts', () => {
 
   it('defaults bounded queries and rejects unknown fields', async () => {
     const contracts = await contextContracts();
-    const schema = contracts.ContextQuerySchema;
+    const schema = parseSchema(contracts, 'ContextQuerySchema');
     expect(schema).toBeDefined();
 
     expect(schema?.parse({ projectId: 'project-1' })).toEqual({
@@ -101,8 +117,8 @@ describe('PH-03 context domain contracts', () => {
 
   it('bounds hydration and ContextDelta payloads', async () => {
     const contracts = await contextContracts();
-    const hydration = contracts.CompanionHydrationCapsuleSchema;
-    const delta = contracts.ContextDeltaSchema;
+    const hydration = parseSchema(contracts, 'CompanionHydrationCapsuleSchema');
+    const delta = parseSchema(contracts, 'ContextDeltaSchema');
     expect(hydration).toBeDefined();
     expect(delta).toBeDefined();
 
