@@ -36,8 +36,8 @@ describe('PH-02 migrations', () => {
     const storage = resolveStorageRoot(await tempRoot());
     const db = openWorkflowDatabase(storage);
     try {
-      await migrateDatabase(db, storage);
-      await migrateDatabase(db, storage);
+      await migrateDatabase(db, storage, [INITIAL_MIGRATION]);
+      await migrateDatabase(db, storage, [INITIAL_MIGRATION]);
 
       expect(currentSchemaVersion(db)).toBe(1);
       expect(
@@ -73,7 +73,7 @@ describe('PH-02 migrations', () => {
     const storage = resolveStorageRoot(await tempRoot());
     const db = openWorkflowDatabase(storage);
     try {
-      await migrateDatabase(db, storage);
+      await migrateDatabase(db, storage, [INITIAL_MIGRATION]);
       const drifted = {
         ...INITIAL_MIGRATION,
         sql: `${INITIAL_MIGRATION.sql}\n-- drift`,
@@ -162,7 +162,7 @@ describe('PH-02 migrations', () => {
       expect(
         db.prepare('SELECT count(*) AS count FROM schema_migrations').get(),
       ).toEqual({
-        count: 1,
+        count: 2,
       });
     } finally {
       db.close();
@@ -179,7 +179,7 @@ describe('PH-02 migrations', () => {
       sql: 'INSERT INTO missing VALUES (1);',
     };
     try {
-      await migrateDatabase(db, storage);
+      await migrateDatabase(db, storage, [INITIAL_MIGRATION]);
       await expect(
         migrateDatabase(db, storage, [INITIAL_MIGRATION, incompatible]),
       ).rejects.toThrow();
@@ -206,7 +206,7 @@ describe('PH-02 migrations', () => {
     };
     const fixedClock = { nowIso: () => '2026-09-09T00:00:00.000Z' };
     try {
-      await migrateDatabase(first, storage);
+      await migrateDatabase(first, storage, [INITIAL_MIGRATION]);
       await expect(
         Promise.all([
           migrateDatabase(
@@ -252,7 +252,7 @@ describe('PH-02 migrations', () => {
       sql: 'CREATE TABLE backup_junction_probe (id INTEGER) STRICT;',
     };
     try {
-      await migrateDatabase(db, storage);
+      await migrateDatabase(db, storage, [INITIAL_MIGRATION]);
       await rm(storage.backupsDir, { recursive: true });
       const linked = await symlink(
         outside,
