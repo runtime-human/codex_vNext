@@ -1,7 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ContextKind } from '../../src/domain/context.js';
@@ -292,7 +291,6 @@ describe('PH-03 ContextIndexService query', () => {
       contexts.put(
         record('external', {
           sourceUri: 'external:https://example.com/reference',
-          sourceHash: undefined,
         }),
       );
 
