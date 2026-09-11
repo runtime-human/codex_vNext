@@ -101,6 +101,19 @@ export class ContextRepository {
     return row ? contextFromRow(row) : undefined;
   }
 
+  getByLogicalVersion(
+    projectId: string,
+    logicalKey: string,
+    sourceHash?: string,
+  ): ContextRecord | undefined {
+    const row = this.db
+      .prepare(`SELECT * FROM context_items
+        WHERE project_id = ? AND logical_key = ?
+          AND ifnull(source_hash, '') = ?`)
+      .get(projectId, logicalKey, sourceHash ?? '') as Row | undefined;
+    return row ? contextFromRow(row) : undefined;
+  }
+
   listCandidates(
     projectId: string,
     limit?: number,
