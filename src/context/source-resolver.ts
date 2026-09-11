@@ -26,8 +26,85 @@ export interface ContextSourceResolverDependencies {
   repositories: StateRepositories;
 }
 
+export interface RepositoryFileMetadata {
+  dev: bigint;
+  ino: bigint;
+  size: bigint;
+  mtimeNs: bigint;
+  isFile: boolean;
+}
+
+export interface RepositoryFileHashIo {
+  stat(filePath: string): Promise<RepositoryFileMetadata>;
+  chunks(filePath: string): AsyncIterable<Uint8Array>;
+}
+
+export interface StableRepositoryFileHashResult {
+  status: 'resolved' | 'unresolvable' | 'unverifiable';
+  sourceHash?: string;
+  bytes: number;
+}
+
+const nodeRepositoryFileHashIo: RepositoryFileHashIo = {
+  async stat(filePath) {
+    const value = await stat(filePath, { bigint: true });
+    return {
+      dev: value.dev,
+      ino: value.ino,
+      size: value.size,
+      mtimeNs: value.mtimeNs,
+      isFile: value.isFile(),
+    };
+  },
+  chunks(filePath) {
+    return createReadStream(filePath);
+  },
+};
+
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+function sameRepositoryFileSnapshot(
+  before: RepositoryFileMetadata,
+  after: RepositoryFileMetadata,
+): boolean {
+  return (
+    before.dev === after.dev &&
+    before.ino === after.ino &&
+    before.size === after.size &&
+    before.mtimeNs === after.mtimeNs
+  );
+}
+
+export async function hashStableRepositoryFile(
+  filePath: string,
+  io: RepositoryFileHashIo = nodeRepositoryFileHashIo,
+): Promise<StableRepositoryFileHashResult> {
+  const before = await io.stat(filePath);
+  if (!before.isFile) return { status: 'unresolvable', bytes: 0 };
+
+  const hash = createHash('sha256');
+  let bytes = 0;
+  for await (const chunk of io.chunks(filePath)) {
+    hash.update(chunk);
+    bytes += chunk.byteLength;
+  }
+
+  const after = await io.stat(filePath);
+  if (
+    !after.isFile ||
+    !sameRepositoryFileSnapshot(before, after) ||
+    BigInt(bytes) !== before.size
+  ) {
+    return { status: 'unverifiable', bytes };
+  }
+
+  return {
+    status: 'resolved',
+    sourceHash: hash.digest('hex'),
+    bytes,
+  };
 }
 
 function missing(sourceUri: string): ContextSourceSnapshot {
@@ -94,14 +171,15 @@ export class ContextSourceResolver {
       ) {
         return unresolvable(sourceUri);
       }
-      if (!(await stat(resolved)).isFile()) return unresolvable(sourceUri);
 
-      const hash = createHash('sha256');
-      for await (const chunk of createReadStream(resolved)) hash.update(chunk);
+      const result = await hashStableRepositoryFile(resolved);
+      if (result.status !== 'resolved') {
+        return { sourceUri, status: result.status };
+      }
       return {
         sourceUri,
         status: 'resolved',
-        sourceHash: hash.digest('hex'),
+        sourceHash: result.sourceHash,
       };
     } catch (error) {
       return (error as NodeJS.ErrnoException).code === 'ENOENT'
