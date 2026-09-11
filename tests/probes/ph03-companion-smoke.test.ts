@@ -20,6 +20,7 @@ function validEvidence() {
     codexVersion: '0.153.4',
     hostSurface: 'cli',
     workerHandoffSha256: 'b'.repeat(64),
+    parentMarkerSha256: 'c'.repeat(64),
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
@@ -45,11 +46,17 @@ describe('PH-03 live Companion smoke evidence', () => {
     expect(validatePh03CompanionSmoke(validEvidence()).status).toBe('PASS');
   });
 
-  it('requires a SHA-256 binding to the exact worker handoff', async () => {
+  it('requires SHA-256 bindings to both worker handoff and parent marker', async () => {
     const { validatePh03CompanionSmoke } = await subject();
-    const { workerHandoffSha256: _workerHandoffSha256, ...unbound } =
+    const {
+      workerHandoffSha256: _workerHandoffSha256,
+      ...withoutWorkerBinding
+    } = validEvidence();
+    expect(() => validatePh03CompanionSmoke(withoutWorkerBinding)).toThrow();
+
+    const { parentMarkerSha256: _parentMarkerSha256, ...withoutParentBinding } =
       validEvidence();
-    expect(() => validatePh03CompanionSmoke(unbound)).toThrow();
+    expect(() => validatePh03CompanionSmoke(withoutParentBinding)).toThrow();
   });
 
   it.each([
