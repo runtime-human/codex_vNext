@@ -1,20 +1,25 @@
 {
   "phase": "PH-03",
   "status": "PARTIAL",
-  "pluginPackageCommit": "3a96a807f086d981c6270f9ac283834cbff452ad",
+  "pluginPackageCommit": "11eed97a9945a52bc15a665ca3098cc871ad0d37",
   "environment": {
     "surface": null,
     "codexBuild": null
   },
   "observations": {
     "forkTurnsNone": "unobserved",
+    "singleChildExecution": "unobserved",
     "parentMarkerIsolation": "unobserved",
     "schemaValidDelta": "unobserved",
-    "noRepositoryWrites": "unobserved"
+    "noRepositoryWrites": "unobserved",
+    "runtimeRoleMetadata": "unobserved",
+    "runtimeModelMetadata": "unobserved"
   },
   "limitations": [
     "The current execution environment exposes GitHub repository and Actions capabilities but no authorized Codex Desktop/CLI native agent-spawn surface.",
-    "The append-only preparation bundle, exact worker-handoff digest, parent-sentinel digest, parent-artifact binding, and fail-closed validator make a future native smoke reproducible and tamper-evident but do not prove that a native worker was spawned or isolated.",
-    "Explicit fork_turns=none, parent-marker isolation, schema-valid live worker ContextDelta, and no-repository-write behavior require a native Codex live smoke and are not inferred from unit tests, generated bundles, validator fixtures, or GitHub Actions evidence."
+    "Smoke v2 requires a single-child native run with explicit fork_turns=none. The prepared worker is also instructed not to spawn subagents, so the PH-03 isolation proof does not depend on current parallel-subagent isolation behavior.",
+    "requestedRole=context_companion and requestedAuthority=read_only describe the semantic launch request; they are not treated as proof that Codex applied a named runtime role, model, or tool policy. Runtime role/model metadata remain informational and explicitly unobserved unless the host exposes them.",
+    "The append-only preparation bundle, exact worker-handoff digest, parent-sentinel digest, parent-artifact binding, smokeVersion/packetVersion 2 contract, and fail-closed validator make a future native smoke reproducible and tamper-evident but do not prove that a native worker was spawned or isolated.",
+    "Explicit fork_turns=none, single-child execution, parent-marker isolation, schema-valid live worker ContextDelta, and no-repository-write behavior require a native Codex live smoke and are not inferred from unit tests, generated bundles, validator fixtures, or GitHub Actions evidence."
   ]
 }
