@@ -1,7 +1,7 @@
 {
   "phase": "PH-03",
   "status": "PARTIAL",
-  "pluginPackageCommit": "b441336ea65ed7921c81d76dc2927639fe9ff50c",
+  "pluginPackageCommit": "3a96a807f086d981c6270f9ac283834cbff452ad",
   "environment": {
     "surface": null,
     "codexBuild": null
@@ -14,6 +14,7 @@
   },
   "limitations": [
     "The current execution environment exposes GitHub repository and Actions capabilities but no authorized Codex Desktop/CLI native agent-spawn surface.",
-    "Explicit fork_turns=none, parent-marker isolation, schema-valid live worker ContextDelta, and no-repository-write behavior require a native Codex live smoke and are not inferred from unit or GitHub Actions evidence."
+    "The append-only preparation bundle, exact worker-handoff digest, parent-sentinel digest, parent-artifact binding, and fail-closed validator make a future native smoke reproducible and tamper-evident but do not prove that a native worker was spawned or isolated.",
+    "Explicit fork_turns=none, parent-marker isolation, schema-valid live worker ContextDelta, and no-repository-write behavior require a native Codex live smoke and are not inferred from unit tests, generated bundles, validator fixtures, or GitHub Actions evidence."
   ]
 }
