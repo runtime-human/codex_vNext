@@ -9,6 +9,7 @@ export const Ph03CompanionSmokeEvidenceSchema = z
     runtimeCommit: z.string().regex(/^[a-f0-9]{40}$/u),
     codexVersion: z.string().trim().min(1).max(128),
     hostSurface: z.enum(['cli', 'desktop']),
+    workerHandoffSha256: z.string().regex(/^[a-f0-9]{64}$/u),
     worker: z
       .object({
         role: z.literal('context_companion'),
