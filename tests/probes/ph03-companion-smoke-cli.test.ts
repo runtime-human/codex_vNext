@@ -137,11 +137,7 @@ describe('PH-03 Companion smoke CLI validator', () => {
     );
 
     await expect(
-      validatePh03CompanionSmokeBundle(
-        evidenceFile,
-        workerFile,
-        parentFile,
-      ),
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile, parentFile),
     ).resolves.toMatchObject({ status: 'PASS' });
 
     await writeFile(
@@ -150,11 +146,7 @@ describe('PH-03 Companion smoke CLI validator', () => {
       'utf8',
     );
     await expect(
-      validatePh03CompanionSmokeBundle(
-        evidenceFile,
-        workerFile,
-        parentFile,
-      ),
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile, parentFile),
     ).rejects.toThrow(/worker handoff digest mismatch/u);
 
     await writeFile(workerFile, `${JSON.stringify(worker, null, 2)}\n`, 'utf8');
@@ -171,11 +163,7 @@ describe('PH-03 Companion smoke CLI validator', () => {
       'utf8',
     );
     await expect(
-      validatePh03CompanionSmokeBundle(
-        evidenceFile,
-        workerFile,
-        parentFile,
-      ),
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile, parentFile),
     ).rejects.toThrow(/parent marker digest mismatch/u);
   });
 
