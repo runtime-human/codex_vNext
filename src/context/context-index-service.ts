@@ -99,6 +99,11 @@ interface FreshnessResult {
   staleReason: ContextStaleReason;
 }
 
+interface ContextVerificationOperation {
+  budget: ContextVerificationBudget;
+  snapshots: Map<string, ContextSourceSnapshot>;
+}
+
 type PreparedDeltaMutation =
   | {
       type: 'insert';
@@ -111,6 +116,13 @@ type PreparedDeltaMutation =
       expectedSourceHash?: string;
     }
   | { type: 'none' };
+
+function createVerificationOperation(): ContextVerificationOperation {
+  return {
+    budget: createContextVerificationBudget(),
+    snapshots: new Map<string, ContextSourceSnapshot>(),
+  };
+}
 
 function normalizeText(value: string): string {
   return value.normalize('NFKC').toLowerCase().trim();
@@ -243,8 +255,8 @@ export class ContextIndexService {
     );
     if (!record) return undefined;
 
-    const verificationBudget = createContextVerificationBudget();
-    const freshness = await this.resolveFreshness(record, verificationBudget);
+    const verification = createVerificationOperation();
+    const freshness = await this.resolveFreshness(record, verification);
     if (
       !shouldInclude(
         freshness.freshness,
@@ -296,12 +308,12 @@ export class ContextIndexService {
       }))
       .sort((left, right) => compareHits(left.hit, right.hit));
 
-    const verificationBudget = createContextVerificationBudget();
+    const verification = createVerificationOperation();
     const hits: ContextQueryHit[] = [];
     for (const rankedCandidate of ranked) {
       const freshness = await this.resolveFreshness(
         rankedCandidate.candidate,
-        verificationBudget,
+        verification,
       );
       if (
         shouldInclude(
@@ -421,14 +433,14 @@ export class ContextIndexService {
     }
 
     const verifiedAt = this.clock.nowIso();
-    const verificationBudget = createContextVerificationBudget();
+    const verification = createVerificationOperation();
     const prepared: PreparedDeltaMutation[] = [];
     for (const item of parsedDelta.items) {
-      const snapshot = await this.dependencies.sourceResolver.resolve({
-        projectId: input.projectId,
-        sourceUri: item.sourceUri,
-        verificationBudget,
-      });
+      const snapshot = await this.resolveSourceSnapshot(
+        input.projectId,
+        item.sourceUri,
+        verification,
+      );
       prepared.push(
         this.prepareDeltaMutation(input.projectId, item, snapshot, verifiedAt),
       );
@@ -676,19 +688,37 @@ export class ContextIndexService {
     };
   }
 
+  private async resolveSourceSnapshot(
+    projectId: string,
+    sourceUri: string,
+    verification: ContextVerificationOperation,
+  ): Promise<ContextSourceSnapshot> {
+    const cacheKey = `${projectId}\u0000${sourceUri}`;
+    const cached = verification.snapshots.get(cacheKey);
+    if (cached) return cached;
+
+    const snapshot = await this.dependencies.sourceResolver.resolve({
+      projectId,
+      sourceUri,
+      verificationBudget: verification.budget,
+    });
+    verification.snapshots.set(cacheKey, snapshot);
+    return snapshot;
+  }
+
   private async resolveFreshness(
     record: ContextRecord,
-    verificationBudget: ContextVerificationBudget,
+    verification: ContextVerificationOperation,
   ): Promise<FreshnessResult> {
     if (record.stale) {
       return { freshness: 'stale', staleReason: 'persisted_stale' };
     }
 
-    const snapshot = await this.dependencies.sourceResolver.resolve({
-      projectId: record.projectId,
-      sourceUri: record.sourceUri,
-      verificationBudget,
-    });
+    const snapshot = await this.resolveSourceSnapshot(
+      record.projectId,
+      record.sourceUri,
+      verification,
+    );
     if (snapshot.status === 'missing') {
       return { freshness: 'stale', staleReason: 'source_missing' };
     }
