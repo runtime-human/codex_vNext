@@ -17,7 +17,9 @@ const roots: string[] = [];
 const sourceHash = 'a'.repeat(64);
 
 async function runtime() {
-  const pluginData = await mkdtemp(path.join(tmpdir(), 'ph03-stale-saturation-'));
+  const pluginData = await mkdtemp(
+    path.join(tmpdir(), 'ph03-stale-saturation-'),
+  );
   const projectRoot = await mkdtemp(path.join(tmpdir(), 'ph03-stale-project-'));
   roots.push(pluginData, projectRoot);
 
