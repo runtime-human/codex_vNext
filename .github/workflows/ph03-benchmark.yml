@@ -42,6 +42,7 @@ jobs:
             evidence/generated/ph03-candidate-sql-benchmark.json
             evidence/generated/ph03-candidate-admission-benchmark.json
             evidence/generated/ph03-admission-recall-stress.json
+            evidence/generated/ph03-multiscope-admission-stress.json
             evidence/generated/ph03-source-hash-benchmark.json
             evidence/generated/ph03-verification-budget-benchmark.json
             evidence/generated/ph03-source-reuse-stress.json
