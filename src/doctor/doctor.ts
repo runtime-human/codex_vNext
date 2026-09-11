@@ -38,6 +38,84 @@ function addCheck(
   });
 }
 
+function contextSchemaHealthy(db: DatabaseSync): boolean {
+  try {
+    const table = (
+      db.prepare('PRAGMA table_list').all() as unknown as Array<{
+        name: string;
+        type: string;
+        strict: number;
+      }>
+    ).find((row) => row.name === 'context_items' && row.type === 'table');
+    if (!table || table.strict !== 1) return false;
+
+    const expectedColumns = [
+      'context_id',
+      'project_id',
+      'logical_key',
+      'kind',
+      'scope',
+      'summary',
+      'source_uri',
+      'source_hash',
+      'git_sha',
+      'verified_at',
+      'stale',
+      'replaces_context_id',
+      'created_at',
+      'updated_at',
+    ];
+    const columns = db.prepare('PRAGMA table_info(context_items)').all() as unknown as Array<{
+      name: string;
+    }>;
+    if (
+      columns.length !== expectedColumns.length ||
+      !expectedColumns.every((name) => columns.some((column) => column.name === name))
+    ) {
+      return false;
+    }
+
+    const foreignKeys = db
+      .prepare('PRAGMA foreign_key_list(context_items)')
+      .all() as unknown as Array<{
+      table: string;
+      from: string;
+      to: string;
+    }>;
+    const projectForeignKey = foreignKeys.some(
+      (row) =>
+        row.table === 'projects' &&
+        row.from === 'project_id' &&
+        row.to === 'project_id',
+    );
+    const replacementForeignKey = foreignKeys.some(
+      (row) =>
+        row.table === 'context_items' &&
+        row.from === 'replaces_context_id' &&
+        row.to === 'context_id',
+    );
+    if (!projectForeignKey || !replacementForeignKey) return false;
+
+    const indexes = db.prepare('PRAGMA index_list(context_items)').all() as unknown as Array<{
+      name: string;
+      unique: number;
+      partial: number;
+    }>;
+    const requiredIndexes = new Map<string, number>([
+      ['idx_context_logical_version', 1],
+      ['idx_context_project_stale_updated', 0],
+      ['idx_context_project_scope', 0],
+      ['idx_context_project_source', 0],
+    ]);
+    return [...requiredIndexes.entries()].every(([name, unique]) => {
+      const index = indexes.find((candidate) => candidate.name === name);
+      return index?.unique === unique && index.partial === 0;
+    });
+  } catch {
+    return false;
+  }
+}
+
 export function runDoctor(input: {
   storage: StorageRoot;
   db: DatabaseSync;
@@ -182,6 +260,14 @@ export function runDoctor(input: {
     'fail',
     'foreign keys are valid',
     'foreign key violations found',
+  );
+  addCheck(
+    checks,
+    'context_schema',
+    contextSchemaHealthy(db),
+    'fail',
+    'context schema and indexes are valid',
+    'context schema or indexes are invalid',
   );
 
   let artifactTargetsHealthy = false;
