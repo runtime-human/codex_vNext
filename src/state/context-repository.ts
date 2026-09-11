@@ -105,19 +105,24 @@ export class ContextRepository {
     projectId: string,
     limit?: number,
     includePersistedStale = true,
+    kinds: ContextKind[] = [],
   ): ContextRecord[] {
-    const sql = includePersistedStale
-      ? `SELECT * FROM context_items
-          WHERE project_id = ?
-          ORDER BY updated_at DESC, context_id ASC
-          LIMIT ?`
-      : `SELECT * FROM context_items
-          WHERE project_id = ? AND stale = 0
-          ORDER BY updated_at DESC, context_id ASC
-          LIMIT ?`;
-    return (
-      this.db.prepare(sql).all(projectId, boundedLimit(limit)) as Row[]
-    ).map(contextFromRow);
+    const predicates = ['project_id = ?'];
+    const parameters: SQLOutputValue[] = [projectId];
+    if (!includePersistedStale) predicates.push('stale = 0');
+    if (kinds.length > 0) {
+      predicates.push(`kind IN (${kinds.map(() => '?').join(', ')})`);
+      parameters.push(...kinds);
+    }
+    parameters.push(boundedLimit(limit));
+
+    const sql = `SELECT * FROM context_items
+      WHERE ${predicates.join(' AND ')}
+      ORDER BY updated_at DESC, context_id ASC
+      LIMIT ?`;
+    return (this.db.prepare(sql).all(...parameters) as Row[]).map(
+      contextFromRow,
+    );
   }
 
   listByLogicalKey(
