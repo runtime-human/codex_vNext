@@ -208,9 +208,7 @@ export class ContextRepository {
     const childPredicates = requestedScopes
       .map(() => '(scope >= ? AND scope < ?)')
       .join(' OR ');
-    predicates.push(
-      `(scope IN (${exactPlaceholders}) OR ${childPredicates})`,
-    );
+    predicates.push(`(scope IN (${exactPlaceholders}) OR ${childPredicates})`);
     parameters.push(...requestedScopes);
     for (const scope of requestedScopes) {
       const prefix = `${scope}/`;
