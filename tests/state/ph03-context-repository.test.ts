@@ -38,6 +38,11 @@ interface ContextRecord {
 interface ContextRepositoryContract {
   put(value: ContextRecord): void;
   get(projectId: string, contextId: string): ContextRecord | undefined;
+  getByLogicalVersion(
+    projectId: string,
+    logicalKey: string,
+    sourceHash?: string,
+  ): ContextRecord | undefined;
   listCandidates(projectId: string, limit?: number): ContextRecord[];
   listByLogicalKey(
     projectId: string,
@@ -163,6 +168,47 @@ describe('PH-03 ContextRepository', () => {
           projectId: 'project-b',
         }),
       ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('finds an exact logical version even when it is older than the bounded history window', async () => {
+    const { db, contexts } = await runtime();
+    try {
+      const oldestHash = '0'.repeat(64);
+      contexts.put(
+        record('context-oldest', 'project-a', {
+          sourceHash: oldestHash,
+          verifiedAt: '2026-09-01T00:00:00.000Z',
+          updatedAt: '2026-09-01T00:00:00.000Z',
+        }),
+      );
+      for (let index = 0; index < 200; index += 1) {
+        const sourceHash = index.toString(16).padStart(64, '0');
+        contexts.put(
+          record(`context-new-${index}`, 'project-a', {
+            sourceHash,
+            verifiedAt: `2026-09-10T18:${String(index % 60).padStart(2, '0')}:00.000Z`,
+            updatedAt: '2026-09-11T00:00:00.000Z',
+          }),
+        );
+      }
+
+      expect(
+        contexts.getByLogicalVersion(
+          'project-a',
+          'logical-source-a',
+          oldestHash,
+        ),
+      ).toMatchObject({ contextId: 'context-oldest', sourceHash: oldestHash });
+      expect(
+        contexts.getByLogicalVersion(
+          'project-b',
+          'logical-source-a',
+          oldestHash,
+        ),
+      ).toBeUndefined();
     } finally {
       db.close();
     }
