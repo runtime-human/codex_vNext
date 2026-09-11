@@ -57,7 +57,7 @@ function validEvidence(
   parentMarkerSha256 = 'c'.repeat(64),
 ) {
   return {
-    smokeVersion: 1,
+    smokeVersion: 2,
     phase: 'PH-03',
     probe: 'companion_live_smoke',
     observedAt: '2026-09-11T05:00:00.000Z',
@@ -67,9 +67,12 @@ function validEvidence(
     workerHandoffSha256,
     parentMarkerSha256,
     worker: {
-      role: 'context_companion',
+      requestedRole: 'context_companion',
+      runtimeRoleObserved: null,
+      runtimeModelObserved: null,
       forkTurns: 'none',
-      authority: 'read_only',
+      requestedAuthority: 'read_only',
+      singleChildObserved: true,
       freshThreadObserved: true,
       parentMarkerVisible: false,
       repoWritesObserved: false,
@@ -113,7 +116,7 @@ describe('PH-03 Companion smoke CLI validator', () => {
     };
     const workerHandoffSha256 = hashWorker(worker);
     const parent = {
-      packetVersion: 1,
+      packetVersion: 2,
       phase: 'PH-03',
       probe: 'companion_live_smoke',
       runtimeCommit: 'a'.repeat(40),
@@ -123,9 +126,10 @@ describe('PH-03 Companion smoke CLI validator', () => {
       parentMarkerSha256: sha256Text(parentOnlyMarker),
       workerHandoffSha256,
       launch: {
-        role: 'context_companion',
+        requestedRole: 'context_companion',
         forkTurns: 'none',
-        authority: 'read_only',
+        requestedAuthority: 'read_only',
+        singleChildOnly: true,
       },
     };
     const workerFile = await tempFile(root, 'worker.json', worker);
@@ -165,6 +169,46 @@ describe('PH-03 Companion smoke CLI validator', () => {
     await expect(
       validatePh03CompanionSmokeBundle(evidenceFile, workerFile, parentFile),
     ).rejects.toThrow(/parent marker digest mismatch/u);
+  });
+
+  it('rejects a parent artifact that relaxes single-child launch constraints', async () => {
+    const { validatePh03CompanionSmokeBundle } = await subject();
+    const root = await mkdtemp(path.join(tmpdir(), 'workflow-ph03-smoke-cli-'));
+    roots.push(root);
+    const parentOnlyMarker = 'PH03_PARENT_ONLY_TEST_11223344';
+    const worker = {
+      task: 'Return a bounded ContextDelta.',
+      hydrationCapsule: { taskId: 'task-ph03-smoke' },
+    };
+    const workerHandoffSha256 = hashWorker(worker);
+    const parentMarkerSha256 = sha256Text(parentOnlyMarker);
+    const workerFile = await tempFile(root, 'worker.json', worker);
+    const parentFile = await tempFile(root, 'parent.json', {
+      packetVersion: 2,
+      phase: 'PH-03',
+      probe: 'companion_live_smoke',
+      runtimeCommit: 'a'.repeat(40),
+      codexVersion: '0.153.4',
+      hostSurface: 'cli',
+      parentOnlyMarker,
+      parentMarkerSha256,
+      workerHandoffSha256,
+      launch: {
+        requestedRole: 'context_companion',
+        forkTurns: 'none',
+        requestedAuthority: 'read_only',
+        singleChildOnly: false,
+      },
+    });
+    const evidenceFile = await tempFile(
+      root,
+      'evidence.json',
+      validEvidence(workerHandoffSha256, parentMarkerSha256),
+    );
+
+    await expect(
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile, parentFile),
+    ).rejects.toThrow(/parent launch contract mismatch/u);
   });
 
   it('rejects PARTIAL or malformed evidence instead of promoting it', async () => {
