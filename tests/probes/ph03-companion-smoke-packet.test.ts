@@ -37,7 +37,7 @@ function hydrationCapsule() {
 }
 
 describe('PH-03 native Companion smoke packet', () => {
-  it('keeps the parent-only marker out of the exact worker handoff', async () => {
+  it('keeps the parent-only marker out of the exact single-child worker handoff', async () => {
     const { createPh03CompanionSmokeArtifacts } = await subject();
     const parentOnlyMarker = 'PH03_PARENT_ONLY_TEST_7f31d5f3';
     const expectedParentMarkerSha256 = createHash('sha256')
@@ -52,46 +52,63 @@ describe('PH-03 native Companion smoke packet', () => {
       hydrationCapsule: hydrationCapsule(),
     }) as {
       parent: {
+        packetVersion: number;
         parentOnlyMarker: string;
         parentMarkerSha256: string;
         workerHandoffSha256: string;
         launch: {
-          role: string;
+          requestedRole: string;
           forkTurns: string;
-          authority: string;
+          requestedAuthority: string;
+          singleChildOnly: boolean;
         };
       };
-      worker: Record<string, unknown>;
+      worker: { task: string } & Record<string, unknown>;
       evidenceTemplate: {
+        smokeVersion: number;
         parentMarkerSha256: string;
         workerHandoffSha256: string;
+        worker: {
+          requestedRole: string;
+          runtimeRoleObserved: string | null;
+          runtimeModelObserved: string | null;
+          singleChildObserved: boolean | null;
+        };
       };
     };
 
     expect(artifacts.parent).toMatchObject({
+      packetVersion: 2,
       parentOnlyMarker,
       parentMarkerSha256: expectedParentMarkerSha256,
       launch: {
-        role: 'context_companion',
+        requestedRole: 'context_companion',
         forkTurns: 'none',
-        authority: 'read_only',
+        requestedAuthority: 'read_only',
+        singleChildOnly: true,
       },
     });
     expect(Object.keys(artifacts.worker).sort()).toEqual([
       'hydrationCapsule',
       'task',
     ]);
+    expect(artifacts.worker.task).toContain('Do not spawn subagents.');
     expect(JSON.stringify(artifacts.worker)).not.toContain(parentOnlyMarker);
     expect(JSON.stringify(artifacts.evidenceTemplate)).not.toContain(
       parentOnlyMarker,
     );
     expect(artifacts.parent.workerHandoffSha256).toMatch(/^[a-f0-9]{64}$/u);
-    expect(artifacts.evidenceTemplate.workerHandoffSha256).toBe(
-      artifacts.parent.workerHandoffSha256,
-    );
-    expect(artifacts.evidenceTemplate.parentMarkerSha256).toBe(
-      expectedParentMarkerSha256,
-    );
+    expect(artifacts.evidenceTemplate).toMatchObject({
+      smokeVersion: 2,
+      workerHandoffSha256: artifacts.parent.workerHandoffSha256,
+      parentMarkerSha256: expectedParentMarkerSha256,
+      worker: {
+        requestedRole: 'context_companion',
+        runtimeRoleObserved: null,
+        runtimeModelObserved: null,
+        singleChildObserved: null,
+      },
+    });
   });
 
   it('changes the worker binding when the exact worker handoff changes', async () => {
