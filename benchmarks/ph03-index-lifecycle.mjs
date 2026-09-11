@@ -4,7 +4,9 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { DatabaseSync } from 'node:sqlite';
 
-const OUTPUT_PATH = path.resolve('evidence/generated/ph03-index-lifecycle-stress.json');
+const OUTPUT_PATH = path.resolve(
+  'evidence/generated/ph03-index-lifecycle-stress.json',
+);
 const ITERATIONS = 20;
 const WARMUP = 4;
 
@@ -53,7 +55,9 @@ const QUERY = `SELECT context_id FROM context_items
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
+  return sorted[
+    Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)
+  ];
 }
 
 function summarize(values) {
@@ -110,7 +114,8 @@ function insertRows(db, count, staleRatio) {
 function markStale(db, count, fraction) {
   const cutoff = Math.floor(count * fraction);
   const started = performance.now();
-  const result = db.prepare(`UPDATE context_items SET stale = 1, updated_at = updated_at
+  const result = db
+    .prepare(`UPDATE context_items SET stale = 1, updated_at = updated_at
     WHERE project_id = ? AND stale = 0 AND CAST(substr(context_id, 9) AS INTEGER) < ?`)
     .run('project-benchmark', cutoff);
   return { ms: performance.now() - started, changed: Number(result.changes) };
@@ -118,7 +123,8 @@ function markStale(db, count, fraction) {
 
 function measureQuery(db) {
   const statement = db.prepare(QUERY);
-  for (let i = 0; i < WARMUP; i += 1) statement.all('project-benchmark', 'pitfall', 12);
+  for (let i = 0; i < WARMUP; i += 1)
+    statement.all('project-benchmark', 'pitfall', 12);
   const durations = [];
   for (let i = 0; i < ITERATIONS; i += 1) {
     const started = performance.now();
@@ -127,14 +133,19 @@ function measureQuery(db) {
   }
   return {
     timing: summarize(durations),
-    plan: db.prepare(`EXPLAIN QUERY PLAN ${QUERY}`).all('project-benchmark', 'pitfall', 12).map((row) => String(row.detail)),
+    plan: db
+      .prepare(`EXPLAIN QUERY PLAN ${QUERY}`)
+      .all('project-benchmark', 'pitfall', 12)
+      .map((row) => String(row.detail)),
   };
 }
 
 async function fileBytes(filePath) {
   let total = 0;
   for (const suffix of ['', '-wal', '-shm']) {
-    try { total += (await stat(`${filePath}${suffix}`)).size; } catch (error) {
+    try {
+      total += (await stat(`${filePath}${suffix}`)).size;
+    } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
   }
@@ -142,13 +153,20 @@ async function fileBytes(filePath) {
 }
 
 async function runScenario(count, staleRatio, strategy, root) {
-  const filePath = path.join(root, `${strategy}-${count}-${String(staleRatio).replace('.', '_')}.sqlite`);
+  const filePath = path.join(
+    root,
+    `${strategy}-${count}-${String(staleRatio).replace('.', '_')}.sqlite`,
+  );
   const db = openDb(filePath, strategy);
   try {
     const insertMs = insertRows(db, count, staleRatio);
     const beforeMutationBytes = await fileBytes(filePath);
     const queryBefore = measureQuery(db);
-    const staleMutation = markStale(db, count, Math.min(0.9, staleRatio + 0.1));
+    const staleMutation = markStale(
+      db,
+      count,
+      Math.min(0.9, staleRatio + 0.1),
+    );
     const queryAfter = measureQuery(db);
     db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     const afterCheckpointBytes = await fileBytes(filePath);
@@ -182,7 +200,11 @@ try {
     benchmarkVersion: 1,
     phase: 'PH-03',
     benchmark: 'index-lifecycle-stress',
-    environment: { platform: process.platform, arch: process.arch, node: process.version },
+    environment: {
+      platform: process.platform,
+      arch: process.arch,
+      node: process.version,
+    },
     strategies: {
       A: 'current indexes',
       B: 'current indexes plus full active/stale kind recency composite index',
@@ -191,7 +213,9 @@ try {
     scenarios,
   };
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
-  await import('node:fs/promises').then(({ writeFile }) => writeFile(OUTPUT_PATH, `${JSON.stringify(evidence, null, 2)}\n`));
+  await import('node:fs/promises').then(({ writeFile }) =>
+    writeFile(OUTPUT_PATH, `${JSON.stringify(evidence, null, 2)}\n`),
+  );
   console.log(JSON.stringify(evidence, null, 2));
 } finally {
   await rm(root, { recursive: true, force: true });
