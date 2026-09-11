@@ -8,7 +8,13 @@ import { performance } from 'node:perf_hooks';
 const OUTPUT_PATH = path.resolve(
   'evidence/generated/ph03-source-hash-benchmark.json',
 );
-const SIZES = [32 * 1024, 256 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024];
+const SIZES = [
+  32 * 1024,
+  256 * 1024,
+  1024 * 1024,
+  4 * 1024 * 1024,
+  16 * 1024 * 1024,
+];
 const ITERATIONS = 12;
 const WARMUP_ITERATIONS = 2;
 
