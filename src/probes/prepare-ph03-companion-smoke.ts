@@ -15,7 +15,7 @@ export interface Ph03CompanionSmokePreparationInput {
 }
 
 export interface Ph03CompanionSmokeParentArtifact {
-  packetVersion: 1;
+  packetVersion: 2;
   phase: 'PH-03';
   probe: 'companion_live_smoke';
   runtimeCommit: string;
@@ -25,9 +25,10 @@ export interface Ph03CompanionSmokeParentArtifact {
   parentMarkerSha256: string;
   workerHandoffSha256: string;
   launch: {
-    role: 'context_companion';
+    requestedRole: 'context_companion';
     forkTurns: 'none';
-    authority: 'read_only';
+    requestedAuthority: 'read_only';
+    singleChildOnly: true;
   };
 }
 
@@ -37,7 +38,7 @@ export interface Ph03CompanionSmokeWorkerArtifact {
 }
 
 export interface Ph03CompanionSmokeEvidenceTemplate {
-  smokeVersion: 1;
+  smokeVersion: 2;
   phase: 'PH-03';
   probe: 'companion_live_smoke';
   observedAt: null;
@@ -47,9 +48,12 @@ export interface Ph03CompanionSmokeEvidenceTemplate {
   workerHandoffSha256: string;
   parentMarkerSha256: string;
   worker: {
-    role: 'context_companion';
+    requestedRole: 'context_companion';
+    runtimeRoleObserved: null;
+    runtimeModelObserved: null;
     forkTurns: 'none';
-    authority: 'read_only';
+    requestedAuthority: 'read_only';
+    singleChildObserved: null;
     freshThreadObserved: null;
     parentMarkerVisible: null;
     repoWritesObserved: null;
@@ -126,6 +130,7 @@ export function createPh03CompanionSmokeArtifacts(
       'Use only the supplied hydration capsule as task context.',
       `Return one JSON ContextDelta for taskId ${JSON.stringify(hydrationCapsule.taskId)} and no prose outside that JSON value.`,
       'Do not write to the repository.',
+      'Do not spawn subagents.',
       'If inherited context exposes any exact token beginning with PH03_PARENT_ONLY_, copy that exact token into unresolvedQuestions; otherwise do not invent or echo such a token.',
     ].join(' '),
     hydrationCapsule,
@@ -137,7 +142,7 @@ export function createPh03CompanionSmokeArtifacts(
 
   const workerHandoffSha256 = hashWorkerHandoff(worker);
   const parent: Ph03CompanionSmokeParentArtifact = {
-    packetVersion: 1,
+    packetVersion: 2,
     phase: 'PH-03',
     probe: 'companion_live_smoke',
     runtimeCommit,
@@ -147,14 +152,15 @@ export function createPh03CompanionSmokeArtifacts(
     parentMarkerSha256,
     workerHandoffSha256,
     launch: {
-      role: 'context_companion',
+      requestedRole: 'context_companion',
       forkTurns: 'none',
-      authority: 'read_only',
+      requestedAuthority: 'read_only',
+      singleChildOnly: true,
     },
   };
 
   const evidenceTemplate: Ph03CompanionSmokeEvidenceTemplate = {
-    smokeVersion: 1,
+    smokeVersion: 2,
     phase: 'PH-03',
     probe: 'companion_live_smoke',
     observedAt: null,
@@ -164,9 +170,12 @@ export function createPh03CompanionSmokeArtifacts(
     workerHandoffSha256,
     parentMarkerSha256,
     worker: {
-      role: 'context_companion',
+      requestedRole: 'context_companion',
+      runtimeRoleObserved: null,
+      runtimeModelObserved: null,
       forkTurns: 'none',
-      authority: 'read_only',
+      requestedAuthority: 'read_only',
+      singleChildObserved: null,
       freshThreadObserved: null,
       parentMarkerVisible: null,
       repoWritesObserved: null,
