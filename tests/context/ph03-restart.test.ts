@@ -19,8 +19,12 @@ const roots: string[] = [];
 const now = '2026-09-11T00:00:00.000Z';
 
 async function fixture() {
-  const pluginData = await mkdtemp(path.join(tmpdir(), 'workflow-ph03-restart-data-'));
-  const projectRoot = await mkdtemp(path.join(tmpdir(), 'workflow-ph03-restart-repo-'));
+  const pluginData = await mkdtemp(
+    path.join(tmpdir(), 'workflow-ph03-restart-data-'),
+  );
+  const projectRoot = await mkdtemp(
+    path.join(tmpdir(), 'workflow-ph03-restart-repo-'),
+  );
   roots.push(pluginData, projectRoot);
   await mkdir(path.join(projectRoot, 'src'), { recursive: true });
   const sourcePath = path.join(projectRoot, 'src', 'a.ts');
@@ -152,9 +156,9 @@ describe('PH-03 restart correctness', () => {
         staleReason: 'source_hash_changed',
         item: { stale: false },
       });
-      expect(
-        db.prepare('SELECT stale FROM context_items').get(),
-      ).toEqual({ stale: 0 });
+      expect(db.prepare('SELECT stale FROM context_items').get()).toEqual({
+        stale: 0,
+      });
     } finally {
       db.close();
     }
