@@ -295,7 +295,7 @@ export class ContextIndexService {
     limit?: number;
   }): Promise<ContextQueryResult> {
     const query = ContextQuerySchema.parse(input);
-    const recentCandidates = this.dependencies.contexts.listCandidates(
+    const recentPool = this.dependencies.contexts.listCandidatePool(
       query.projectId,
       MAX_CONTEXT_CANDIDATES,
       query.includeStale,
@@ -312,11 +312,11 @@ export class ContextIndexService {
         : { items: [], truncated: false };
     const admitted = dedupeCandidates([
       ...scopePool.items,
-      ...recentCandidates,
+      ...recentPool.items,
     ]);
-    const candidateLimitReached =
+    const candidateWindowExhausted =
+      recentPool.truncated ||
       scopePool.truncated ||
-      recentCandidates.length >= MAX_CONTEXT_CANDIDATES ||
       admitted.length > MAX_CONTEXT_CANDIDATES;
     const ranked = admitted
       .filter(
@@ -351,7 +351,7 @@ export class ContextIndexService {
       ) {
         hits.push({ ...rankedCandidate.hit, ...freshness });
       }
-      const enoughEvidence = candidateLimitReached
+      const enoughEvidence = candidateWindowExhausted
         ? hits.length >= query.limit
         : hits.length > query.limit;
       if (enoughEvidence) break;
@@ -360,7 +360,7 @@ export class ContextIndexService {
     return {
       projectId: query.projectId,
       hits: hits.slice(0, query.limit),
-      truncated: candidateLimitReached || hits.length > query.limit,
+      truncated: candidateWindowExhausted || hits.length > query.limit,
     };
   }
 
