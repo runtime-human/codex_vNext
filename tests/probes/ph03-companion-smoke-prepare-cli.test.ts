@@ -64,7 +64,7 @@ afterEach(async () => {
 });
 
 describe('PH-03 Companion smoke preparation CLI', () => {
-  it('writes an isolated native-smoke bundle without leaking the parent sentinel', async () => {
+  it('writes an isolated single-child native-smoke bundle without leaking the parent sentinel', async () => {
     const { preparePh03CompanionSmokeFiles } = await subject();
     const root = await tempRoot();
     const capsuleFile = await writeCapsule(root);
@@ -86,22 +86,53 @@ describe('PH-03 Companion smoke preparation CLI', () => {
     expect(path.dirname(result.evidenceTemplateFile)).toBe(outputDirectory);
 
     const parent = JSON.parse(await readFile(result.parentFile, 'utf8')) as {
+      packetVersion: number;
       parentOnlyMarker: string;
-      launch: { forkTurns: string; authority: string };
+      launch: {
+        requestedRole: string;
+        forkTurns: string;
+        requestedAuthority: string;
+        singleChildOnly: boolean;
+      };
     };
     const workerRaw = await readFile(result.workerFile, 'utf8');
     const evidence = JSON.parse(
       await readFile(result.evidenceTemplateFile, 'utf8'),
-    ) as { observedAt: unknown; worker: { freshThreadObserved: unknown } };
+    ) as {
+      smokeVersion: number;
+      observedAt: unknown;
+      worker: {
+        requestedRole: string;
+        runtimeRoleObserved: unknown;
+        runtimeModelObserved: unknown;
+        singleChildObserved: unknown;
+        freshThreadObserved: unknown;
+      };
+    };
 
-    expect(parent.parentOnlyMarker).toBe(parentOnlyMarker);
-    expect(parent.launch).toMatchObject({
-      forkTurns: 'none',
-      authority: 'read_only',
+    expect(parent).toMatchObject({
+      packetVersion: 2,
+      parentOnlyMarker,
+      launch: {
+        requestedRole: 'context_companion',
+        forkTurns: 'none',
+        requestedAuthority: 'read_only',
+        singleChildOnly: true,
+      },
     });
     expect(workerRaw).not.toContain(parentOnlyMarker);
-    expect(evidence.observedAt).toBeNull();
-    expect(evidence.worker.freshThreadObserved).toBeNull();
+    expect(workerRaw).toContain('Do not spawn subagents.');
+    expect(evidence).toMatchObject({
+      smokeVersion: 2,
+      observedAt: null,
+      worker: {
+        requestedRole: 'context_companion',
+        runtimeRoleObserved: null,
+        runtimeModelObserved: null,
+        singleChildObserved: null,
+        freshThreadObserved: null,
+      },
+    });
   });
 
   it('refuses to overwrite a previously prepared smoke bundle', async () => {
