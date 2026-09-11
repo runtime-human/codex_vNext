@@ -101,14 +101,22 @@ export class ContextRepository {
     return row ? contextFromRow(row) : undefined;
   }
 
-  listCandidates(projectId: string, limit?: number): ContextRecord[] {
-    return (
-      this.db
-        .prepare(`SELECT * FROM context_items
+  listCandidates(
+    projectId: string,
+    limit?: number,
+    includePersistedStale = true,
+  ): ContextRecord[] {
+    const sql = includePersistedStale
+      ? `SELECT * FROM context_items
           WHERE project_id = ?
           ORDER BY updated_at DESC, context_id ASC
-          LIMIT ?`)
-        .all(projectId, boundedLimit(limit)) as Row[]
+          LIMIT ?`
+      : `SELECT * FROM context_items
+          WHERE project_id = ? AND stale = 0
+          ORDER BY updated_at DESC, context_id ASC
+          LIMIT ?`;
+    return (
+      this.db.prepare(sql).all(projectId, boundedLimit(limit)) as Row[]
     ).map(contextFromRow);
   }
 
