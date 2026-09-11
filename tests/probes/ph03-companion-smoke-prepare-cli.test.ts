@@ -100,9 +100,9 @@ describe('PH-03 Companion smoke preparation CLI', () => {
   });
 
   it('exposes a build-then-prepare npm command outside the default check gate', async () => {
-    const packageJson = JSON.parse(
-      await readFile('package.json', 'utf8'),
-    ) as { scripts: Record<string, string> };
+    const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
+      scripts: Record<string, string>;
+    };
 
     expect(packageJson.scripts['prepare:ph03-companion-smoke']).toBe(
       'npm run build && node ./dist/probes/prepare-ph03-companion-smoke-cli.js',
