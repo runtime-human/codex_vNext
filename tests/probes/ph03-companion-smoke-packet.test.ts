@@ -83,6 +83,8 @@ describe('PH-03 native Companion smoke packet', () => {
       hydrationCapsule: hydrationCapsule(),
     });
 
-    expect(() => validatePh03CompanionSmoke(artifacts.evidenceTemplate)).toThrow();
+    expect(() =>
+      validatePh03CompanionSmoke(artifacts.evidenceTemplate),
+    ).toThrow();
   });
 });
