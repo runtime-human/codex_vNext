@@ -34,6 +34,7 @@ function validEvidence() {
     runtimeCommit: 'a'.repeat(40),
     codexVersion: '0.153.4',
     hostSurface: 'cli',
+    workerHandoffSha256: 'b'.repeat(64),
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
