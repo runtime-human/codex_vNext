@@ -1,8 +1,11 @@
+import { createHash } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { canonicalJson } from '../../src/state/canonical-json.js';
 
 const roots: string[] = [];
 
@@ -14,18 +17,37 @@ async function subject() {
       status: 'PASS';
       evidence: unknown;
     }>;
+    validatePh03CompanionSmokeBundle(
+      evidenceFilePath: string,
+      workerFilePath: string,
+    ): Promise<{
+      status: 'PASS';
+      evidence: unknown;
+    }>;
   };
+}
+
+async function tempFile(
+  root: string,
+  name: string,
+  value: unknown,
+): Promise<string> {
+  const filePath = path.join(root, name);
+  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  return filePath;
 }
 
 async function tempEvidence(value: unknown): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), 'workflow-ph03-smoke-cli-'));
   roots.push(root);
-  const filePath = path.join(root, 'evidence.json');
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  return filePath;
+  return tempFile(root, 'evidence.json', value);
 }
 
-function validEvidence() {
+function hashWorker(worker: unknown): string {
+  return createHash('sha256').update(canonicalJson(worker)).digest('hex');
+}
+
+function validEvidence(workerHandoffSha256 = 'b'.repeat(64)) {
   return {
     smokeVersion: 1,
     phase: 'PH-03',
@@ -34,7 +56,7 @@ function validEvidence() {
     runtimeCommit: 'a'.repeat(40),
     codexVersion: '0.153.4',
     hostSurface: 'cli',
-    workerHandoffSha256: 'b'.repeat(64),
+    workerHandoffSha256,
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
@@ -69,6 +91,35 @@ describe('PH-03 Companion smoke CLI validator', () => {
     ).resolves.toMatchObject({
       status: 'PASS',
     });
+  });
+
+  it('binds PASS evidence to the exact prepared worker handoff', async () => {
+    const { validatePh03CompanionSmokeBundle } = await subject();
+    const root = await mkdtemp(path.join(tmpdir(), 'workflow-ph03-smoke-cli-'));
+    roots.push(root);
+    const worker = {
+      task: 'Return a bounded ContextDelta.',
+      hydrationCapsule: { taskId: 'task-ph03-smoke' },
+    };
+    const workerFile = await tempFile(root, 'worker.json', worker);
+    const evidenceFile = await tempFile(
+      root,
+      'evidence.json',
+      validEvidence(hashWorker(worker)),
+    );
+
+    await expect(
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile),
+    ).resolves.toMatchObject({ status: 'PASS' });
+
+    await writeFile(
+      workerFile,
+      `${JSON.stringify({ ...worker, task: 'tampered' }, null, 2)}\n`,
+      'utf8',
+    );
+    await expect(
+      validatePh03CompanionSmokeBundle(evidenceFile, workerFile),
+    ).rejects.toThrow(/worker handoff digest mismatch/u);
   });
 
   it('rejects PARTIAL or malformed evidence instead of promoting it', async () => {
