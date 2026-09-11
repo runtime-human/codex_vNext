@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 
 import { validatePh03CompanionSmoke } from '../../src/probes/ph03-companion-smoke.js';
@@ -38,6 +40,9 @@ describe('PH-03 native Companion smoke packet', () => {
   it('keeps the parent-only marker out of the exact worker handoff', async () => {
     const { createPh03CompanionSmokeArtifacts } = await subject();
     const parentOnlyMarker = 'PH03_PARENT_ONLY_TEST_7f31d5f3';
+    const expectedParentMarkerSha256 = createHash('sha256')
+      .update(parentOnlyMarker)
+      .digest('hex');
 
     const artifacts = createPh03CompanionSmokeArtifacts({
       runtimeCommit: 'b'.repeat(40),
@@ -48,6 +53,7 @@ describe('PH-03 native Companion smoke packet', () => {
     }) as {
       parent: {
         parentOnlyMarker: string;
+        parentMarkerSha256: string;
         workerHandoffSha256: string;
         launch: {
           role: string;
@@ -56,11 +62,15 @@ describe('PH-03 native Companion smoke packet', () => {
         };
       };
       worker: Record<string, unknown>;
-      evidenceTemplate: { workerHandoffSha256: string };
+      evidenceTemplate: {
+        parentMarkerSha256: string;
+        workerHandoffSha256: string;
+      };
     };
 
     expect(artifacts.parent).toMatchObject({
       parentOnlyMarker,
+      parentMarkerSha256: expectedParentMarkerSha256,
       launch: {
         role: 'context_companion',
         forkTurns: 'none',
@@ -72,13 +82,19 @@ describe('PH-03 native Companion smoke packet', () => {
       'task',
     ]);
     expect(JSON.stringify(artifacts.worker)).not.toContain(parentOnlyMarker);
+    expect(JSON.stringify(artifacts.evidenceTemplate)).not.toContain(
+      parentOnlyMarker,
+    );
     expect(artifacts.parent.workerHandoffSha256).toMatch(/^[a-f0-9]{64}$/u);
     expect(artifacts.evidenceTemplate.workerHandoffSha256).toBe(
       artifacts.parent.workerHandoffSha256,
     );
+    expect(artifacts.evidenceTemplate.parentMarkerSha256).toBe(
+      expectedParentMarkerSha256,
+    );
   });
 
-  it('changes the binding when the exact worker handoff changes', async () => {
+  it('changes the worker binding when the exact worker handoff changes', async () => {
     const { createPh03CompanionSmokeArtifacts } = await subject();
     const base = createPh03CompanionSmokeArtifacts({
       runtimeCommit: 'c'.repeat(40),
