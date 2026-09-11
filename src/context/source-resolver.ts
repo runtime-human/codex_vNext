@@ -39,11 +39,9 @@ export interface RepositoryFileHashIo {
   chunks(filePath: string): AsyncIterable<Uint8Array>;
 }
 
-export interface StableRepositoryFileHashResult {
-  status: 'resolved' | 'unresolvable' | 'unverifiable';
-  sourceHash?: string;
-  bytes: number;
-}
+export type StableRepositoryFileHashResult =
+  | { status: 'resolved'; sourceHash: string; bytes: number }
+  | { status: 'unresolvable' | 'unverifiable'; bytes: number };
 
 const nodeRepositoryFileHashIo: RepositoryFileHashIo = {
   async stat(filePath) {
