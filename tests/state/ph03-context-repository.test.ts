@@ -185,7 +185,7 @@ describe('PH-03 ContextRepository', () => {
         }),
       );
       for (let index = 0; index < 200; index += 1) {
-        const sourceHash = index.toString(16).padStart(64, '0');
+        const sourceHash = (index + 1).toString(16).padStart(64, '0');
         contexts.put(
           record(`context-new-${index}`, 'project-a', {
             sourceHash,
