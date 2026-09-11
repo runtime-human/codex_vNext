@@ -38,6 +38,13 @@ function serviceFor(
     listCandidates(_projectId: string, limit = 200) {
       return candidates.slice(0, Math.min(limit, 200));
     },
+    listCandidatePool(_projectId: string, limit = 200) {
+      const bounded = Math.min(limit, 200);
+      return {
+        items: candidates.slice(0, bounded),
+        truncated: candidates.length > bounded,
+      };
+    },
     listScopeCandidates() {
       return { items: candidates.slice(0, 200), truncated: false };
     },
@@ -61,7 +68,7 @@ function serviceFor(
 }
 
 describe('PH-03 lazy freshness work contract', () => {
-  it('resolves only the requested top hits when 200 ranked candidates are fresh', async () => {
+  it('resolves one extra fresh hit to prove result truncation when the candidate window is complete', async () => {
     const { service, calls } = serviceFor(
       Array.from({ length: 200 }, (_, index) => candidate(index)),
     );
@@ -79,7 +86,7 @@ describe('PH-03 lazy freshness work contract', () => {
       ),
     );
     expect(result.truncated).toBe(true);
-    expect(calls()).toBe(12);
+    expect(calls()).toBe(13);
   });
 
   it('resolves through stale leaders plus one extra valid hit to prove truncation below 200 candidates', async () => {
@@ -107,7 +114,7 @@ describe('PH-03 lazy freshness work contract', () => {
     expect(calls()).toBe(29);
   });
 
-  it('does not report truncation when exactly 200 admitted candidates contain exactly the requested fresh hits', async () => {
+  it('does not report truncation when exactly 200 candidates contain exactly the requested fresh hits', async () => {
     const staleIndexes = new Set(
       Array.from({ length: 192 }, (_, index) => index),
     );
@@ -118,7 +125,6 @@ describe('PH-03 lazy freshness work contract', () => {
 
     const result = await service.query({
       projectId: 'project-a',
-      scopes: ['src/context'],
       limit: 8,
     });
 
