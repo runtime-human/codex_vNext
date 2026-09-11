@@ -12,7 +12,7 @@ async function subject() {
 
 function validEvidence() {
   return {
-    smokeVersion: 1,
+    smokeVersion: 2,
     phase: 'PH-03',
     probe: 'companion_live_smoke',
     observedAt: '2026-09-11T05:00:00.000Z',
@@ -22,9 +22,12 @@ function validEvidence() {
     workerHandoffSha256: 'b'.repeat(64),
     parentMarkerSha256: 'c'.repeat(64),
     worker: {
-      role: 'context_companion',
+      requestedRole: 'context_companion',
+      runtimeRoleObserved: null,
+      runtimeModelObserved: null,
       forkTurns: 'none',
-      authority: 'read_only',
+      requestedAuthority: 'read_only',
+      singleChildObserved: true,
       freshThreadObserved: true,
       parentMarkerVisible: false,
       repoWritesObserved: false,
@@ -41,9 +44,17 @@ function validEvidence() {
 }
 
 describe('PH-03 live Companion smoke evidence', () => {
-  it('accepts only fully observed live evidence as PASS', async () => {
+  it('accepts only fully observed isolation evidence as PASS without inventing runtime role provenance', async () => {
     const { validatePh03CompanionSmoke } = await subject();
-    expect(validatePh03CompanionSmoke(validEvidence()).status).toBe('PASS');
+    const result = validatePh03CompanionSmoke(validEvidence());
+    expect(result.status).toBe('PASS');
+    expect(result.evidence).toMatchObject({
+      worker: {
+        requestedRole: 'context_companion',
+        runtimeRoleObserved: null,
+        runtimeModelObserved: null,
+      },
+    });
   });
 
   it('requires SHA-256 bindings to both worker handoff and parent marker', async () => {
@@ -67,9 +78,15 @@ describe('PH-03 live Companion smoke evidence', () => {
       },
     ],
     [
-      'authority',
+      'requested authority',
       (value: ReturnType<typeof validEvidence>) => {
-        value.worker.authority = 'write';
+        value.worker.requestedAuthority = 'write';
+      },
+    ],
+    [
+      'single-child execution',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.singleChildObserved = false;
       },
     ],
     [
