@@ -209,9 +209,7 @@ if (!isMainThread) {
     }
     const results = await Promise.all(tasks);
     const elapsedMs = performance.now() - started;
-    const readers = results.filter(
-      (result) => result.role === 'reader',
-    );
+    const readers = results.filter((result) => result.role === 'reader');
     const writer = results.find((result) => result.role === 'writer');
     const readerDurations = readers.flatMap((result) => result.durations);
     const walBytesBeforeManual = await fileSize(`${filePath}-wal`);
