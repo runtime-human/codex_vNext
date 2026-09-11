@@ -11,20 +11,83 @@ export async function validatePh03CompanionSmokeFile(filePath: string) {
   return validatePh03CompanionSmoke(JSON.parse(raw) as unknown);
 }
 
+function sha256Text(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+function requireRecord(value: unknown, name: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${name} must be a JSON object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function requireString(
+  record: Record<string, unknown>,
+  key: string,
+  name: string,
+): string {
+  const value = record[key];
+  if (typeof value !== 'string' || !value) {
+    throw new Error(`${name}.${key} must be a non-empty string`);
+  }
+  return value;
+}
+
 export async function validatePh03CompanionSmokeBundle(
   evidenceFilePath: string,
   workerFilePath: string,
+  parentFilePath: string,
 ) {
   if (!workerFilePath.trim()) throw new Error('worker file path is required');
+  if (!parentFilePath.trim()) throw new Error('parent file path is required');
   const result = await validatePh03CompanionSmokeFile(evidenceFilePath);
+
   const workerRaw = await readFile(workerFilePath, 'utf8');
   const worker = JSON.parse(workerRaw) as unknown;
   const workerHandoffSha256 = createHash('sha256')
     .update(canonicalJson(worker))
     .digest('hex');
-
   if (workerHandoffSha256 !== result.evidence.workerHandoffSha256) {
     throw new Error('worker handoff digest mismatch');
+  }
+
+  const parentRaw = await readFile(parentFilePath, 'utf8');
+  const parent = requireRecord(JSON.parse(parentRaw) as unknown, 'parent');
+  const parentOnlyMarker = requireString(parent, 'parentOnlyMarker', 'parent');
+  const parentMarkerSha256 = sha256Text(parentOnlyMarker);
+  if (parentMarkerSha256 !== result.evidence.parentMarkerSha256) {
+    throw new Error('parent marker digest mismatch');
+  }
+  if (
+    requireString(parent, 'parentMarkerSha256', 'parent') !==
+    result.evidence.parentMarkerSha256
+  ) {
+    throw new Error('parent artifact marker digest mismatch');
+  }
+  if (
+    requireString(parent, 'workerHandoffSha256', 'parent') !==
+    result.evidence.workerHandoffSha256
+  ) {
+    throw new Error('parent worker handoff digest mismatch');
+  }
+  if (
+    requireString(parent, 'runtimeCommit', 'parent') !==
+      result.evidence.runtimeCommit ||
+    requireString(parent, 'codexVersion', 'parent') !==
+      result.evidence.codexVersion ||
+    requireString(parent, 'hostSurface', 'parent') !== result.evidence.hostSurface
+  ) {
+    throw new Error('parent runtime metadata mismatch');
+  }
+
+  const launch = requireRecord(parent.launch, 'parent.launch');
+  if (
+    launch.role !== result.evidence.worker.role ||
+    launch.forkTurns !== result.evidence.worker.forkTurns ||
+    launch.authority !== result.evidence.worker.authority
+  ) {
+    throw new Error('parent launch contract mismatch');
   }
 
   return result;
@@ -35,14 +98,17 @@ async function main(): Promise<void> {
     process.argv[2] ?? process.env.PH03_COMPANION_SMOKE_EVIDENCE;
   const workerFilePath =
     process.argv[3] ?? process.env.PH03_COMPANION_SMOKE_WORKER;
-  if (!evidenceFilePath || !workerFilePath) {
+  const parentFilePath =
+    process.argv[4] ?? process.env.PH03_COMPANION_SMOKE_PARENT;
+  if (!evidenceFilePath || !workerFilePath || !parentFilePath) {
     throw new Error(
-      'usage: npm run validate:ph03-companion-smoke -- <live-evidence.json> <worker.json>',
+      'usage: npm run validate:ph03-companion-smoke -- <live-evidence.json> <worker.json> <parent.json>',
     );
   }
   const result = await validatePh03CompanionSmokeBundle(
     evidenceFilePath,
     workerFilePath,
+    parentFilePath,
   );
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
