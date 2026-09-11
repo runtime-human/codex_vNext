@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -26,7 +26,10 @@ function generatedParentOnlyMarker(): string {
 }
 
 async function writeJson(filePath: string, value: unknown): Promise<void> {
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, {
+    encoding: 'utf8',
+    flag: 'wx',
+  });
 }
 
 export async function preparePh03CompanionSmokeFiles(
@@ -47,7 +50,8 @@ export async function preparePh03CompanionSmokeFiles(
     hydrationCapsule,
   });
 
-  await mkdir(outputDirectory, { recursive: true });
+  await mkdir(path.dirname(outputDirectory), { recursive: true });
+  await mkdir(outputDirectory);
   const parentFile = path.join(outputDirectory, 'parent.json');
   const workerFile = path.join(outputDirectory, 'worker.json');
   const evidenceTemplateFile = path.join(
@@ -55,11 +59,16 @@ export async function preparePh03CompanionSmokeFiles(
     'evidence-template.json',
   );
 
-  await Promise.all([
-    writeJson(parentFile, artifacts.parent),
-    writeJson(workerFile, artifacts.worker),
-    writeJson(evidenceTemplateFile, artifacts.evidenceTemplate),
-  ]);
+  try {
+    await Promise.all([
+      writeJson(parentFile, artifacts.parent),
+      writeJson(workerFile, artifacts.worker),
+      writeJson(evidenceTemplateFile, artifacts.evidenceTemplate),
+    ]);
+  } catch (error) {
+    await rm(outputDirectory, { recursive: true, force: true });
+    throw error;
+  }
 
   return {
     parentFile,
