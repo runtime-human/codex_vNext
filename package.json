@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "benchmark:ph03": "npm run build && node ./benchmarks/ph03-query-strategies.mjs",
+    "benchmark:ph03": "npm run build && node ./benchmarks/ph03-query-strategies.mjs && node ./benchmarks/ph03-candidate-sql.mjs",
     "validate:ph03-companion-smoke": "npm run build && node ./dist/probes/validate-ph03-companion-smoke-cli.js",
     "prevalidate:plugin": "npm run build",
     "validate:plugin": "node ./scripts/validate-plugin.mjs",
