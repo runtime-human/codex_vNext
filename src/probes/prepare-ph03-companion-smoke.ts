@@ -1,7 +1,10 @@
+import { createHash } from 'node:crypto';
+
 import {
   type CompanionHydrationCapsule,
   CompanionHydrationCapsuleSchema,
 } from '../domain/context.js';
+import { canonicalJson } from '../state/canonical-json.js';
 
 export interface Ph03CompanionSmokePreparationInput {
   runtimeCommit: string;
@@ -19,6 +22,7 @@ export interface Ph03CompanionSmokeParentArtifact {
   codexVersion: string;
   hostSurface: 'cli' | 'desktop';
   parentOnlyMarker: string;
+  workerHandoffSha256: string;
   launch: {
     role: 'context_companion';
     forkTurns: 'none';
@@ -39,6 +43,7 @@ export interface Ph03CompanionSmokeEvidenceTemplate {
   runtimeCommit: string;
   codexVersion: string;
   hostSurface: 'cli' | 'desktop';
+  workerHandoffSha256: string;
   worker: {
     role: 'context_companion';
     forkTurns: 'none';
@@ -89,6 +94,10 @@ function normalizeParentOnlyMarker(value: string): string {
   return normalized;
 }
 
+function hashWorkerHandoff(worker: Ph03CompanionSmokeWorkerArtifact): string {
+  return createHash('sha256').update(canonicalJson(worker)).digest('hex');
+}
+
 export function createPh03CompanionSmokeArtifacts(
   input: Ph03CompanionSmokePreparationInput,
 ): Ph03CompanionSmokeArtifacts {
@@ -105,21 +114,6 @@ export function createPh03CompanionSmokeArtifacts(
     );
   }
 
-  const parent: Ph03CompanionSmokeParentArtifact = {
-    packetVersion: 1,
-    phase: 'PH-03',
-    probe: 'companion_live_smoke',
-    runtimeCommit,
-    codexVersion,
-    hostSurface: input.hostSurface,
-    parentOnlyMarker,
-    launch: {
-      role: 'context_companion',
-      forkTurns: 'none',
-      authority: 'read_only',
-    },
-  };
-
   const worker: Ph03CompanionSmokeWorkerArtifact = {
     task: [
       'Use only the supplied hydration capsule as task context.',
@@ -134,6 +128,23 @@ export function createPh03CompanionSmokeArtifacts(
     throw new Error('parent-only marker leaked into the worker handoff');
   }
 
+  const workerHandoffSha256 = hashWorkerHandoff(worker);
+  const parent: Ph03CompanionSmokeParentArtifact = {
+    packetVersion: 1,
+    phase: 'PH-03',
+    probe: 'companion_live_smoke',
+    runtimeCommit,
+    codexVersion,
+    hostSurface: input.hostSurface,
+    parentOnlyMarker,
+    workerHandoffSha256,
+    launch: {
+      role: 'context_companion',
+      forkTurns: 'none',
+      authority: 'read_only',
+    },
+  };
+
   const evidenceTemplate: Ph03CompanionSmokeEvidenceTemplate = {
     smokeVersion: 1,
     phase: 'PH-03',
@@ -142,6 +153,7 @@ export function createPh03CompanionSmokeArtifacts(
     runtimeCommit,
     codexVersion,
     hostSurface: input.hostSurface,
+    workerHandoffSha256,
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
