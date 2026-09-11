@@ -1,6 +1,6 @@
 import {
-  CompanionHydrationCapsuleSchema,
   type CompanionHydrationCapsule,
+  CompanionHydrationCapsuleSchema,
 } from '../domain/context.js';
 
 export interface Ph03CompanionSmokePreparationInput {
