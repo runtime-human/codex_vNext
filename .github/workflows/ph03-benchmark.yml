@@ -10,6 +10,7 @@ on:
       - 'src/context/context-index-service.ts'
       - 'src/context/source-resolver.ts'
       - 'src/state/context-repository.ts'
+      - 'src/state/migrations/002-context-index.ts'
       - 'package.json'
       - '.github/workflows/ph03-benchmark.yml'
 
@@ -40,6 +41,9 @@ jobs:
             evidence/generated/ph03-query-benchmark.json
             evidence/generated/ph03-candidate-sql-benchmark.json
             evidence/generated/ph03-candidate-admission-benchmark.json
+            evidence/generated/ph03-admission-recall-stress.json
             evidence/generated/ph03-source-hash-benchmark.json
             evidence/generated/ph03-verification-budget-benchmark.json
+            evidence/generated/ph03-source-reuse-stress.json
+            evidence/generated/ph03-index-lifecycle-stress.json
           if-no-files-found: error
