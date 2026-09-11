@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -16,7 +16,9 @@ const CONCURRENCY = 4;
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
+  return sorted[
+    Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)
+  ];
 }
 
 function summarize(values) {
@@ -35,7 +37,11 @@ function workload(files, repeat) {
 }
 
 async function hashOne(filePath, metrics) {
-  const result = await hashStableRepositoryFile(filePath, undefined, SOURCE_BUDGET);
+  const result = await hashStableRepositoryFile(
+    filePath,
+    undefined,
+    SOURCE_BUDGET,
+  );
   metrics.calls += 1;
   metrics.bytes += result.bytes;
   return result;
@@ -121,7 +127,10 @@ try {
   const files = [];
   const payload = Buffer.alloc(MIB, 0x5a);
   for (let index = 0; index < 32; index += 1) {
-    const filePath = path.join(root, `source-${String(index).padStart(2, '0')}.bin`);
+    const filePath = path.join(
+      root,
+      `source-${String(index).padStart(2, '0')}.bin`,
+    );
     await writeFile(filePath, payload);
     files.push(filePath);
   }
