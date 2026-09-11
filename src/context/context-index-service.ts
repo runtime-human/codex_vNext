@@ -205,6 +205,17 @@ function compareHits(left: ContextQueryHit, right: ContextQueryHit): number {
   return left.item.contextId < right.item.contextId ? -1 : 1;
 }
 
+function dedupeCandidates(candidates: ContextRecord[]): ContextRecord[] {
+  const seen = new Set<string>();
+  const deduped: ContextRecord[] = [];
+  for (const candidate of candidates) {
+    if (seen.has(candidate.contextId)) continue;
+    seen.add(candidate.contextId);
+    deduped.push(candidate);
+  }
+  return deduped;
+}
+
 function boundHydrationItems(items: ContextItem[]): ContextItem[] {
   const bounded: ContextItem[] = [];
   let remaining = MAX_HYDRATION_TOTAL_CHARS;
@@ -284,15 +295,27 @@ export class ContextIndexService {
     limit?: number;
   }): Promise<ContextQueryResult> {
     const query = ContextQuerySchema.parse(input);
-    const rawCandidates = this.dependencies.contexts.listCandidates(
+    const recentCandidates = this.dependencies.contexts.listCandidates(
       query.projectId,
       MAX_CONTEXT_CANDIDATES,
       query.includeStale,
       query.kinds,
     );
+    const scopePool = this.dependencies.contexts.listScopeCandidates(
+      query.projectId,
+      query.scopes,
+      query.includeStale,
+      query.kinds,
+    );
+    const admitted = dedupeCandidates([
+      ...scopePool.items,
+      ...recentCandidates,
+    ]);
     const candidateLimitReached =
-      rawCandidates.length >= MAX_CONTEXT_CANDIDATES;
-    const ranked = rawCandidates
+      scopePool.truncated ||
+      recentCandidates.length >= MAX_CONTEXT_CANDIDATES ||
+      admitted.length > MAX_CONTEXT_CANDIDATES;
+    const ranked = admitted
       .filter(
         (candidate) =>
           query.kinds.length === 0 || query.kinds.includes(candidate.kind),
@@ -306,7 +329,8 @@ export class ContextIndexService {
           score: scoreContextCandidate(candidate, query),
         },
       }))
-      .sort((left, right) => compareHits(left.hit, right.hit));
+      .sort((left, right) => compareHits(left.hit, right.hit))
+      .slice(0, MAX_CONTEXT_CANDIDATES);
 
     const verification = createVerificationOperation();
     const hits: ContextQueryHit[] = [];
