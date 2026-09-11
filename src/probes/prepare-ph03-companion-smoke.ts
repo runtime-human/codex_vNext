@@ -22,6 +22,7 @@ export interface Ph03CompanionSmokeParentArtifact {
   codexVersion: string;
   hostSurface: 'cli' | 'desktop';
   parentOnlyMarker: string;
+  parentMarkerSha256: string;
   workerHandoffSha256: string;
   launch: {
     role: 'context_companion';
@@ -44,6 +45,7 @@ export interface Ph03CompanionSmokeEvidenceTemplate {
   codexVersion: string;
   hostSurface: 'cli' | 'desktop';
   workerHandoffSha256: string;
+  parentMarkerSha256: string;
   worker: {
     role: 'context_companion';
     forkTurns: 'none';
@@ -94,6 +96,10 @@ function normalizeParentOnlyMarker(value: string): string {
   return normalized;
 }
 
+function sha256Text(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
 function hashWorkerHandoff(worker: Ph03CompanionSmokeWorkerArtifact): string {
   return createHash('sha256').update(canonicalJson(worker)).digest('hex');
 }
@@ -104,6 +110,7 @@ export function createPh03CompanionSmokeArtifacts(
   const runtimeCommit = normalizeRuntimeCommit(input.runtimeCommit);
   const codexVersion = normalizeCodexVersion(input.codexVersion);
   const parentOnlyMarker = normalizeParentOnlyMarker(input.parentOnlyMarker);
+  const parentMarkerSha256 = sha256Text(parentOnlyMarker);
   const hydrationCapsule = CompanionHydrationCapsuleSchema.parse(
     input.hydrationCapsule,
   );
@@ -137,6 +144,7 @@ export function createPh03CompanionSmokeArtifacts(
     codexVersion,
     hostSurface: input.hostSurface,
     parentOnlyMarker,
+    parentMarkerSha256,
     workerHandoffSha256,
     launch: {
       role: 'context_companion',
@@ -154,6 +162,7 @@ export function createPh03CompanionSmokeArtifacts(
     codexVersion,
     hostSurface: input.hostSurface,
     workerHandoffSha256,
+    parentMarkerSha256,
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
