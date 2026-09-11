@@ -38,6 +38,9 @@ function serviceFor(
     listCandidates(_projectId: string, limit = 200) {
       return candidates.slice(0, Math.min(limit, 200));
     },
+    listScopeCandidates() {
+      return { items: candidates.slice(0, 200), truncated: false };
+    },
   } as unknown as ContextRepository;
   const service = new ContextIndexService({
     contexts,
