@@ -106,4 +106,29 @@ describe('PH-03 lazy freshness work contract', () => {
     expect(result.truncated).toBe(true);
     expect(calls()).toBe(29);
   });
+
+  it('does not report truncation when exactly 200 admitted candidates contain exactly the requested fresh hits', async () => {
+    const staleIndexes = new Set(
+      Array.from({ length: 192 }, (_, index) => index),
+    );
+    const { service, calls } = serviceFor(
+      Array.from({ length: 200 }, (_, index) => candidate(index)),
+      staleIndexes,
+    );
+
+    const result = await service.query({
+      projectId: 'project-a',
+      scopes: ['src/context'],
+      limit: 8,
+    });
+
+    expect(result.hits.map((hit) => hit.item.contextId)).toEqual(
+      Array.from(
+        { length: 8 },
+        (_, index) => `context-${String(index + 192).padStart(3, '0')}`,
+      ),
+    );
+    expect(result.truncated).toBe(false);
+    expect(calls()).toBe(200);
+  });
 });
