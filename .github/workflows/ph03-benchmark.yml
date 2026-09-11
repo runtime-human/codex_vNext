@@ -8,6 +8,7 @@ on:
     paths:
       - 'benchmarks/**'
       - 'src/context/context-index-service.ts'
+      - 'src/state/context-repository.ts'
       - 'package.json'
       - '.github/workflows/ph03-benchmark.yml'
 
@@ -33,6 +34,8 @@ jobs:
       - run: npm run benchmark:ph03
       - uses: actions/upload-artifact@v4
         with:
-          name: ph03-query-benchmark-${{ runner.os }}
-          path: evidence/generated/ph03-query-benchmark.json
+          name: ph03-benchmark-${{ runner.os }}
+          path: |
+            evidence/generated/ph03-query-benchmark.json
+            evidence/generated/ph03-candidate-sql-benchmark.json
           if-no-files-found: error
