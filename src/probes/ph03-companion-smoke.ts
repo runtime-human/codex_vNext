@@ -1,0 +1,47 @@
+import { z } from 'zod';
+
+export const Ph03CompanionSmokeEvidenceSchema = z
+  .object({
+    smokeVersion: z.literal(1),
+    phase: z.literal('PH-03'),
+    probe: z.literal('companion_live_smoke'),
+    observedAt: z.string().datetime(),
+    runtimeCommit: z.string().regex(/^[a-f0-9]{40}$/u),
+    codexVersion: z.string().trim().min(1).max(128),
+    hostSurface: z.enum(['cli', 'desktop']),
+    worker: z
+      .object({
+        role: z.literal('context_companion'),
+        forkTurns: z.literal('none'),
+        authority: z.literal('read_only'),
+        freshThreadObserved: z.literal(true),
+        parentMarkerVisible: z.literal(false),
+        repoWritesObserved: z.literal(false),
+      })
+      .strict(),
+    handoff: z
+      .object({
+        hydrationCapsuleValidated: z.literal(true),
+        onlyHydrationCapsuleAndTaskPassed: z.literal(true),
+        contextDeltaValidated: z.literal(true),
+        contextDeltaItemCount: z.number().int().min(0).max(16),
+        contextDeltaBytes: z.number().int().min(0).max(65_536),
+        mainPersistedThroughContextIngestDelta: z.literal(true),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type Ph03CompanionSmokeEvidence = z.infer<
+  typeof Ph03CompanionSmokeEvidenceSchema
+>;
+
+export function validatePh03CompanionSmoke(input: unknown): {
+  status: 'PASS';
+  evidence: Ph03CompanionSmokeEvidence;
+} {
+  return {
+    status: 'PASS',
+    evidence: Ph03CompanionSmokeEvidenceSchema.parse(input),
+  };
+}
