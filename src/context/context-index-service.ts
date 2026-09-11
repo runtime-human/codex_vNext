@@ -315,9 +315,7 @@ export class ContextIndexService {
       ...recentPool.items,
     ]);
     const candidateWindowExhausted =
-      recentPool.truncated ||
-      scopePool.truncated ||
-      admitted.length > MAX_CONTEXT_CANDIDATES;
+      recentPool.truncated || admitted.length > MAX_CONTEXT_CANDIDATES;
     const ranked = admitted
       .filter(
         (candidate) =>
