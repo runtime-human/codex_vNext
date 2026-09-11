@@ -109,7 +109,7 @@ export class ContextRepository {
     const sql = includePersistedStale
       ? `SELECT * FROM context_items
           WHERE project_id = ?
-          ORDER BY stale ASC, updated_at DESC, context_id ASC
+          ORDER BY updated_at DESC, context_id ASC
           LIMIT ?`
       : `SELECT * FROM context_items
           WHERE project_id = ? AND stale = 0
