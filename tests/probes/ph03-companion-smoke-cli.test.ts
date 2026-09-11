@@ -7,7 +7,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 const roots: string[] = [];
 
 async function subject() {
-  const modulePath: string = '../../src/probes/validate-ph03-companion-smoke-cli.js';
+  const modulePath: string =
+    '../../src/probes/validate-ph03-companion-smoke-cli.js';
   return (await import(modulePath)) as {
     validatePh03CompanionSmokeFile(filePath: string): Promise<{
       status: 'PASS';
@@ -62,7 +63,9 @@ describe('PH-03 Companion smoke CLI validator', () => {
   it('validates a real PASS-shaped evidence file', async () => {
     const { validatePh03CompanionSmokeFile } = await subject();
     const filePath = await tempEvidence(validEvidence());
-    await expect(validatePh03CompanionSmokeFile(filePath)).resolves.toMatchObject({
+    await expect(
+      validatePh03CompanionSmokeFile(filePath),
+    ).resolves.toMatchObject({
       status: 'PASS',
     });
   });
@@ -74,7 +77,9 @@ describe('PH-03 Companion smoke CLI validator', () => {
       status: 'PARTIAL',
       observations: { forkTurnsNone: 'unobserved' },
     });
-    await expect(validatePh03CompanionSmokeFile(filePath)).rejects.toBeDefined();
+    await expect(
+      validatePh03CompanionSmokeFile(filePath),
+    ).rejects.toBeDefined();
   });
 
   it('exposes a build-then-validate npm command without entering the default check gate', async () => {
