@@ -47,4 +47,5 @@ jobs:
             evidence/generated/ph03-verification-budget-benchmark.json
             evidence/generated/ph03-source-reuse-stress.json
             evidence/generated/ph03-index-lifecycle-stress.json
+            evidence/generated/ph03-wal-concurrency-stress.json
           if-no-files-found: error
