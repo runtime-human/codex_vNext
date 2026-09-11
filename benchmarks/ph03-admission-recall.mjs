@@ -40,7 +40,9 @@ CREATE INDEX idx_context_project_source
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((left, right) => left - right);
-  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
+  return sorted[
+    Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)
+  ];
 }
 
 function summarize(values) {
@@ -68,7 +70,9 @@ function rankedIds(rows, query) {
 
 function recall(actual, oracle) {
   const expected = new Set(oracle);
-  return actual.filter((id) => expected.has(id)).length / Math.max(1, oracle.length);
+  return (
+    actual.filter((id) => expected.has(id)).length / Math.max(1, oracle.length)
+  );
 }
 
 function rowsFor(count, scenario) {
@@ -186,12 +190,19 @@ function childScope(db, scope, limit) {
       WHERE project_id = ? AND stale = 0 AND kind = ?
         AND scope >= ? AND scope < ?
       ORDER BY updated_at DESC, context_id ASC LIMIT ?`)
-    .all('project-benchmark', 'source_pointer', prefix, `${prefix}\uffff`, limit)
+    .all(
+      'project-benchmark',
+      'source_pointer',
+      prefix,
+      `${prefix}\uffff`,
+      limit,
+    )
     .map(toRecord);
 }
 
 function termLane(db, term, column, limit) {
-  if (column !== 'source_uri' && column !== 'summary') throw new Error('invalid column');
+  if (column !== 'source_uri' && column !== 'summary')
+    throw new Error('invalid column');
   return db
     .prepare(`SELECT * FROM context_items
       WHERE project_id = ? AND stale = 0 AND kind = ?
@@ -285,7 +296,9 @@ function runScenario(count, scenario) {
       result.strategies[name] = {
         recallAt8: recall(ranked, oracle),
         candidateCount: candidates.length,
-        containsTarget: candidates.some((row) => row.contextId === 'context-00000007'),
+        containsTarget: candidates.some(
+          (row) => row.contextId === 'context-00000007',
+        ),
         timing: measure(admission),
       };
     }
@@ -309,9 +322,12 @@ for (const count of [2_000, 10_000, 100_000]) {
 
 const aggregate = {};
 for (const name of ['A', 'B', 'C']) {
-  const recalls = scenarios.map((scenario) => scenario.strategies[name].recallAt8);
+  const recalls = scenarios.map(
+    (scenario) => scenario.strategies[name].recallAt8,
+  );
   aggregate[name] = {
-    meanRecallAt8: recalls.reduce((sum, value) => sum + value, 0) / recalls.length,
+    meanRecallAt8:
+      recalls.reduce((sum, value) => sum + value, 0) / recalls.length,
     perfectRecallScenarios: recalls.filter((value) => value === 1).length,
     targetAdmissionScenarios: scenarios.filter(
       (scenario) => scenario.strategies[name].containsTarget,
