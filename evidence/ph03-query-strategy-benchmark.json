@@ -1,0 +1,58 @@
+{
+  "phase": "PH-03",
+  "benchmark": "context-query-strategy",
+  "benchmarkVersion": 1,
+  "sourceCommit": "2e8d97a958ed1347f59e704d000f702c72e328ba",
+  "workflowRunId": 34564045183,
+  "correctness": {
+    "syntheticScenarios": 135,
+    "realIoScenarios": 4,
+    "linuxMismatches": 0,
+    "windowsMismatches": 0
+  },
+  "strategies": {
+    "A": "exhaustive sequential freshness",
+    "B": "rank-first lazy sequential freshness",
+    "C": "rank-first freshness in bounded batches of four"
+  },
+  "syntheticWork": {
+    "resolverCalls": {
+      "A": 13905,
+      "B": 1827,
+      "C": 2025
+    },
+    "resolverBytes": {
+      "A": 1371663360,
+      "B": 180225024,
+      "C": 199756800
+    }
+  },
+  "representativeMedianMs": {
+    "linux": {
+      "count200Limit8Fresh32KiB": { "A": 42.22, "B": 1.966, "C": 1.084 },
+      "count200Limit8Top20Stale32KiB": { "A": 38.96, "B": 5.937, "C": 3.042 },
+      "count200Limit12Fresh256KiB": { "A": 76.96, "B": 4.704, "C": 3.311 }
+    },
+    "windows": {
+      "count200Limit8Fresh32KiB": { "A": 48.01, "B": 2.133, "C": 1.094 },
+      "count200Limit8Top20Stale32KiB": { "A": 49.03, "B": 7.275, "C": 3.678 },
+      "count200Limit12Fresh256KiB": { "A": 123.56, "B": 7.032, "C": 4.443 }
+    }
+  },
+  "artifacts": {
+    "linux": {
+      "artifactId": 10185346452,
+      "digest": "sha256:86674cf0709d6243fb10f6df7ad24554a84a4028cac5841edbf642a485d1f4a5"
+    },
+    "windows": {
+      "artifactId": 10185355460,
+      "digest": "sha256:360e6db392ac5ef863824ed38b3b39e18f746783a14e02e260687b60d4d15ae9"
+    }
+  },
+  "decision": {
+    "selected": "B",
+    "reason": "B preserves identical correctness while minimizing deterministic resolver work, bytes read, and implementation/runtime complexity across the campaign. C frequently lowers median latency for limits 8 and 12, but performs extra batched I/O and introduces parallel I/O contention risk without reducing resolver work.",
+    "deferredCandidate": "C",
+    "deferredCondition": "Do not adopt C without separate evidence covering contention and representative SSD/HDD or equivalent slow-storage behavior."
+  }
+}
