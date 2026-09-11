@@ -34,7 +34,9 @@ async function runtime() {
     version: 1,
   });
   const contexts = new ContextRepository(db);
-  for (const [index, kind] of ['source_pointer', 'pitfall'] as const).entries()) {
+  for (const [index, kind] of (
+    ['source_pointer', 'pitfall'] as const
+  ).entries()) {
     const suffix = String(index + 1);
     contexts.put({
       contextId: `context-${suffix}`,
