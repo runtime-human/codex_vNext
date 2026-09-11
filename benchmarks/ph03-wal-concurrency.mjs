@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { DatabaseSync } from 'node:sqlite';
-import { isMainThread, parentPort, workerData, Worker } from 'node:worker_threads';
+import {
+  isMainThread,
+  parentPort,
+  Worker,
+  workerData,
+} from 'node:worker_threads';
 
 const OUTPUT_PATH = path.resolve(
   'evidence/generated/ph03-wal-concurrency-stress.json',
@@ -204,7 +209,9 @@ if (!isMainThread) {
     }
     const results = await Promise.all(tasks);
     const elapsedMs = performance.now() - started;
-    const readers = results.filter((result) => result.role === 'reader');
+    const readers = results.filter(
+      (result) => result.role === 'reader',
+    );
     const writer = results.find((result) => result.role === 'writer');
     const readerDurations = readers.flatMap((result) => result.durations);
     const walBytesBeforeManual = await fileSize(`${filePath}-wal`);
