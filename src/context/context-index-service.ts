@@ -269,6 +269,7 @@ export class ContextIndexService {
     const rawCandidates = this.dependencies.contexts.listCandidates(
       query.projectId,
       MAX_CONTEXT_CANDIDATES,
+      query.includeStale,
     );
     const candidateLimitReached =
       rawCandidates.length >= MAX_CONTEXT_CANDIDATES;
