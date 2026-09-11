@@ -19,6 +19,7 @@ function validEvidence() {
     runtimeCommit: 'a'.repeat(40),
     codexVersion: '0.153.4',
     hostSurface: 'cli',
+    workerHandoffSha256: 'b'.repeat(64),
     worker: {
       role: 'context_companion',
       forkTurns: 'none',
@@ -42,6 +43,13 @@ describe('PH-03 live Companion smoke evidence', () => {
   it('accepts only fully observed live evidence as PASS', async () => {
     const { validatePh03CompanionSmoke } = await subject();
     expect(validatePh03CompanionSmoke(validEvidence()).status).toBe('PASS');
+  });
+
+  it('requires a SHA-256 binding to the exact worker handoff', async () => {
+    const { validatePh03CompanionSmoke } = await subject();
+    const { workerHandoffSha256: _workerHandoffSha256, ...unbound } =
+      validEvidence();
+    expect(() => validatePh03CompanionSmoke(unbound)).toThrow();
   });
 
   it.each([
