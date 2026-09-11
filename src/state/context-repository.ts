@@ -27,10 +27,12 @@ export interface ContextRecord {
   updatedAt: string;
 }
 
-export interface ContextScopeCandidatePool {
+export interface ContextCandidatePool {
   items: ContextRecord[];
   truncated: boolean;
 }
+
+export type ContextScopeCandidatePool = ContextCandidatePool;
 
 function text(row: Row, key: string): string {
   return row[key] as string;
@@ -144,20 +146,37 @@ export class ContextRepository {
     includePersistedStale = true,
     kinds: ContextKind[] = [],
   ): ContextRecord[] {
+    return this.listCandidatePool(
+      projectId,
+      limit,
+      includePersistedStale,
+      kinds,
+    ).items;
+  }
+
+  listCandidatePool(
+    projectId: string,
+    limit?: number,
+    includePersistedStale = true,
+    kinds: ContextKind[] = [],
+  ): ContextCandidatePool {
     const { predicates, parameters } = candidateFilter(
       projectId,
       includePersistedStale,
       kinds,
     );
-    parameters.push(boundedLimit(limit));
+    const bounded = boundedLimit(limit);
+    parameters.push(bounded + 1);
 
     const sql = `SELECT * FROM context_items
       WHERE ${predicates.join(' AND ')}
       ORDER BY updated_at DESC, context_id ASC
       LIMIT ?`;
-    return (this.db.prepare(sql).all(...parameters) as Row[]).map(
-      contextFromRow,
-    );
+    const rows = this.db.prepare(sql).all(...parameters) as Row[];
+    return {
+      items: rows.slice(0, bounded).map(contextFromRow),
+      truncated: rows.length > bounded,
+    };
   }
 
   listScopeCandidates(
@@ -192,10 +211,8 @@ export class ContextRepository {
         SINGLE_SCOPE_CHILD_LIMIT,
       );
       return {
-        items: [...exact, ...children],
-        truncated:
-          exact.length >= SINGLE_SCOPE_EXACT_LIMIT ||
-          children.length >= SINGLE_SCOPE_CHILD_LIMIT,
+        items: [...exact.items, ...children.items],
+        truncated: exact.truncated || children.truncated,
       };
     }
 
@@ -214,7 +231,7 @@ export class ContextRepository {
       const prefix = `${scope}/`;
       parameters.push(prefix, `${prefix}${MAX_UNICODE_SUFFIX}`);
     }
-    parameters.push(...requestedScopes, MULTI_SCOPE_RESERVOIR_LIMIT);
+    parameters.push(...requestedScopes, MULTI_SCOPE_RESERVOIR_LIMIT + 1);
 
     const rows = this.db
       .prepare(`SELECT * FROM context_items
@@ -225,8 +242,8 @@ export class ContextRepository {
         LIMIT ?`)
       .all(...parameters) as Row[];
     return {
-      items: rows.map(contextFromRow),
-      truncated: rows.length >= MULTI_SCOPE_RESERVOIR_LIMIT,
+      items: rows.slice(0, MULTI_SCOPE_RESERVOIR_LIMIT).map(contextFromRow),
+      truncated: rows.length > MULTI_SCOPE_RESERVOIR_LIMIT,
     };
   }
 
@@ -294,21 +311,23 @@ export class ContextRepository {
     scopePredicate: string,
     scopeParameters: SQLOutputValue[],
     limit: number,
-  ): ContextRecord[] {
+  ): ContextCandidatePool {
     const { predicates, parameters } = candidateFilter(
       projectId,
       includePersistedStale,
       kinds,
     );
     predicates.push(scopePredicate);
-    parameters.push(...scopeParameters, limit);
-    return (
-      this.db
-        .prepare(`SELECT * FROM context_items
-          WHERE ${predicates.join(' AND ')}
-          ORDER BY stale ASC, updated_at DESC, context_id ASC
-          LIMIT ?`)
-        .all(...parameters) as Row[]
-    ).map(contextFromRow);
+    parameters.push(...scopeParameters, limit + 1);
+    const rows = this.db
+      .prepare(`SELECT * FROM context_items
+        WHERE ${predicates.join(' AND ')}
+        ORDER BY stale ASC, updated_at DESC, context_id ASC
+        LIMIT ?`)
+      .all(...parameters) as Row[];
+    return {
+      items: rows.slice(0, limit).map(contextFromRow),
+      truncated: rows.length > limit,
+    };
   }
 }
