@@ -1,8 +1,8 @@
-# PH-03 Context Index + Conditional Companion Implementation Plan — Rev 1.3
+# PH-03 Context Index + Conditional Companion Implementation Plan — Rev 1.4
 
 **Status:** CURRENT executable phase — implementation/code gates complete, native Companion evidence PARTIAL  
 **Baseline:** `811eb8350f06dd0aa60f420d14d485aaa5f3e9be`  
-**Last verified code gate:** `b441336ea65ed7921c81d76dc2927639fe9ff50c` — CI GREEN, 236 tests passed / 1 skipped, plugin validation passed  
+**Last verified code gate:** `3a96a807f086d981c6270f9ac283834cbff452ad` — CI run `34607859745` GREEN, 244 tests passed / 1 skipped, Biome GREEN, plugin validation passed  
 **Cross-platform query benchmark:** GitHub Actions run `34586655319` — Ubuntu 24.04 + Windows latest GREEN  
 **Master:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.4  
 **Roadmap:** `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.4
@@ -165,6 +165,8 @@ Do not add routing, spawn, model-selection, Investigator or PH-04 tools.
 
 One fresh read-only `context_companion` worker is used only for PH-03 live proof. It MUST use explicit `fork_turns="none"`. Hydration capsule is the intended context input; a parent-only marker must not leak into the worker result. Worker performs no repository writes and returns schema-valid ContextDelta. Main/runtime remains acceptance, causal and architecture owner.
 
+The native-smoke preparation path is deliberately separate from orchestration runtime. `prepare:ph03-companion-smoke` creates a new append-only bundle containing `parent.json`, the exact `worker.json` handoff and a fail-closed `evidence-template.json`. The worker handoff is bound by canonical SHA-256; the parent-only sentinel is represented in evidence by its SHA-256 while the raw sentinel stays parent-side. `validate:ph03-companion-smoke` accepts PASS only when live evidence, exact worker handoff and parent artifact agree on worker digest, sentinel digest, runtime metadata and launch contract. These tools make the native test reproducible and tamper-evident; they do **not** prove that a native worker was actually spawned or isolated.
+
 If fresh isolation cannot be sufficiently observed, PH-03 is `PARTIAL`; do not relabel missing evidence as PASS.
 
 ## Task sequence
@@ -258,10 +260,13 @@ Required negative contracts include: project A context ID queried as B → not f
 ### Task 10 — Live Companion smoke
 
 - [x] record explicit PARTIAL evidence in `evidence/ph03-companion-smoke.json` rather than infer native behavior from tests/CI
+- [x] add reproducible append-only smoke preparation that emits parent, exact worker handoff and fail-closed evidence template
+- [x] bind evidence to canonical SHA-256 of the exact worker handoff and SHA-256 of the parent-only sentinel
+- [x] make PASS validation require the exact parent artifact + worker handoff and reject provenance mismatches
 - [ ] execute the native Desktop/CLI live smoke when an authorized Codex agent-spawn surface is actually available
 - [ ] record exact native surface/Codex build, explicit `fork_turns="none"`, parent-marker isolation, schema-valid live ContextDelta and no-repository-write observation
 
-Current blocker: this GitHub/Actions execution environment exposes repository and CI capabilities but no authorized native Codex Desktop/CLI agent-spawn surface. `surface`, `codexBuild`, `forkTurnsNone`, parent-marker isolation, live delta validity and no-write behavior therefore remain explicitly unobserved. Unit/contract tests do not substitute for this proof.
+Current blocker: this GitHub/Actions execution environment exposes repository and CI capabilities but no authorized native Codex Desktop/CLI agent-spawn surface. The preparation and validation tooling is ready, but `surface`, `codexBuild`, `forkTurnsNone`, parent-marker isolation, live delta validity and no-write behavior remain explicitly unobserved. Unit/contract tests, generated smoke bundles and validator success on synthetic fixtures do not substitute for this proof.
 
 ### Task 11 — Full gate
 
@@ -275,16 +280,18 @@ Current blocker: this GitHub/Actions execution environment exposes repository an
 - [x] scope audit
 - [x] cross-platform PH-03 query benchmark GREEN on Ubuntu 24.04 and Windows latest
 
-Latest verified code gate at `b441336ea65ed7921c81d76dc2927639fe9ff50c`:
+Latest verified code gate at `3a96a807f086d981c6270f9ac283834cbff452ad` (GitHub Actions run `34607859745`):
 
 ```text
-39 test files passed / 1 skipped
-236 tests passed / 1 skipped
+41 test files passed / 1 skipped
+244 tests passed / 1 skipped
 Biome GREEN
 plugin validation passed
 legacy stdio smoke GREEN
 modern MCP negotiation + PH-03 stdio calls GREEN
 ```
+
+The previously flaky 200-vs-201 candidate-window boundary test now has a local bounded 15-second timeout; the successful gate completed that test in 357 ms. Production Context Index behavior was unchanged by this test-harness hardening.
 
 ## Acceptance gate
 
@@ -302,7 +309,7 @@ PH-03 may PASS only when:
 - Companion isolation is PASS, or the phase is explicitly PARTIAL with downstream assumptions narrowed;
 - no PH-04 routing/runtime, Terra/relay, Serena/structural provider, embeddings/vector DB, documentation subsystem or economic claim leaked into scope.
 
-Current disposition: **PH-03 PARTIAL**. The implementation/code/CI side of the acceptance gate is satisfied; native Companion isolation is still unobserved, so PH-03 must not be relabeled PASS and PH-04 must not assume native Companion isolation has been proven.
+Current disposition: **PH-03 PARTIAL**. The implementation/code/CI side of the acceptance gate is satisfied and the native-smoke packet is reproducible/tamper-evident; native Companion isolation is still unobserved, so PH-03 must not be relabeled PASS and PH-04 must not assume native Companion isolation has been proven.
 
 ## PH-04 entry outputs
 
