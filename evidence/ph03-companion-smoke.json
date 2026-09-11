@@ -1,0 +1,19 @@
+{
+  "phase": "PH-03",
+  "status": "PARTIAL",
+  "pluginPackageCommit": "d8abd3e35118d0bde3cbb5ee26d383f4dacb6f41",
+  "environment": {
+    "surface": null,
+    "codexBuild": null
+  },
+  "observations": {
+    "forkTurnsNone": "unobserved",
+    "parentMarkerIsolation": "unobserved",
+    "schemaValidDelta": "unobserved",
+    "noRepositoryWrites": "unobserved"
+  },
+  "limitations": [
+    "The current execution environment exposes GitHub repository and Actions capabilities but no authorized Codex Desktop/CLI native agent-spawn surface.",
+    "Explicit fork_turns=none, parent-marker isolation, schema-valid live worker ContextDelta, and no-repository-write behavior require a native Codex live smoke and are not inferred from unit or GitHub Actions evidence."
+  ]
+}
