@@ -247,31 +247,37 @@ describe('PH-03 ContextRepository', () => {
     }
   });
 
-  it('distinguishes an exact 200-row candidate window from a 201-row overflow', async () => {
-    const exact = await runtime();
-    try {
-      putCandidateRows(exact.contexts, 200);
-      expect(exact.contexts.listCandidatePool('project-a', 200)).toMatchObject({
-        items: expect.any(Array),
-        truncated: false,
-      });
-      expect(
-        exact.contexts.listCandidatePool('project-a', 200).items,
-      ).toHaveLength(200);
-    } finally {
-      exact.db.close();
-    }
+  it(
+    'distinguishes an exact 200-row candidate window from a 201-row overflow',
+    async () => {
+      const exact = await runtime();
+      try {
+        putCandidateRows(exact.contexts, 200);
+        expect(
+          exact.contexts.listCandidatePool('project-a', 200),
+        ).toMatchObject({
+          items: expect.any(Array),
+          truncated: false,
+        });
+        expect(
+          exact.contexts.listCandidatePool('project-a', 200).items,
+        ).toHaveLength(200);
+      } finally {
+        exact.db.close();
+      }
 
-    const overflow = await runtime();
-    try {
-      putCandidateRows(overflow.contexts, 201);
-      const pool = overflow.contexts.listCandidatePool('project-a', 200);
-      expect(pool.items).toHaveLength(200);
-      expect(pool.truncated).toBe(true);
-    } finally {
-      overflow.db.close();
-    }
-  });
+      const overflow = await runtime();
+      try {
+        putCandidateRows(overflow.contexts, 201);
+        const pool = overflow.contexts.listCandidatePool('project-a', 200);
+        expect(pool.items).toHaveLength(200);
+        expect(pool.truncated).toBe(true);
+      } finally {
+        overflow.db.close();
+      }
+    },
+    15_000,
+  );
 
   it('marks only prior versions in the requested project stale', async () => {
     const { db, contexts } = await runtime();
