@@ -54,6 +54,14 @@ export async function validatePh03CompanionSmokeBundle(
 
   const parentRaw = await readFile(parentFilePath, 'utf8');
   const parent = requireRecord(JSON.parse(parentRaw) as unknown, 'parent');
+  if (
+    parent.packetVersion !== 2 ||
+    parent.phase !== 'PH-03' ||
+    parent.probe !== 'companion_live_smoke'
+  ) {
+    throw new Error('parent artifact contract mismatch');
+  }
+
   const parentOnlyMarker = requireString(parent, 'parentOnlyMarker', 'parent');
   const parentMarkerSha256 = sha256Text(parentOnlyMarker);
   if (parentMarkerSha256 !== result.evidence.parentMarkerSha256) {
@@ -84,9 +92,11 @@ export async function validatePh03CompanionSmokeBundle(
 
   const launch = requireRecord(parent.launch, 'parent.launch');
   if (
-    launch.role !== result.evidence.worker.role ||
+    launch.requestedRole !== result.evidence.worker.requestedRole ||
     launch.forkTurns !== result.evidence.worker.forkTurns ||
-    launch.authority !== result.evidence.worker.authority
+    launch.requestedAuthority !== result.evidence.worker.requestedAuthority ||
+    launch.singleChildOnly !== true ||
+    result.evidence.worker.singleChildObserved !== true
   ) {
     throw new Error('parent launch contract mismatch');
   }
