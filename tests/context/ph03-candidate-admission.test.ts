@@ -161,14 +161,15 @@ describe('PH-03 query candidate admission', () => {
       );
       const expectedIds: string[] = [];
       for (let index = 0; index < scopes.length; index += 1) {
+        const scope = scopes[index];
+        if (!scope) throw new Error(`missing scope ${index}`);
         const contextId = `context-scope-${index}`;
         expectedIds.push(contextId);
         putContext(contexts, {
           contextId,
           kind: 'source_pointer',
-          scope:
-            index % 2 === 0 ? scopes[index] : `${scopes[index]}/descendant`,
-          sourceUri: `repo:${scopes[index]}/target-${index}.ts`,
+          scope: index % 2 === 0 ? scope : `${scope}/descendant`,
+          sourceUri: `repo:${scope}/target-${index}.ts`,
           timestamp: '2026-09-10T00:00:00.000Z',
         });
       }
