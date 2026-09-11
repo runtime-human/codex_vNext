@@ -263,6 +263,14 @@ function admissionD(db, scopes) {
   ]);
 }
 
+function admissionE(db, scopes) {
+  return scopes.length <= 1 ? admissionB(db, scopes) : admissionC(db, scopes);
+}
+
+function admissionF(db, scopes) {
+  return scopes.length <= 2 ? admissionB(db, scopes) : admissionC(db, scopes);
+}
+
 function measure(fn) {
   for (let index = 0; index < WARMUP; index += 1) fn();
   const durations = [];
@@ -285,6 +293,8 @@ function runScenario(count, scopeCount, density) {
       B: () => admissionB(db, scopes),
       C: () => admissionC(db, scopes),
       D: () => admissionD(db, scopes),
+      E: () => admissionE(db, scopes),
+      F: () => admissionF(db, scopes),
     };
     const result = { count, scopeCount, density, oracle, strategies: {} };
     for (const [name, admission] of Object.entries(strategies)) {
@@ -312,19 +322,28 @@ for (const count of [10_000, 100_000]) {
 }
 
 const aggregate = {};
-for (const name of ['A', 'B', 'C', 'D']) {
+for (const name of ['A', 'B', 'C', 'D', 'E', 'F']) {
   const recalls = scenarios.map(
     (scenario) => scenario.strategies[name].recallAt8,
+  );
+  const medians = scenarios.map(
+    (scenario) => scenario.strategies[name].timing.medianMs,
+  );
+  const p95s = scenarios.map(
+    (scenario) => scenario.strategies[name].timing.p95Ms,
   );
   aggregate[name] = {
     meanRecallAt8:
       recalls.reduce((sum, value) => sum + value, 0) / recalls.length,
     perfectRecallScenarios: recalls.filter((value) => value === 1).length,
+    meanMedianMs:
+      medians.reduce((sum, value) => sum + value, 0) / medians.length,
+    worstP95Ms: Math.max(...p95s),
   };
 }
 
 const evidence = {
-  benchmarkVersion: 1,
+  benchmarkVersion: 2,
   phase: 'PH-03',
   benchmark: 'multi-scope-admission-stress',
   environment: {
@@ -339,6 +358,8 @@ const evidence = {
     B: 'per-scope exact80 child60 lanes plus recent fallback',
     C: 'single combined exact/child scope reservoir 120 plus recent fallback',
     D: 'single combined exact/child scope reservoir 160 plus recent fallback',
+    E: 'adaptive: per-scope for 1 scope, combined-120 for 2-8 scopes',
+    F: 'adaptive: per-scope for 1-2 scopes, combined-120 for 4-8 scopes',
   },
   aggregate,
   scenarios,
