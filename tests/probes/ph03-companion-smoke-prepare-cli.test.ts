@@ -47,6 +47,16 @@ async function tempRoot(): Promise<string> {
   return root;
 }
 
+async function writeCapsule(root: string): Promise<string> {
+  const capsuleFile = path.join(root, 'capsule.json');
+  await writeFile(
+    capsuleFile,
+    `${JSON.stringify(hydrationCapsule(), null, 2)}\n`,
+    'utf8',
+  );
+  return capsuleFile;
+}
+
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
@@ -57,14 +67,9 @@ describe('PH-03 Companion smoke preparation CLI', () => {
   it('writes an isolated native-smoke bundle without leaking the parent sentinel', async () => {
     const { preparePh03CompanionSmokeFiles } = await subject();
     const root = await tempRoot();
-    const capsuleFile = path.join(root, 'capsule.json');
+    const capsuleFile = await writeCapsule(root);
     const outputDirectory = path.join(root, 'bundle');
     const parentOnlyMarker = 'PH03_PARENT_ONLY_TEST_a1b2c3d4';
-    await writeFile(
-      capsuleFile,
-      `${JSON.stringify(hydrationCapsule(), null, 2)}\n`,
-      'utf8',
-    );
 
     const result = await preparePh03CompanionSmokeFiles({
       runtimeCommit: 'd'.repeat(40),
@@ -97,6 +102,24 @@ describe('PH-03 Companion smoke preparation CLI', () => {
     expect(workerRaw).not.toContain(parentOnlyMarker);
     expect(evidence.observedAt).toBeNull();
     expect(evidence.worker.freshThreadObserved).toBeNull();
+  });
+
+  it('refuses to overwrite a previously prepared smoke bundle', async () => {
+    const { preparePh03CompanionSmokeFiles } = await subject();
+    const root = await tempRoot();
+    const capsuleFile = await writeCapsule(root);
+    const outputDirectory = path.join(root, 'bundle');
+    const input = {
+      runtimeCommit: 'd'.repeat(40),
+      codexVersion: '0.153.4',
+      hostSurface: 'desktop' as const,
+      hydrationCapsuleFile: capsuleFile,
+      outputDirectory,
+      parentOnlyMarker: 'PH03_PARENT_ONLY_TEST_a1b2c3d4',
+    };
+
+    await preparePh03CompanionSmokeFiles(input);
+    await expect(preparePh03CompanionSmokeFiles(input)).rejects.toBeDefined();
   });
 
   it('exposes a build-then-prepare npm command outside the default check gate', async () => {
