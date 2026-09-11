@@ -25,7 +25,11 @@ import { executeIdempotent } from '../state/idempotency.js';
 import { newContextId, newEventId } from '../state/ids.js';
 import { redactSensitiveText } from '../state/redaction.js';
 import type { StateRepositories } from '../state/repositories.js';
-import type { ContextSourceSnapshot } from './source-resolver.js';
+import {
+  createContextVerificationBudget,
+  type ContextSourceSnapshot,
+  type ContextVerificationBudget,
+} from './source-resolver.js';
 
 const MAX_CONTEXT_CANDIDATES = 200;
 const MAX_HYDRATION_CONTEXT_ITEMS = 10;
@@ -37,6 +41,7 @@ export interface ContextSourceResolverLike {
   resolve(input: {
     projectId: string;
     sourceUri: string;
+    verificationBudget?: ContextVerificationBudget;
   }): Promise<ContextSourceSnapshot>;
 }
 
@@ -238,7 +243,8 @@ export class ContextIndexService {
     );
     if (!record) return undefined;
 
-    const freshness = await this.resolveFreshness(record);
+    const verificationBudget = createContextVerificationBudget();
+    const freshness = await this.resolveFreshness(record, verificationBudget);
     if (
       !shouldInclude(
         freshness.freshness,
@@ -290,9 +296,13 @@ export class ContextIndexService {
       }))
       .sort((left, right) => compareHits(left.hit, right.hit));
 
+    const verificationBudget = createContextVerificationBudget();
     const hits: ContextQueryHit[] = [];
     for (const rankedCandidate of ranked) {
-      const freshness = await this.resolveFreshness(rankedCandidate.candidate);
+      const freshness = await this.resolveFreshness(
+        rankedCandidate.candidate,
+        verificationBudget,
+      );
       if (
         shouldInclude(
           freshness.freshness,
@@ -411,11 +421,13 @@ export class ContextIndexService {
     }
 
     const verifiedAt = this.clock.nowIso();
+    const verificationBudget = createContextVerificationBudget();
     const prepared: PreparedDeltaMutation[] = [];
     for (const item of parsedDelta.items) {
       const snapshot = await this.dependencies.sourceResolver.resolve({
         projectId: input.projectId,
         sourceUri: item.sourceUri,
+        verificationBudget,
       });
       prepared.push(
         this.prepareDeltaMutation(input.projectId, item, snapshot, verifiedAt),
@@ -666,6 +678,7 @@ export class ContextIndexService {
 
   private async resolveFreshness(
     record: ContextRecord,
+    verificationBudget: ContextVerificationBudget,
   ): Promise<FreshnessResult> {
     if (record.stale) {
       return { freshness: 'stale', staleReason: 'persisted_stale' };
@@ -674,6 +687,7 @@ export class ContextIndexService {
     const snapshot = await this.dependencies.sourceResolver.resolve({
       projectId: record.projectId,
       sourceUri: record.sourceUri,
+      verificationBudget,
     });
     if (snapshot.status === 'missing') {
       return { freshness: 'stale', staleReason: 'source_missing' };

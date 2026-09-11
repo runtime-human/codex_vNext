@@ -12,7 +12,7 @@ interface FileMetadata {
 
 interface HashIo {
   stat(filePath: string): Promise<FileMetadata>;
-  chunks(filePath: string): AsyncIterable<Uint8Array>;
+  chunks(filePath: string, maxBytes: number): AsyncIterable<Uint8Array>;
 }
 
 interface StableHashResult {
@@ -132,21 +132,26 @@ describe('PH-03 stable repository source hashing', () => {
     expect(read).toBe(false);
   });
 
-  it('fails closed if a growing source crosses the budget while being streamed', async () => {
+  it('bounds the read to the original snapshot and fails closed if the file grows', async () => {
     const hashStableRepositoryFile = await loadStableHasher();
-    const snapshot = metadata({ size: 4n });
+    const before = metadata({ size: 4n });
+    const after = metadata({ size: 5n });
+    let calls = 0;
+    let observedMaxBytes = 0;
     const io: HashIo = {
       async stat() {
-        return snapshot;
+        calls += 1;
+        return calls === 1 ? before : after;
       },
-      async *chunks() {
-        yield Buffer.from('abc');
-        yield Buffer.from('de');
+      async *chunks(_filePath, maxBytes) {
+        observedMaxBytes = maxBytes;
+        yield Buffer.from('abcde').subarray(0, maxBytes);
       },
     };
 
     await expect(
       hashStableRepositoryFile('/repo/growing.ts', io, 4),
-    ).resolves.toEqual({ status: 'unverifiable', bytes: 3 });
+    ).resolves.toEqual({ status: 'unverifiable', bytes: 4 });
+    expect(observedMaxBytes).toBe(4);
   });
 });
