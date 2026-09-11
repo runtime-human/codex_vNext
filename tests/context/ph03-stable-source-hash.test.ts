@@ -24,6 +24,7 @@ interface StableHashResult {
 type HashStableRepositoryFile = (
   filePath: string,
   io?: HashIo,
+  maxBytes?: number,
 ) => Promise<StableHashResult>;
 
 async function loadStableHasher(): Promise<HashStableRepositoryFile> {
@@ -109,5 +110,43 @@ describe('PH-03 stable repository source hashing', () => {
       hashStableRepositoryFile('/repo/directory', io),
     ).resolves.toEqual({ status: 'unresolvable', bytes: 0 });
     expect(read).toBe(false);
+  });
+
+  it('does not read a source whose stable size already exceeds the per-source budget', async () => {
+    const hashStableRepositoryFile = await loadStableHasher();
+    let read = false;
+    const snapshot = metadata({ size: 17n });
+    const io: HashIo = {
+      async stat() {
+        return snapshot;
+      },
+      async *chunks() {
+        read = true;
+        yield Buffer.alloc(17);
+      },
+    };
+
+    await expect(
+      hashStableRepositoryFile('/repo/oversized.ts', io, 16),
+    ).resolves.toEqual({ status: 'unverifiable', bytes: 0 });
+    expect(read).toBe(false);
+  });
+
+  it('fails closed if a growing source crosses the budget while being streamed', async () => {
+    const hashStableRepositoryFile = await loadStableHasher();
+    const snapshot = metadata({ size: 4n });
+    const io: HashIo = {
+      async stat() {
+        return snapshot;
+      },
+      async *chunks() {
+        yield Buffer.from('abc');
+        yield Buffer.from('de');
+      },
+    };
+
+    await expect(
+      hashStableRepositoryFile('/repo/growing.ts', io, 4),
+    ).resolves.toEqual({ status: 'unverifiable', bytes: 3 });
   });
 });
