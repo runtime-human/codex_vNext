@@ -38,4 +38,5 @@ jobs:
           path: |
             evidence/generated/ph03-query-benchmark.json
             evidence/generated/ph03-candidate-sql-benchmark.json
+            evidence/generated/ph03-candidate-admission-benchmark.json
           if-no-files-found: error
