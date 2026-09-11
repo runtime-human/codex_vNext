@@ -18,12 +18,22 @@ const sourceHash = 'a'.repeat(64);
 
 async function createRuntime() {
   const pluginData = await mkdtemp(path.join(tmpdir(), 'ph03-admission-'));
-  roots.push(pluginData);
+  const repoRoot = await mkdtemp(path.join(tmpdir(), 'ph03-admission-repo-'));
+  roots.push(pluginData, repoRoot);
   const storage = resolveStorageRoot(pluginData);
   const db = openWorkflowDatabase(storage);
   await migrateDatabase(db, storage);
   const contexts = new ContextRepository(db);
   const repositories = new StateRepositories(db);
+  repositories.putProject({
+    projectId: 'project-a',
+    repoRoot,
+    repoKey: 'repo-a',
+    repoFingerprint: 'fingerprint-a',
+    createdAt: '2026-09-10T00:00:00.000Z',
+    updatedAt: '2026-09-11T00:00:00.000Z',
+    version: 1,
+  });
   const service = new ContextIndexService({
     contexts,
     repositories,
