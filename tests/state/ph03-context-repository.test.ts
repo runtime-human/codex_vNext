@@ -44,6 +44,10 @@ interface ContextRepositoryContract {
     sourceHash?: string,
   ): ContextRecord | undefined;
   listCandidates(projectId: string, limit?: number): ContextRecord[];
+  listCandidatePool(
+    projectId: string,
+    limit?: number,
+  ): { items: ContextRecord[]; truncated: boolean };
   listByLogicalKey(
     projectId: string,
     logicalKey: string,
@@ -120,6 +124,20 @@ function record(
     updatedAt: '2026-09-10T18:00:00.000Z',
     ...overrides,
   };
+}
+
+function putCandidateRows(
+  contexts: ContextRepositoryContract,
+  count: number,
+): void {
+  for (let index = 0; index < count; index += 1) {
+    contexts.put(
+      record(`context-${index}`, 'project-a', {
+        logicalKey: `logical-${index}`,
+        sourceUri: `repo:src/${index}.ts`,
+      }),
+    );
+  }
 }
 
 afterEach(async () => {
@@ -217,14 +235,7 @@ describe('PH-03 ContextRepository', () => {
   it('bounds candidate reads to 200 rows even when a larger limit is requested', async () => {
     const { db, contexts } = await runtime();
     try {
-      for (let index = 0; index < 205; index += 1) {
-        contexts.put(
-          record(`context-${index}`, 'project-a', {
-            logicalKey: `logical-${index}`,
-            sourceUri: `repo:src/${index}.ts`,
-          }),
-        );
-      }
+      putCandidateRows(contexts, 205);
 
       const candidates = contexts.listCandidates('project-a', 500);
       expect(candidates).toHaveLength(200);
@@ -233,6 +244,32 @@ describe('PH-03 ContextRepository', () => {
       );
     } finally {
       db.close();
+    }
+  });
+
+  it('distinguishes an exact 200-row candidate window from a 201-row overflow', async () => {
+    const exact = await runtime();
+    try {
+      putCandidateRows(exact.contexts, 200);
+      expect(exact.contexts.listCandidatePool('project-a', 200)).toMatchObject({
+        items: expect.any(Array),
+        truncated: false,
+      });
+      expect(
+        exact.contexts.listCandidatePool('project-a', 200).items,
+      ).toHaveLength(200);
+    } finally {
+      exact.db.close();
+    }
+
+    const overflow = await runtime();
+    try {
+      putCandidateRows(overflow.contexts, 201);
+      const pool = overflow.contexts.listCandidatePool('project-a', 200);
+      expect(pool.items).toHaveLength(200);
+      expect(pool.truncated).toBe(true);
+    } finally {
+      overflow.db.close();
     }
   });
 
