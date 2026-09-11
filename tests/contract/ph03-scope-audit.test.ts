@@ -28,7 +28,9 @@ describe('PH-03 scope audit', () => {
     ]);
     expect(
       names.filter((name) =>
-        /(?:^|\.)(?:board|dispatch|model|route|spawn|agent)(?:\.|$)/u.test(name),
+        /(?:^|\.)(?:board|dispatch|model|route|spawn|agent)(?:\.|$)/u.test(
+          name,
+        ),
       ),
     ).toEqual([]);
   });
@@ -52,7 +54,9 @@ describe('PH-03 scope audit', () => {
   });
 
   it('contains no PH-04 runtime, Board or structural-provider production modules', async () => {
-    const paths = (await sourcePaths()).map((value) => value.replaceAll('\\', '/'));
+    const paths = (await sourcePaths()).map((value) =>
+      value.replaceAll('\\', '/'),
+    );
     expect(
       paths.filter((value) =>
         /(?:^|\/)(?:board|scheduler|delegation-relay|structural-context-provider|serena|terra)(?:[./-]|$)/iu.test(
