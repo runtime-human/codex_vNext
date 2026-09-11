@@ -156,8 +156,9 @@ describe('PH-03 query candidate admission', () => {
   it('keeps exact and descendant matches discoverable across eight requested scopes', async () => {
     const { db, contexts, service } = await createRuntime();
     try {
-      const scopes = Array.from({ length: 8 }, (_, index) =>
-        `src/critical/${index}`,
+      const scopes = Array.from(
+        { length: 8 },
+        (_, index) => `src/critical/${index}`,
       );
       const expectedIds: string[] = [];
       for (let index = 0; index < scopes.length; index += 1) {
