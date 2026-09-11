@@ -41,4 +41,5 @@ jobs:
             evidence/generated/ph03-candidate-sql-benchmark.json
             evidence/generated/ph03-candidate-admission-benchmark.json
             evidence/generated/ph03-source-hash-benchmark.json
+            evidence/generated/ph03-verification-budget-benchmark.json
           if-no-files-found: error
