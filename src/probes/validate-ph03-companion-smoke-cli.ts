@@ -76,7 +76,8 @@ export async function validatePh03CompanionSmokeBundle(
       result.evidence.runtimeCommit ||
     requireString(parent, 'codexVersion', 'parent') !==
       result.evidence.codexVersion ||
-    requireString(parent, 'hostSurface', 'parent') !== result.evidence.hostSurface
+    requireString(parent, 'hostSurface', 'parent') !==
+      result.evidence.hostSurface
   ) {
     throw new Error('parent runtime metadata mismatch');
   }
