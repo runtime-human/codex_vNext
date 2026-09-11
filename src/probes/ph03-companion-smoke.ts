@@ -1,8 +1,15 @@
 import { z } from 'zod';
 
+const OptionalObservedRuntimeMetadataSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(128)
+  .nullable();
+
 export const Ph03CompanionSmokeEvidenceSchema = z
   .object({
-    smokeVersion: z.literal(1),
+    smokeVersion: z.literal(2),
     phase: z.literal('PH-03'),
     probe: z.literal('companion_live_smoke'),
     observedAt: z.string().datetime(),
@@ -13,9 +20,12 @@ export const Ph03CompanionSmokeEvidenceSchema = z
     parentMarkerSha256: z.string().regex(/^[a-f0-9]{64}$/u),
     worker: z
       .object({
-        role: z.literal('context_companion'),
+        requestedRole: z.literal('context_companion'),
+        runtimeRoleObserved: OptionalObservedRuntimeMetadataSchema,
+        runtimeModelObserved: OptionalObservedRuntimeMetadataSchema,
         forkTurns: z.literal('none'),
-        authority: z.literal('read_only'),
+        requestedAuthority: z.literal('read_only'),
+        singleChildObserved: z.literal(true),
         freshThreadObserved: z.literal(true),
         parentMarkerVisible: z.literal(false),
         repoWritesObserved: z.literal(false),
