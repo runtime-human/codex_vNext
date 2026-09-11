@@ -18,7 +18,9 @@ const sourceHash = 'a'.repeat(64);
 
 async function runtime() {
   const pluginData = await mkdtemp(path.join(tmpdir(), 'ph03-source-reuse-'));
-  const repoRoot = await mkdtemp(path.join(tmpdir(), 'ph03-source-reuse-repo-'));
+  const repoRoot = await mkdtemp(
+    path.join(tmpdir(), 'ph03-source-reuse-repo-'),
+  );
   roots.push(pluginData, repoRoot);
   const storage = resolveStorageRoot(pluginData);
   const db = openWorkflowDatabase(storage);
