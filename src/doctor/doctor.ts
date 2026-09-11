@@ -47,7 +47,7 @@ function contextSchemaHealthy(db: DatabaseSync): boolean {
         strict: number;
       }>
     ).find((row) => row.name === 'context_items' && row.type === 'table');
-    if (!table || table.strict !== 1) return false;
+    if (table?.strict !== 1) return false;
 
     const expectedColumns = [
       'context_id',
@@ -65,12 +65,16 @@ function contextSchemaHealthy(db: DatabaseSync): boolean {
       'created_at',
       'updated_at',
     ];
-    const columns = db.prepare('PRAGMA table_info(context_items)').all() as unknown as Array<{
+    const columns = db
+      .prepare('PRAGMA table_info(context_items)')
+      .all() as unknown as Array<{
       name: string;
     }>;
     if (
       columns.length !== expectedColumns.length ||
-      !expectedColumns.every((name) => columns.some((column) => column.name === name))
+      !expectedColumns.every((name) =>
+        columns.some((column) => column.name === name),
+      )
     ) {
       return false;
     }
@@ -96,7 +100,9 @@ function contextSchemaHealthy(db: DatabaseSync): boolean {
     );
     if (!projectForeignKey || !replacementForeignKey) return false;
 
-    const indexes = db.prepare('PRAGMA index_list(context_items)').all() as unknown as Array<{
+    const indexes = db
+      .prepare('PRAGMA index_list(context_items)')
+      .all() as unknown as Array<{
       name: string;
       unique: number;
       partial: number;
