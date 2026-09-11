@@ -535,18 +535,22 @@ export class ContextIndexService {
     });
 
     if (item.kind === 'stale') {
-      const candidates = this.dependencies.contexts
-        .listByLogicalKey(projectId, logicalKey)
-        .filter(
-          (candidate) =>
-            !item.sourceHash || candidate.sourceHash === item.sourceHash,
-        );
       const requestedContextId = item.contextId ?? item.replacesContextId;
       const target = requestedContextId
         ? this.dependencies.contexts.get(projectId, requestedContextId)
-        : candidates.length === 1
-          ? candidates[0]
-          : undefined;
+        : item.sourceHash
+          ? this.dependencies.contexts.getByLogicalVersion(
+              projectId,
+              logicalKey,
+              item.sourceHash,
+            )
+          : (() => {
+              const candidates = this.dependencies.contexts.listByLogicalKey(
+                projectId,
+                logicalKey,
+              );
+              return candidates.length === 1 ? candidates[0] : undefined;
+            })();
       if (
         !target ||
         target.logicalKey !== logicalKey ||
@@ -596,9 +600,11 @@ export class ContextIndexService {
       );
     }
 
-    const sameVersion = this.dependencies.contexts
-      .listByLogicalKey(projectId, logicalKey)
-      .find((candidate) => (candidate.sourceHash ?? '') === (sourceHash ?? ''));
+    const sameVersion = this.dependencies.contexts.getByLogicalVersion(
+      projectId,
+      logicalKey,
+      sourceHash,
+    );
     if (sameVersion) {
       throw new StateError(
         'INVALID_ARGUMENT',
