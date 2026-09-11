@@ -270,6 +270,7 @@ export class ContextIndexService {
       query.projectId,
       MAX_CONTEXT_CANDIDATES,
       query.includeStale,
+      query.kinds,
     );
     const candidateLimitReached =
       rawCandidates.length >= MAX_CONTEXT_CANDIDATES;
