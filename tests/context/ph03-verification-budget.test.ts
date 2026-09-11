@@ -136,7 +136,9 @@ describe('PH-03 source verification budget', () => {
         limit: 3,
       });
 
-      expect(result.hits.map((hit) => [hit.item.contextId, hit.freshness])).toEqual([
+      expect(
+        result.hits.map((hit) => [hit.item.contextId, hit.freshness]),
+      ).toEqual([
         ['context-a', 'fresh'],
         ['context-b', 'fresh'],
         ['context-c', 'unverifiable'],

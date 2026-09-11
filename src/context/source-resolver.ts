@@ -209,7 +209,8 @@ export class ContextSourceResolver {
         0,
         Math.min(
           verificationBudget?.remainingBytes ?? MAX_CONTEXT_SOURCE_VERIFY_BYTES,
-          verificationBudget?.perSourceMaxBytes ?? MAX_CONTEXT_SOURCE_VERIFY_BYTES,
+          verificationBudget?.perSourceMaxBytes ??
+            MAX_CONTEXT_SOURCE_VERIFY_BYTES,
         ),
       );
       const result = await hashStableRepositoryFile(

@@ -26,9 +26,9 @@ import { newContextId, newEventId } from '../state/ids.js';
 import { redactSensitiveText } from '../state/redaction.js';
 import type { StateRepositories } from '../state/repositories.js';
 import {
-  createContextVerificationBudget,
   type ContextSourceSnapshot,
   type ContextVerificationBudget,
+  createContextVerificationBudget,
 } from './source-resolver.js';
 
 const MAX_CONTEXT_CANDIDATES = 200;
