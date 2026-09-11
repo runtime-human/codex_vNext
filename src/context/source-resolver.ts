@@ -10,6 +10,10 @@ import {
   type StateRepositories,
 } from '../state/index.js';
 
+const MIB = 1024 * 1024;
+export const MAX_CONTEXT_SOURCE_VERIFY_BYTES = 16 * MIB;
+export const MAX_CONTEXT_OPERATION_VERIFY_BYTES = 32 * MIB;
+
 export type ContextSourceStatus =
   | 'resolved'
   | 'missing'
@@ -20,6 +24,18 @@ export interface ContextSourceSnapshot {
   sourceUri: string;
   status: ContextSourceStatus;
   sourceHash?: string;
+}
+
+export interface ContextVerificationBudget {
+  remainingBytes: number;
+  perSourceMaxBytes: number;
+}
+
+export function createContextVerificationBudget(): ContextVerificationBudget {
+  return {
+    remainingBytes: MAX_CONTEXT_OPERATION_VERIFY_BYTES,
+    perSourceMaxBytes: MAX_CONTEXT_SOURCE_VERIFY_BYTES,
+  };
 }
 
 export interface ContextSourceResolverDependencies {
@@ -36,7 +52,7 @@ export interface RepositoryFileMetadata {
 
 export interface RepositoryFileHashIo {
   stat(filePath: string): Promise<RepositoryFileMetadata>;
-  chunks(filePath: string): AsyncIterable<Uint8Array>;
+  chunks(filePath: string, maxBytes: number): AsyncIterable<Uint8Array>;
 }
 
 export type StableRepositoryFileHashResult =
@@ -54,8 +70,11 @@ const nodeRepositoryFileHashIo: RepositoryFileHashIo = {
       isFile: value.isFile(),
     };
   },
-  chunks(filePath) {
-    return createReadStream(filePath);
+  chunks(filePath, maxBytes) {
+    return createReadStream(filePath, {
+      start: 0,
+      end: Math.max(0, maxBytes - 1),
+    });
   },
 };
 
@@ -78,22 +97,32 @@ function sameRepositoryFileSnapshot(
 export async function hashStableRepositoryFile(
   filePath: string,
   io: RepositoryFileHashIo = nodeRepositoryFileHashIo,
+  maxBytes = MAX_CONTEXT_SOURCE_VERIFY_BYTES,
 ): Promise<StableRepositoryFileHashResult> {
   const before = await io.stat(filePath);
   if (!before.isFile) return { status: 'unresolvable', bytes: 0 };
+  if (before.size > BigInt(maxBytes)) {
+    return { status: 'unverifiable', bytes: 0 };
+  }
 
+  const expectedBytes = Number(before.size);
   const hash = createHash('sha256');
   let bytes = 0;
-  for await (const chunk of io.chunks(filePath)) {
-    hash.update(chunk);
-    bytes += chunk.byteLength;
+  if (expectedBytes > 0) {
+    for await (const chunk of io.chunks(filePath, expectedBytes)) {
+      bytes += chunk.byteLength;
+      if (bytes > expectedBytes || bytes > maxBytes) {
+        return { status: 'unverifiable', bytes };
+      }
+      hash.update(chunk);
+    }
   }
 
   const after = await io.stat(filePath);
   if (
     !after.isFile ||
     !sameRepositoryFileSnapshot(before, after) ||
-    BigInt(bytes) !== before.size
+    bytes !== expectedBytes
   ) {
     return { status: 'unverifiable', bytes };
   }
@@ -125,6 +154,7 @@ export class ContextSourceResolver {
   async resolve(input: {
     projectId: string;
     sourceUri: string;
+    verificationBudget?: ContextVerificationBudget;
   }): Promise<ContextSourceSnapshot> {
     const parsed = ContextSourceUriSchema.safeParse(input.sourceUri);
     if (!parsed.success) return unresolvable(input.sourceUri);
@@ -136,7 +166,11 @@ export class ContextSourceResolver {
       return { sourceUri, status: 'unverifiable' };
     }
     if (sourceUri.startsWith('repo:')) {
-      return await this.resolveRepositorySource(project, sourceUri);
+      return await this.resolveRepositorySource(
+        project,
+        sourceUri,
+        input.verificationBudget,
+      );
     }
     return this.resolveSemanticSource(project, sourceUri);
   }
@@ -144,6 +178,7 @@ export class ContextSourceResolver {
   private async resolveRepositorySource(
     project: ProjectRecord,
     sourceUri: string,
+    verificationBudget?: ContextVerificationBudget,
   ): Promise<ContextSourceSnapshot> {
     try {
       const canonicalRoot = await realpath(project.repoRoot);
@@ -170,7 +205,24 @@ export class ContextSourceResolver {
         return unresolvable(sourceUri);
       }
 
-      const result = await hashStableRepositoryFile(resolved);
+      const maxBytes = Math.max(
+        0,
+        Math.min(
+          verificationBudget?.remainingBytes ?? MAX_CONTEXT_SOURCE_VERIFY_BYTES,
+          verificationBudget?.perSourceMaxBytes ?? MAX_CONTEXT_SOURCE_VERIFY_BYTES,
+        ),
+      );
+      const result = await hashStableRepositoryFile(
+        resolved,
+        nodeRepositoryFileHashIo,
+        maxBytes,
+      );
+      if (verificationBudget) {
+        verificationBudget.remainingBytes = Math.max(
+          0,
+          verificationBudget.remainingBytes - result.bytes,
+        );
+      }
       if (result.status !== 'resolved') {
         return { sourceUri, status: result.status };
       }
