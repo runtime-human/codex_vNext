@@ -1,7 +1,9 @@
-# PH-03 Context Index + Conditional Companion Implementation Plan — Rev 1.2
+# PH-03 Context Index + Conditional Companion Implementation Plan — Rev 1.3
 
-**Status:** CURRENT executable phase  
+**Status:** CURRENT executable phase — implementation/code gates complete, native Companion evidence PARTIAL  
 **Baseline:** `811eb8350f06dd0aa60f420d14d485aaa5f3e9be`  
+**Last verified code gate:** `b441336ea65ed7921c81d76dc2927639fe9ff50c` — CI GREEN, 236 tests passed / 1 skipped, plugin validation passed  
+**Cross-platform query benchmark:** GitHub Actions run `34586655319` — Ubuntu 24.04 + Windows latest GREEN  
 **Master:** `CODEX_WORKFLOW_NEXT_MASTER_PLAN.md` Rev 4.4  
 **Roadmap:** `CODEX_WORKFLOW_NEXT_ROADMAP.md` Rev 2.4
 
@@ -123,6 +125,21 @@ Score candidates with no embeddings/fuzzy matching:
 
 Normalize terms with Unicode NFKC + lowercase + trim. Tie-break: `score DESC`, `verifiedAt DESC`, `contextId ASC`.
 
+Candidate admission is bounded before source verification. Current evidence-backed policy is:
+
+```text
+1 requested scope:
+  exact scope reservoir <= 80
+  descendant reservoir <= 60
+2..8 requested scopes:
+  combined exact/descendant reservoir <= 120
+always:
+  union with recent candidate pool <= 200
+  deduplicate -> deterministic score -> top 200 -> source freshness
+```
+
+The repository reads one additional metadata row where necessary to distinguish an exact full window from actual overflow; source verification remains bounded to 200 candidates. Scope-reservoir truncation is an admission detail and does not itself imply that the global candidate universe is truncated when the exact recent pool proves otherwise.
+
 ## Hydration
 
 `context.hydrate` builds a strict Companion capsule from current project/run identity, at most 10 fresh Context Items, explicitly selected same-project/run Decision/Evidence references, objective/scopes/terms and unresolved questions. Total context summary content is capped at 14,000 characters. It must not read all indexed source bodies or bootstrap the whole repository.
@@ -157,100 +174,116 @@ If fresh isolation cannot be sufficiently observed, PH-03 is `PARTIAL`; do not r
 - [x] create isolated PH-03 branch from exact PH-02 main
 - [x] switch root `AGENTS.md` to PH-03
 - [x] add reproducible GitHub Actions `npm ci` + `npm run check` gate
-- [ ] remove stale `.work/` plan copies and ignore `.work/`
-- [ ] preserve PH-02 baseline regression GREEN
-- [ ] add RED PH-03 domain/MCP/project-isolation contracts
+- [x] remove stale `.work/` plan copies and ignore `.work/`
+- [x] preserve PH-02 baseline regression GREEN
+- [x] add RED PH-03 domain/MCP/project-isolation contracts
 
 Required negative contracts include: project A context ID queried as B → not found; same source URI in two projects remains isolated; wrong-project delta rejected; stale/missing source excluded from hydration.
 
 ### Task 1 — Domain schemas
 
-- [ ] extract reusable `ContextKindSchema` without changing PH-01 values
-- [ ] add strict canonical Context source URI schema/parser
-- [ ] add query/hit/result schemas
-- [ ] add hydration capsule schemas
-- [ ] add ContextDelta schemas
-- [ ] RED → GREEN focused contract tests
+- [x] extract reusable `ContextKindSchema` without changing PH-01 values
+- [x] add strict canonical Context source URI schema/parser
+- [x] add query/hit/result schemas
+- [x] add hydration capsule schemas
+- [x] add ContextDelta schemas
+- [x] RED → GREEN focused contract tests
 
 ### Task 2 — Migration 002 + ContextRepository
 
-- [ ] RED migration/repository tests
-- [ ] add `002-context-index.ts` as `STRICT`
-- [ ] introduce authoritative `ALL_MIGRATIONS`
-- [ ] generic migration-chain doctor validation
-- [ ] repository methods always require `projectId` for reads/mutations
-- [ ] bounded SQL candidate retrieval (`<=200`)
-- [ ] no source-body columns
+- [x] RED migration/repository tests
+- [x] add `002-context-index.ts` as `STRICT`
+- [x] introduce authoritative `ALL_MIGRATIONS`
+- [x] generic migration-chain doctor validation
+- [x] repository methods always require `projectId` for reads/mutations
+- [x] bounded SQL candidate retrieval (`<=200`)
+- [x] no source-body columns
 
 ### Task 3 — Source URI + resolver/fingerprint
 
-- [ ] RED traversal/symlink/cross-project/state-source tests
-- [ ] canonical `repo:` path containment
-- [ ] streaming SHA-256 exact bytes
-- [ ] canonical JSON hashes for PH-02 Decision/Evidence/Work entities
-- [ ] `external:` remains unverifiable/no fetch
+- [x] RED traversal/symlink/cross-project/state-source tests
+- [x] canonical `repo:` path containment
+- [x] streaming SHA-256 exact bytes
+- [x] canonical JSON hashes for PH-02 Decision/Evidence/Work entities
+- [x] `external:` remains unverifiable/no fetch
 
 ### Task 4 — Ranking + get/query
 
-- [ ] RED exact scoring/NFKC/tie-break tests
-- [ ] RED bounded query and freshness tests
-- [ ] implement exact deterministic ranking
-- [ ] revalidate only bounded selected candidates
-- [ ] stale/unverifiable excluded by default
-- [ ] retrieval itself never refreshes validity
+- [x] RED exact scoring/NFKC/tie-break tests
+- [x] RED bounded query and freshness tests
+- [x] implement exact deterministic ranking
+- [x] revalidate only bounded selected candidates
+- [x] stale/unverifiable excluded by default
+- [x] retrieval itself never refreshes validity
+- [x] same-kind scope starvation and 1/2/4/8-scope admission regression coverage
+- [x] exact candidate-window truncation semantics (`200` vs `201`) covered at service and repository boundaries
 
 ### Task 5 — Hydration
 
-- [ ] RED max-items and 14k budget tests
-- [ ] RED same-project/run authority tests
-- [ ] build fresh-only capsule
-- [ ] drop/trim summaries deterministically; never truncate URI/hash
+- [x] RED max-items and 14k budget tests
+- [x] RED same-project/run authority tests
+- [x] build fresh-only capsule
+- [x] drop/trim summaries deterministically; never truncate URI/hash
 
 ### Task 6 — Delta validation + atomic ingestion
 
-- [ ] RED task/base/source/project/idempotency tests
-- [ ] preflight all source snapshots before transaction
-- [ ] redact summaries before persistence
-- [ ] same command replay returns same result; different request conflicts
-- [ ] changed source marks prior logical version stale
-- [ ] one invalid item rejects whole command
-- [ ] one `executeIdempotent()` transaction owns mutations + one `context.delta_ingested` run event + receipt
+- [x] RED task/base/source/project/idempotency tests
+- [x] preflight all source snapshots before transaction
+- [x] redact summaries before persistence
+- [x] same command replay returns same result; different request conflicts
+- [x] changed source marks prior logical version stale
+- [x] one invalid item rejects whole command
+- [x] one `executeIdempotent()` transaction owns mutations + one `context.delta_ingested` run event + receipt
 
 ### Task 7 — MCP
 
-- [ ] RED strict schema/annotation/error tests
-- [ ] register four tools as thin adapters
-- [ ] no PH-04 tool leakage
-- [ ] stdio smoke remains GREEN
+- [x] RED strict schema/annotation/error tests
+- [x] register four tools as thin adapters
+- [x] no PH-04 tool leakage
+- [x] legacy stdio smoke GREEN
+- [x] modern MCP negotiation + PH-03 production stdio calls GREEN
 
 ### Task 8 — Doctor + restart
 
-- [ ] context schema/index/FK integrity checks
-- [ ] generic known migration-chain verification
-- [ ] restart persistence and stale-source behavior
-- [ ] PH-02 doctor behavior remains valid
+- [x] context schema/index/FK integrity checks
+- [x] generic known migration-chain verification
+- [x] restart persistence and stale-source behavior
+- [x] PH-02 doctor behavior remains valid
 
 ### Task 9 — Minimal Skill update
 
-Update `skills/orchestrate-work/SKILL.md` only enough to describe optional explicit PH-03 hydration/Companion handoff. Do not add automatic routing or mandatory Companion.
+- [x] update `skills/orchestrate-work/SKILL.md` only enough to describe optional explicit PH-03 hydration/Companion handoff
+- [x] keep Companion optional; no automatic routing or mandatory Companion behavior
 
 ### Task 10 — Live Companion smoke
 
-Record `evidence/ph03-companion-smoke.json` with exact Desktop/CLI/Codex build, plugin/package commit, explicit `fork_turns="none"`, parent-marker isolation result, schema-valid delta result, no-repository-write evidence and any degraded observation.
+- [x] record explicit PARTIAL evidence in `evidence/ph03-companion-smoke.json` rather than infer native behavior from tests/CI
+- [ ] execute the native Desktop/CLI live smoke when an authorized Codex agent-spawn surface is actually available
+- [ ] record exact native surface/Codex build, explicit `fork_turns="none"`, parent-marker isolation, schema-valid live ContextDelta and no-repository-write observation
+
+Current blocker: this GitHub/Actions execution environment exposes repository and CI capabilities but no authorized native Codex Desktop/CLI agent-spawn surface. `surface`, `codexBuild`, `forkTurnsNone`, parent-marker isolation, live delta validity and no-write behavior therefore remain explicitly unobserved. Unit/contract tests do not substitute for this proof.
 
 ### Task 11 — Full gate
 
-Required:
+- [x] `npm ci`
+- [x] `npm run check`
+- [x] focused PH-03 tests
+- [x] restart/integration tests
+- [x] plugin validation
+- [x] PH-02 regression suite
+- [x] live Companion evidence is explicitly classified `PARTIAL` rather than falsely PASS
+- [x] scope audit
+- [x] cross-platform PH-03 query benchmark GREEN on Ubuntu 24.04 and Windows latest
+
+Latest verified code gate at `b441336ea65ed7921c81d76dc2927639fe9ff50c`:
 
 ```text
-npm ci
-npm run check
-focused PH-03 tests
-restart/integration tests
-plugin validation
-PH-02 regression suite
-live Companion smoke or explicit PARTIAL classification
-scope audit
+39 test files passed / 1 skipped
+236 tests passed / 1 skipped
+Biome GREEN
+plugin validation passed
+legacy stdio smoke GREEN
+modern MCP negotiation + PH-03 stdio calls GREEN
 ```
 
 ## Acceptance gate
@@ -268,6 +301,8 @@ PH-03 may PASS only when:
 - PH-02 regression remains GREEN;
 - Companion isolation is PASS, or the phase is explicitly PARTIAL with downstream assumptions narrowed;
 - no PH-04 routing/runtime, Terra/relay, Serena/structural provider, embeddings/vector DB, documentation subsystem or economic claim leaked into scope.
+
+Current disposition: **PH-03 PARTIAL**. The implementation/code/CI side of the acceptance gate is satisfied; native Companion isolation is still unobserved, so PH-03 must not be relabeled PASS and PH-04 must not assume native Companion isolation has been proven.
 
 ## PH-04 entry outputs
 
