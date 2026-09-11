@@ -146,9 +146,7 @@ function createDatabase(rows, withExtraIndex) {
     throw error;
   }
 
-  const pageCount = Number(
-    db.prepare('PRAGMA page_count').get().page_count,
-  );
+  const pageCount = Number(db.prepare('PRAGMA page_count').get().page_count);
   const pageSize = Number(db.prepare('PRAGMA page_size').get().page_size);
   return {
     db,
@@ -162,7 +160,10 @@ function ids(result) {
 }
 
 function sameIds(left, right) {
-  return left.length === right.length && left.every((id, index) => id === right[index]);
+  return (
+    left.length === right.length &&
+    left.every((id, index) => id === right[index])
+  );
 }
 
 function explain(db, sql) {
