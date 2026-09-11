@@ -19,6 +19,8 @@ When delegation is useful, choose the semantic role before any model/runtime map
 
 Senior does not own project architecture, public contracts, product trade-offs, ownership expansion, or final acceptance. Escalate those decisions to Main.
 
+For PH-03 context work, the Companion remains optional. Main decides whether the handoff is useful. When it is, Main should obtain a bounded capsule with `context.hydrate`, start a fresh read-only `context_companion` with explicit `fork_turns="none"`, and pass only that capsule plus the bounded task. The Companion returns a schema-valid `ContextDelta`; Main validates the result and persists accepted changes only through `context.ingest_delta`. If direct repository work is cheaper or clearer, stay direct instead of invoking a Companion.
+
 For any delegated role:
 
 - define bounded ownership and acceptance;
