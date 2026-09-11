@@ -301,12 +301,15 @@ export class ContextIndexService {
       query.includeStale,
       query.kinds,
     );
-    const scopePool = this.dependencies.contexts.listScopeCandidates(
-      query.projectId,
-      query.scopes,
-      query.includeStale,
-      query.kinds,
-    );
+    const scopePool =
+      query.scopes.length > 0
+        ? this.dependencies.contexts.listScopeCandidates(
+            query.projectId,
+            query.scopes,
+            query.includeStale,
+            query.kinds,
+          )
+        : { items: [], truncated: false };
     const admitted = dedupeCandidates([
       ...scopePool.items,
       ...recentCandidates,
