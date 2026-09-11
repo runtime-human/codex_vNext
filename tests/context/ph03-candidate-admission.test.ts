@@ -10,6 +10,7 @@ import {
   migrateDatabase,
   openWorkflowDatabase,
   resolveStorageRoot,
+  StateRepositories,
 } from '../../src/state/index.js';
 
 const roots: string[] = [];
@@ -22,8 +23,10 @@ async function createRuntime() {
   const db = openWorkflowDatabase(storage);
   await migrateDatabase(db, storage);
   const contexts = new ContextRepository(db);
+  const repositories = new StateRepositories(db);
   const service = new ContextIndexService({
     contexts,
+    repositories,
     sourceResolver: {
       async resolve(input) {
         return {
