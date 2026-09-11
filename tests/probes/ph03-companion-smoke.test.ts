@@ -45,15 +45,60 @@ describe('PH-03 live Companion smoke evidence', () => {
   });
 
   it.each([
-    ['forkTurns', (value: ReturnType<typeof validEvidence>) => { value.worker.forkTurns = 'full'; }],
-    ['authority', (value: ReturnType<typeof validEvidence>) => { value.worker.authority = 'write'; }],
-    ['parent marker', (value: ReturnType<typeof validEvidence>) => { value.worker.parentMarkerVisible = true; }],
-    ['repo writes', (value: ReturnType<typeof validEvidence>) => { value.worker.repoWritesObserved = true; }],
-    ['fresh thread', (value: ReturnType<typeof validEvidence>) => { value.worker.freshThreadObserved = false; }],
-    ['capsule', (value: ReturnType<typeof validEvidence>) => { value.handoff.hydrationCapsuleValidated = false; }],
-    ['bounded handoff', (value: ReturnType<typeof validEvidence>) => { value.handoff.onlyHydrationCapsuleAndTaskPassed = false; }],
-    ['delta validation', (value: ReturnType<typeof validEvidence>) => { value.handoff.contextDeltaValidated = false; }],
-    ['persistence path', (value: ReturnType<typeof validEvidence>) => { value.handoff.mainPersistedThroughContextIngestDelta = false; }],
+    [
+      'forkTurns',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.forkTurns = 'full';
+      },
+    ],
+    [
+      'authority',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.authority = 'write';
+      },
+    ],
+    [
+      'parent marker',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.parentMarkerVisible = true;
+      },
+    ],
+    [
+      'repo writes',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.repoWritesObserved = true;
+      },
+    ],
+    [
+      'fresh thread',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.worker.freshThreadObserved = false;
+      },
+    ],
+    [
+      'capsule',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.handoff.hydrationCapsuleValidated = false;
+      },
+    ],
+    [
+      'bounded handoff',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.handoff.onlyHydrationCapsuleAndTaskPassed = false;
+      },
+    ],
+    [
+      'delta validation',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.handoff.contextDeltaValidated = false;
+      },
+    ],
+    [
+      'persistence path',
+      (value: ReturnType<typeof validEvidence>) => {
+        value.handoff.mainPersistedThroughContextIngestDelta = false;
+      },
+    ],
   ])('fails closed when %s is not proven', async (_name, mutate) => {
     const { validatePh03CompanionSmoke } = await subject();
     const evidence = validEvidence();
