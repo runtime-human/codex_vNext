@@ -48,6 +48,7 @@ describe('PH-03 native Companion smoke packet', () => {
     }) as {
       parent: {
         parentOnlyMarker: string;
+        workerHandoffSha256: string;
         launch: {
           role: string;
           forkTurns: string;
@@ -55,7 +56,7 @@ describe('PH-03 native Companion smoke packet', () => {
         };
       };
       worker: Record<string, unknown>;
-      evidenceTemplate: unknown;
+      evidenceTemplate: { workerHandoffSha256: string };
     };
 
     expect(artifacts.parent).toMatchObject({
@@ -71,6 +72,36 @@ describe('PH-03 native Companion smoke packet', () => {
       'task',
     ]);
     expect(JSON.stringify(artifacts.worker)).not.toContain(parentOnlyMarker);
+    expect(artifacts.parent.workerHandoffSha256).toMatch(/^[a-f0-9]{64}$/u);
+    expect(artifacts.evidenceTemplate.workerHandoffSha256).toBe(
+      artifacts.parent.workerHandoffSha256,
+    );
+  });
+
+  it('changes the binding when the exact worker handoff changes', async () => {
+    const { createPh03CompanionSmokeArtifacts } = await subject();
+    const base = createPh03CompanionSmokeArtifacts({
+      runtimeCommit: 'c'.repeat(40),
+      codexVersion: '0.153.4',
+      hostSurface: 'desktop',
+      parentOnlyMarker: 'PH03_PARENT_ONLY_TEST_4b2c1d90',
+      hydrationCapsule: hydrationCapsule(),
+    }) as { parent: { workerHandoffSha256: string } };
+    const changedCapsule = {
+      ...hydrationCapsule(),
+      objective: 'A different exact handoff objective.',
+    };
+    const changed = createPh03CompanionSmokeArtifacts({
+      runtimeCommit: 'c'.repeat(40),
+      codexVersion: '0.153.4',
+      hostSurface: 'desktop',
+      parentOnlyMarker: 'PH03_PARENT_ONLY_TEST_4b2c1d90',
+      hydrationCapsule: changedCapsule,
+    }) as { parent: { workerHandoffSha256: string } };
+
+    expect(changed.parent.workerHandoffSha256).not.toBe(
+      base.parent.workerHandoffSha256,
+    );
   });
 
   it('produces a fail-closed evidence template until native observations are filled', async () => {
