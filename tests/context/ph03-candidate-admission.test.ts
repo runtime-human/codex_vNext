@@ -50,6 +50,48 @@ async function createRuntime() {
   return { db, contexts, service };
 }
 
+function putContext(
+  contexts: ContextRepository,
+  input: {
+    contextId: string;
+    kind: 'pitfall' | 'source_pointer';
+    scope: string;
+    sourceUri: string;
+    timestamp: string;
+  },
+) {
+  contexts.put({
+    contextId: input.contextId,
+    projectId: 'project-a',
+    logicalKey: `logical-${input.contextId}`,
+    kind: input.kind,
+    scope: input.scope,
+    summary: `summary ${input.contextId}`,
+    sourceUri: input.sourceUri,
+    sourceHash,
+    verifiedAt: input.timestamp,
+    stale: false,
+    createdAt: input.timestamp,
+    updatedAt: input.timestamp,
+  });
+}
+
+function addNewerNoise(
+  contexts: ContextRepository,
+  kind: 'pitfall' | 'source_pointer',
+) {
+  for (let index = 0; index < 200; index += 1) {
+    const suffix = String(index).padStart(3, '0');
+    putContext(contexts, {
+      contextId: `context-noise-${kind}-${suffix}`,
+      kind,
+      scope: 'src/noise',
+      sourceUri: `repo:src/noise/${kind}-${suffix}.ts`,
+      timestamp: '2026-09-11T00:00:00.000Z',
+    });
+  }
+}
+
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
@@ -57,41 +99,17 @@ afterEach(async () => {
 });
 
 describe('PH-03 query candidate admission', () => {
-  it('does not let 200 newer irrelevant rows hide an older exact-scope hit', async () => {
+  it('does not let 200 newer rows of another kind hide an older exact-scope hit', async () => {
     const { db, contexts, service } = await createRuntime();
     try {
-      contexts.put({
+      putContext(contexts, {
         contextId: 'context-target',
-        projectId: 'project-a',
-        logicalKey: 'logical-target',
         kind: 'pitfall',
         scope: 'src/critical',
-        summary: 'the relevant older context',
         sourceUri: 'repo:src/critical/target.ts',
-        sourceHash,
-        verifiedAt: '2026-09-10T00:00:00.000Z',
-        stale: false,
-        createdAt: '2026-09-10T00:00:00.000Z',
-        updatedAt: '2026-09-10T00:00:00.000Z',
+        timestamp: '2026-09-10T00:00:00.000Z',
       });
-
-      for (let index = 0; index < 200; index += 1) {
-        const suffix = String(index).padStart(3, '0');
-        contexts.put({
-          contextId: `context-noise-${suffix}`,
-          projectId: 'project-a',
-          logicalKey: `logical-noise-${suffix}`,
-          kind: 'source_pointer',
-          scope: 'src/noise',
-          summary: `newer irrelevant candidate ${suffix}`,
-          sourceUri: `repo:src/noise/${suffix}.ts`,
-          sourceHash,
-          verifiedAt: '2026-09-11T00:00:00.000Z',
-          stale: false,
-          createdAt: '2026-09-11T00:00:00.000Z',
-          updatedAt: '2026-09-11T00:00:00.000Z',
-        });
-      }
+      addNewerNoise(contexts, 'source_pointer');
 
       const result = await service.query({
         projectId: 'project-a',
@@ -103,6 +121,69 @@ describe('PH-03 query candidate admission', () => {
       expect(result.hits.map((hit) => hit.item.contextId)).toEqual([
         'context-target',
       ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('does not let 200 newer rows of the same kind hide an older exact-scope hit', async () => {
+    const { db, contexts, service } = await createRuntime();
+    try {
+      putContext(contexts, {
+        contextId: 'context-target-same-kind',
+        kind: 'source_pointer',
+        scope: 'src/critical',
+        sourceUri: 'repo:src/critical/same-kind.ts',
+        timestamp: '2026-09-10T00:00:00.000Z',
+      });
+      addNewerNoise(contexts, 'source_pointer');
+
+      const result = await service.query({
+        projectId: 'project-a',
+        scopes: ['src/critical'],
+        kinds: ['source_pointer'],
+        limit: 1,
+      });
+
+      expect(result.hits.map((hit) => hit.item.contextId)).toEqual([
+        'context-target-same-kind',
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('keeps exact and descendant matches discoverable across eight requested scopes', async () => {
+    const { db, contexts, service } = await createRuntime();
+    try {
+      const scopes = Array.from({ length: 8 }, (_, index) =>
+        `src/critical/${index}`,
+      );
+      const expectedIds: string[] = [];
+      for (let index = 0; index < scopes.length; index += 1) {
+        const contextId = `context-scope-${index}`;
+        expectedIds.push(contextId);
+        putContext(contexts, {
+          contextId,
+          kind: 'source_pointer',
+          scope:
+            index % 2 === 0 ? scopes[index] : `${scopes[index]}/descendant`,
+          sourceUri: `repo:${scopes[index]}/target-${index}.ts`,
+          timestamp: '2026-09-10T00:00:00.000Z',
+        });
+      }
+      addNewerNoise(contexts, 'source_pointer');
+
+      const result = await service.query({
+        projectId: 'project-a',
+        scopes,
+        kinds: ['source_pointer'],
+        limit: 8,
+      });
+
+      expect(result.hits.map((hit) => hit.item.contextId).sort()).toEqual(
+        expectedIds.sort(),
+      );
     } finally {
       db.close();
     }
