@@ -162,11 +162,7 @@ async function runScenario(count, staleRatio, strategy, root) {
     const insertMs = insertRows(db, count, staleRatio);
     const beforeMutationBytes = await fileBytes(filePath);
     const queryBefore = measureQuery(db);
-    const staleMutation = markStale(
-      db,
-      count,
-      Math.min(0.9, staleRatio + 0.1),
-    );
+    const staleMutation = markStale(db, count, Math.min(0.9, staleRatio + 0.1));
     const queryAfter = measureQuery(db);
     db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     const afterCheckpointBytes = await fileBytes(filePath);
